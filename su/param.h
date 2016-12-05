@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>	
 #include <ctime>
-
+#include <stdint.h>
 
 // интерфейс класса
 // объявление класса Параметр
@@ -26,6 +26,9 @@ public: 				// спецификатор доступа public
     void 		getValue(); 				// 
 }; // конец объявления класса CParam
 
+
+int16_t readCfg();
+void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 
 extern std::vector< CParam, std::allocator<CParam> > params;
 

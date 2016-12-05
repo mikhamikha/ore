@@ -11,8 +11,7 @@ std::vector< CParam, allocator<CParam> > params;
 //	Чтение и парсинг конфигурационного файла
 //	name;mqtt;type;address;
 //
-int
-readCfg()
+int16_t readCfg()
 {
 	int	res=0;
 	std::fstream filestr ("test.txt");
@@ -33,4 +32,5 @@ readCfg()
   	}
 	return res;
 }
+
 

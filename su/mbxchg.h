@@ -5,9 +5,11 @@
 #include <stdint.h>
 #include <vector>
 #include <iterator>
-
-
 #include <iostream>
+
+#define EXIT_SUCCESS    0
+#define EXIT_FAILURE    1
+
 //
 // add libmodbus
 //
@@ -25,7 +27,8 @@ enum {
 
 enum {
     INITIALIZED,
-    INIT_ERR
+    INIT_ERR,
+    TERMINATE
 };
 
 const char _parities[] = {'N','O','E'};
@@ -58,33 +61,35 @@ struct ccmd {
 // Connection class
 //
 class cmbxchg {
-    uint32_t    m_baud;             // serial port parameters
-    uint8_t     m_bits;
-    uint8_t     m_stop;
-    char        m_parity;
-    std::string      m_name;
-    uint8_t     m_protocol;         // connection type TCP, TCP_PI, RTU
-    int         m_status;
-    uint32_t    m_minCmdDelay;      // delay ms between commands
-    uint16_t    *m_pReadData;       // read data area
-    uint16_t    *m_pWriteData;      // write data area
-    modbus_t    *m_ctx;
+    private:
+        uint32_t    m_baud;                     // serial port parameters
+        uint8_t     m_bits;
+        uint8_t     m_stop;
+        char        m_parity;
+        std::string m_name;
+        uint8_t     m_protocol;                 // connection type TCP, TCP_PI, RTU
+        int         m_status;
+        uint32_t    m_minCmdDelay;              // delay ms between commands
+        modbus_t    *m_ctx;
 
-    std::vector<ccmd> cmds;          // command list
+        std::vector<ccmd> cmds;                 // command list
     
     public:
-        cmbxchg(char *name, uint32_t baud, uint8_t bits, uint8_t stop, uint8_t parity);//:m_name(name),m_baud(baud),m_bits(bits),m_stop(stop);
+        cmbxchg(char *name, uint32_t baud, uint8_t bits, uint8_t stop, uint8_t parity, uint8_t proto);
         ~cmbxchg()
         {
             modbus_close(m_ctx);
             modbus_free(m_ctx);
         }   
         
-        int32_t runCmdCycle();
+        static uint16_t    *m_pWriteData;      // write data area
+        static uint16_t    *m_pReadData;       // read data area
+        int16_t init();
+        int16_t runCmdCycle();
+        int16_t getStatus();
+        int16_t terminate();
 };
 
-// std::vector< cconn, allocator<cconn> > conn;
 extern std::vector< cmbxchg, std::allocator<cmbxchg> > conn;
-// std::vector< cmbxchg, allocator<cmbxchg> >::iterator coni;
 
 #endif

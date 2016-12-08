@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
     pthread_t   *thMBX;
     
     if (readCfg()==_res_ok) {
+        /*
         thMBX = new pthread_t[conn.size()]; 
         std::vector< cmbxchg, allocator<cmbxchg> >::iterator coni;
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
@@ -43,7 +44,15 @@ int main(int argc, char* argv[])
 //              return EXIT_FAILURE;
                 break;
             }
+            ++i;
         }
+        sleep(10);
+        for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
+            (*coni).terminate();
+            pthread_join(thMBX[i], NULL);
+            ++i;
+        }
+        */
     }
 }
 

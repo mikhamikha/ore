@@ -1,13 +1,14 @@
 #define MQTTCLIENT_QOS2 1
 
-#include "param.h"
-
-#include "main.h"
-#include "mbxchg.h"
-#include "modbus.h"
-#include "MQTTClient.h"
+#include <termios.h>
+#include <unistd.h>
+#include <modbus.h>
+#include <MQTTClient.h>
 #include <pthread.h>
 #include <errno.h>
+#include "param.h"
+#include "main.h"
+#include "mbxchg.h"
 
 #define DEFAULT_STACK_SIZE -1
 
@@ -34,25 +35,46 @@ int main(int argc, char* argv[])
     pthread_t   *thMBX;
     
     if (readCfg()==_res_ok) {
-        /*
-        thMBX = new pthread_t[conn.size()]; 
-        std::vector< cmbxchg, allocator<cmbxchg> >::iterator coni;
+        thMBX = new pthread_t[conn.size()+1]; 
+        fieldconnections::iterator coni;
+        fParamThreadInitialized=1;
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
-            nResult = pthread_create(thMBX+i, NULL, fieldXChange, (void *)(&(*coni)));
+            nResult = pthread_create(thMBX+i, NULL, fieldXChange, (void *)(*coni));
             if (nResult != 0) {
 //              perror("Создание первого потока!");
 //              return EXIT_FAILURE;
                 break;
             }
             ++i;
+        }            
+        cout << "param thread " << i <<endl;
+//        nResult = pthread_create(thMBX+i, NULL,  paramProcessing, (void *)NULL);
+
+       
+// ----------- terminate block -------------
+        struct termios oldt, newt;
+        int ch;
+        tcgetattr( STDIN_FILENO, &oldt );
+        newt = oldt;
+        newt.c_lflag &= ~( ICANON | ECHO );
+        tcsetattr( STDIN_FILENO, TCSANOW, &newt );
+        while (ch!='q' && ch!='Q') {
+            ch = getchar();
+            cout << ch << endl;
         }
-        sleep(10);
+        tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+// ---------- end terminate block ------------
+        
+        cout << "end param thread " << i <<endl;
+        fParamThreadInitialized=0;
+//        pthread_join(thMBX[i], NULL);
+
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
-            (*coni).terminate();
+            (*coni)->terminate();
             pthread_join(thMBX[i], NULL);
+            delete *coni;
             ++i;
         }
-        */
     }
 }
 

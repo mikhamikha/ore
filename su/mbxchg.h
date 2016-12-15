@@ -1,11 +1,16 @@
 #ifndef _mbxchg
     #define _mbxchg
 
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <vector>
 #include <iterator>
-#include <iostream>
+#include <algorithm>
+#include "param.h"
 
 #define EXIT_SUCCESS    0
 #define EXIT_FAILURE    1
@@ -31,65 +36,98 @@ enum {
     TERMINATE
 };
 
-const char _parities[] = {'N','O','E'};
-/*
-class ccon {
-}
-*/
-struct ccmd {
-    uint8_t     m_enable;       // 0 - disabled, 1 - enabled, conditional write
-    uint16_t    m_intAddress;   // offset in m_pReadData [m_pWriteData]
-    uint16_t    m_pollInt;      // poll interval in seconds
-    uint8_t     m_node;         // slave address of device
-    uint8_t     m_func;         // function number
-    uint16_t    m_devAddr;      // address in device for read (write) 
-    uint8_t     m_count;        // registers number
-    uint8_t     m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
-    ccmd(ccmd &s)
-    {
-        m_enable     =  s.m_enable;   
-        m_intAddress =  s.m_intAddress;
-        m_pollInt    =  s.m_pollInt;  
-        m_node       =  s.m_node;     
-        m_func       =  s.m_func;     
-        m_devAddr    =  s.m_devAddr;  
-        m_count      =  s.m_count;    
-        m_swap       =  s.m_swap;     
+struct content {
+    content(int32_t n) : _n(n) { _t=0; }
+    content(char c) : _c(c) {_t=1; }
+    content(std::string s) : _s(s) { 
+        _t = 2;
+        _c = s[0];
+        _n = atoi(s.c_str());
+    }
+    int32_t     _n;
+    std::string _s;
+    char        _c;
+    int8_t      _t;
+};
+
+struct compContent
+{
+    std::string _s;
+    compContent(std::string const& s) {
+        _s = s;
+        std::transform(_s.begin(), _s.end(), _s.begin(), easytolower);
+    }
+    bool operator () (std::pair<std::string, content> const& p) {
+        std::string tmp = p.first;
+        std::transform(tmp.begin(), tmp.end(), tmp.begin(), easytolower);
+        return (tmp.find(_s)==0);
     }
 };
+
+struct ccmd {
+    int16_t    m_enable;       // 0 - disabled, 1 - enabled, 2 - conditional write
+    int16_t    m_intAddress;   // offset in m_pReadData [m_pWriteData]
+    int16_t    m_pollInt;      // poll interval in seconds
+    int16_t    m_node;         // slave address of device
+    int16_t    m_func;         // function number
+    int16_t    m_devAddr;      // address in device for read (write) 
+    int16_t    m_count;        // registers number
+    int16_t    m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
+    ccmd(const ccmd &s);
+    ccmd(std::vector<int16_t> &v);
+    std::string ToString();
+};
+
+const char _parities[] = {'N','O','E'};
+typedef std::vector<std::pair<std::string, content> > portsettings;
+typedef std::vector<ccmd> mbcommands;
+
 //
 // Connection class
 //
 class cmbxchg {
-    private:
-        uint32_t    m_baud;                     // serial port parameters
-        uint8_t     m_bits;
-        uint8_t     m_stop;
-        char        m_parity;
-        std::string m_name;
-        uint8_t     m_protocol;                 // connection type TCP, TCP_PI, RTU
-        int         m_status;
-        uint32_t    m_minCmdDelay;              // delay ms between commands
-        modbus_t    *m_ctx;
 
-        std::vector<ccmd> cmds;                 // command list
-    
+        int                 m_status;
+        modbus_t            *m_ctx;
+        portsettings        ps;                   // serial port settings
+        mbcommands          cmds;                 // command list
+
     public:
-        cmbxchg(char *name, uint32_t baud, uint8_t bits, uint8_t stop, uint8_t parity, uint8_t proto);
+        int32_t             m_id;
+        cmbxchg();
         ~cmbxchg()
         {
             modbus_close(m_ctx);
             modbus_free(m_ctx);
         }   
-        
-        static uint16_t    *m_pWriteData;      // write data area
-        static uint16_t    *m_pReadData;       // read data area
+        int32_t portPropertyCount() {return ps.size();} 
+        content& portProperty(const char *); 
+        content& portProperty(const int); 
+        std::string portProperty2Text(const int i);
+        int32_t portPropertySet(const char *, content& ); 
+        int32_t mbCommandsCount() {return cmds.size();}
+        ccmd* mbCommand(const int i) {return &cmds[i];}
+        void mbCommandAdd(ccmd &cmd) { cmds.push_back(cmd); }
+        static  int16_t    *m_pWriteData;      // write data area
+        static  int16_t    *m_pReadData;       // read data area
         int16_t init();
         int16_t runCmdCycle();
         int16_t getStatus();
         int16_t terminate();
 };
 
-extern std::vector< cmbxchg, std::allocator<cmbxchg> > conn;
+struct equalID 
+{
+    int32_t _i;
+    equalID(int32_t i):_i(i) { }
+    
+    bool operator () (cmbxchg *p) {
+        return (p->m_id==_i);
+    }
+};
+
+typedef std::vector< cmbxchg * > fieldconnections;
+extern fieldconnections conn;
 
 #endif
+

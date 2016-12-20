@@ -78,13 +78,22 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
+am__append_1 = tests
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
-	$(srcdir)/config.h.in $(srcdir)/libmodbus.pc.in \
-	$(srcdir)/libmodbus.spec.in AUTHORS COPYING COPYING.LESSER \
-	NEWS TODO compile config.guess config.sub depcomp install-sh \
-	missing ltmain.sh
+	$(srcdir)/config.h.in \
+	$(top_srcdir)/src/win32/modbus.dll.manifest.in \
+	$(srcdir)/libmodbus.pc.in $(dist_doc_DATA) AUTHORS \
+	COPYING.LESSER NEWS build-aux/compile build-aux/config.guess \
+	build-aux/config.sub build-aux/depcomp build-aux/install-sh \
+	build-aux/missing build-aux/ltmain.sh \
+	$(top_srcdir)/build-aux/compile \
+	$(top_srcdir)/build-aux/config.guess \
+	$(top_srcdir)/build-aux/config.sub \
+	$(top_srcdir)/build-aux/install-sh \
+	$(top_srcdir)/build-aux/ltmain.sh \
+	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -96,7 +105,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h $(top_builddir)/tests/unit-test.h
-CONFIG_CLEAN_FILES = libmodbus.pc libmodbus.spec
+CONFIG_CLEAN_FILES = src/win32/modbus.dll.manifest libmodbus.pc
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -152,8 +161,8 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(pkgconfigdir)"
-DATA = $(pkgconfig_DATA)
+am__installdirs = "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)"
+DATA = $(dist_doc_DATA) $(pkgconfig_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -183,7 +192,7 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 CSCOPE = cscope
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src doc tests
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -226,24 +235,24 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing aclocal-1.14
+ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing aclocal-1.14
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
 AS = as
-AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoconf
-AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoheader
-AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing automake-1.14
-AWK = mawk
-CC = gcc
+AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing automake-1.14
+AWK = gawk
+CC = gcc -std=gnu99
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -Wall -Werror
-CPP = gcc -E
+CFLAGS = -g -O2
+CPP = gcc -std=gnu99 -E
 CPPFLAGS = 
 CXX = g++
-CXXCPP = g++ -E
-CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXCPP = 
+CXXDEPMODE = depmode=none
+CXXFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -264,18 +273,18 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LD = /usr/bin/ld
 LDFLAGS = 
-LIBMODBUS_LT_VERSION_INFO = 5:5:0
-LIBMODBUS_VERSION = 3.0.6
+LIBMODBUS_LT_VERSION_INFO = 6:0:1
+LIBMODBUS_VERSION = 3.1.4
 LIBMODBUS_VERSION_MAJOR = 3
-LIBMODBUS_VERSION_MICRO = 6
-LIBMODBUS_VERSION_MINOR = 0
+LIBMODBUS_VERSION_MICRO = 4
+LIBMODBUS_VERSION_MINOR = 1
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing makeinfo
+MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -287,32 +296,32 @@ OTOOL64 =
 PACKAGE = libmodbus
 PACKAGE_BUGREPORT = https://github.com/stephane/libmodbus/issues
 PACKAGE_NAME = libmodbus
-PACKAGE_STRING = libmodbus 3.0.6
+PACKAGE_STRING = libmodbus 3.1.4
 PACKAGE_TARNAME = libmodbus
-PACKAGE_URL = 
-PACKAGE_VERSION = 3.0.6
+PACKAGE_URL = http://libmodbus.org/
+PACKAGE_VERSION = 3.1.4
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = strip
-VERSION = 3.0.6
+VERSION = 3.1.4
 abs_builddir = /home/admin/work/dep/ore/libmodbus
 abs_srcdir = /home/admin/work/dep/ore/libmodbus
 abs_top_builddir = /home/admin/work/dep/ore/libmodbus
 abs_top_srcdir = /home/admin/work/dep/ore/libmodbus
 ac_ct_AR = ar
 ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CXX = 
 ac_ct_DUMPBIN = 
 ac_libmodbus_have_asciidoc = no
 ac_libmodbus_have_xmlto = no
 am__include = include
 am__leading_dot = .
 am__quote = 
-am__tar = $${TAR-tar} chof - "$$tardir"
-am__untar = $${TAR-tar} xf -
+am__tar = tar --format=posix -chf - "$$tardir"
+am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
 build = i686-pc-linux-gnu
 build_alias = 
@@ -333,13 +342,14 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/install-sh
+install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
 mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
+my_CFLAGS = -Wall -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpointer-arith -Wsign-compare -Wchar-subscripts -Wstrict-prototypes -Wshadow -Wformat-security
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 prefix = /usr/local
@@ -353,11 +363,14 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = MIGRATION README.rst libmodbus.spec
-SUBDIRS = src doc tests
+CLEANFILES = libmodbus.pc
+ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
+AM_MAKEFLAGS = --no-print-directory
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmodbus.pc
+EXTRA_DIST = libmodbus.pc.in
+dist_doc_DATA = MIGRATION README.md
+SUBDIRS = src doc $(am__append_1)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -411,9 +424,9 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
-libmodbus.pc: $(top_builddir)/config.status $(srcdir)/libmodbus.pc.in
+src/win32/modbus.dll.manifest: $(top_builddir)/config.status $(top_srcdir)/src/win32/modbus.dll.manifest.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
-libmodbus.spec: $(top_builddir)/config.status $(srcdir)/libmodbus.spec.in
+libmodbus.pc: $(top_builddir)/config.status $(srcdir)/libmodbus.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
@@ -424,6 +437,27 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
+install-dist_docDATA: $(dist_doc_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
+	done
+
+uninstall-dist_docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
 install-pkgconfigDATA: $(pkgconfig_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
@@ -553,6 +587,12 @@ distclean-tags:
 	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
 
 distdir: $(DISTFILES)
+	@case `sed 15q $(srcdir)/NEWS` in \
+	*"$(VERSION)"*) : ;; \
+	*) \
+	  echo "NEWS not updated; not releasing" 1>&2; \
+	  exit 1;; \
+	esac
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -745,7 +785,7 @@ check: check-recursive
 all-am: Makefile $(DATA) config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkgconfigdir)"; do \
+	for dir in "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -770,6 +810,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -800,7 +841,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-pkgconfigDATA
+install-data-am: install-dist_docDATA install-pkgconfigDATA
 
 install-dvi: install-dvi-recursive
 
@@ -846,7 +887,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-pkgconfigDATA
+uninstall-am: uninstall-dist_docDATA uninstall-pkgconfigDATA
 
 .MAKE: $(am__recursive_targets) all install-am install-strip
 
@@ -858,14 +899,15 @@ uninstall-am: uninstall-pkgconfigDATA
 	distclean-hdr distclean-libtool distclean-tags distcleancheck \
 	distdir distuninstallcheck dvi dvi-am html html-am info \
 	info-am install install-am install-data install-data-am \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-pkgconfigDATA \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-pkgconfigDATA
+	install-dist_docDATA install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-pkgconfigDATA install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_docDATA \
+	uninstall-pkgconfigDATA
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

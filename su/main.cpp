@@ -18,6 +18,20 @@ using namespace std;
  
 int arrivedcount = 0;
 
+void outtext(std::string tx) {
+  time_t      rawtime;
+//    timespec    rawtime;
+    struct tm   *ptm;
+    
+      time(&rawtime);
+//    clock_gettime(CLOCK_MONOTONIC, &rawtime);
+//    ptm = localtime(&(rawtime.tv_sec));
+    ptm = localtime(&rawtime);
+    cout<<setfill('0')<<setw(2)<<ptm->tm_hour<<":"<<\
+          setfill('0')<<setw(2)<<ptm->tm_min<<":"<< \
+          setfill('0')<<setw(2)<<ptm->tm_sec<<"\t"<<tx<<endl;
+}
+
 void messageArrived(MQTT::MessageData& md)
 {
     MQTT::Message &message = md.message;
@@ -34,7 +48,7 @@ int main(int argc, char* argv[])
     uint32_t    i;
     pthread_t   *thMBX;
     
-    if (readCfg()==_res_ok) {
+    if (readCfg()==EXIT_SUCCESS) {
         thMBX = new pthread_t[conn.size()+1]; 
         fieldconnections::iterator coni;
         fParamThreadInitialized=1;
@@ -48,7 +62,7 @@ int main(int argc, char* argv[])
             ++i;
         }            
         cout << "param thread " << i <<endl;
-//        nResult = pthread_create(thMBX+i, NULL,  paramProcessing, (void *)NULL);
+        nResult = pthread_create(thMBX+i, NULL,  paramProcessing, (void *)NULL);
 
        
 // ----------- terminate block -------------
@@ -67,7 +81,7 @@ int main(int argc, char* argv[])
         
         cout << "end param thread " << i <<endl;
         fParamThreadInitialized=0;
-//        pthread_join(thMBX[i], NULL);
+        pthread_join(thMBX[i], NULL);
 
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
             (*coni)->terminate();
@@ -75,6 +89,7 @@ int main(int argc, char* argv[])
             delete *coni;
             ++i;
         }
+        delete []thMBX;
     }
 }
 

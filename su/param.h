@@ -10,7 +10,8 @@
 #include <stdlib.h>
 
 #include <sstream>
-
+/*
+*/
 std::string to_string(int16_t i);
 char easytoupper(char in);
 char easytolower(char in);
@@ -49,12 +50,16 @@ struct compProp
 
 // интерфейс класса
 // объявление класса Параметр
-class CParam 			// имя класса
+class cparam 			// имя класса
 {
 private: 				// спецификатор доступа private
 protected: 				// спецификатор доступа protected
     
-    time_t 			m_ts;
+    timespec		m_ts;
+    timespec		m_oldts;
+    double			m_dvalue;
+    fields          m_prop;             // tag fields
+
 	int8_t 	        m_quality;
     int8_t          m_type;
 	int32_t         m_adc;
@@ -70,8 +75,7 @@ protected: 				// спецификатор доступа protected
     float           m_hi_en;
     float           m_lo_en;
     float           m_lolo_en;
-    float			m_dvalue;
-    float           m_simVal;
+    double          m_simvalue;
 	bool			m_bvalue;
     bool            m_sim;
     bool            m_overrange;
@@ -82,96 +86,39 @@ protected: 				// спецификатор доступа protected
     bool            m_lolo_tr;
     bool            m_isBool;
     std::string     topic;
-    fields          m_prop;
 
 public: 				// спецификатор доступа public
-    CParam(){};			// конструктор класса
-    ~CParam(){};   
+    cparam();			// конструктор класса
+    ~cparam(){};   
 	std::string	name;
-	uint32_t	m_conn_id;	
+    void		*p_conn;	
 	void 		setValue();
     void 		getValue(); 				//                     
-    
-    void addProperty(std::string na, std::string v="")
-    {
-        cfield fld;
-        fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(na));
-        if(ifi == m_prop.end()) {
-            fld._n = na;
-            fld._v = v;
-            m_prop.push_back(fld);
-        }
-        return;
+    time_t*     getTS() {
+        return &(m_ts.tv_sec);
     }
-   int16_t setProperty(int16_t n, std::string na, std::string v)
-    {
-        int16_t res=EXIT_FAILURE;
-        if(n<m_prop.size()) {
-            m_prop[n]._n = na;
-            m_prop[n]._v = v;
-            res=EXIT_SUCCESS;
-        }
-        return res;
-    }
-    cfield* getProperty(int16_t n)
-    {
-        cfield *res=NULL;
-        if(n<m_prop.size()) {
-            res=&m_prop[n];
-        }
-        return res;
-    }
-    std::string getProperty(std::string s)
-    {
-        std::string sOut = "no value";
-        fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
-        if(ifi != m_prop.end()) {
-            sOut=(*ifi)._v;
-        }
-        return sOut;
-    }
-    int16_t getProperty(std::string s, int16_t &nOut)
-    {
-        int16_t res=EXIT_FAILURE;
-        fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
-        if(ifi != m_prop.end()) {
-            nOut=(*ifi).ToInt();
-            res=EXIT_SUCCESS;
-        }
-        return res;
-    }
-    int16_t setProperty(std::string s, std::string &sIn)
-    {
-        int16_t res=EXIT_FAILURE;
-        fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
-        if(ifi != m_prop.end()) {
-            (*ifi)._v = sIn;
-            res=EXIT_SUCCESS;
-        }
-        return res;
-    }
-    int16_t setProperty(std::string s, int16_t &nIn)
-    {
-        int16_t res=EXIT_FAILURE;
-        fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
-        if(ifi != m_prop.end()) {
-            (*ifi)._v = to_string(nIn);
-            res=EXIT_SUCCESS;
-        }
-        return res;
-    }
-    int32_t getPropertySize()
-    {
-        return m_prop.size();
-    }
-}; // конец объявления класса CParam
+    void addproperty(std::string na, std::string v);
+    int16_t getraw(int16_t &nOut);                            // get raw data from readdata buffer
+    int16_t getvalue(double &rOut);                           // get value in EU
+    cfield* getproperty(int16_t n);
+    std::string getproperty(std::string s);
+    int16_t getproperty(std::string s, int16_t &nOut);
+    int16_t getproperty(std::string s, int32_t &nOut);
+    int16_t getproperty(std::string s, double &rOut);
+    int16_t setproperty(int16_t n, std::string na, std::string v);
+    int16_t setproperty(std::string s, std::string &sIn);
+    int16_t setproperty(std::string s, int16_t &nIn);
+    int32_t getpropertysize() { return m_prop.size(); }
+}; // конец объявления класса cparam
 
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
 
-typedef std::vector< CParam, std::allocator<CParam> > paramlist;
+typedef std::vector< cparam, std::allocator<cparam> > paramlist;
 extern paramlist tags;
 extern bool fParamThreadInitialized;
+extern pthread_mutex_t mutex_param;
+extern pthread_cond_t  start_param;
 
 #endif // _PARAM_H

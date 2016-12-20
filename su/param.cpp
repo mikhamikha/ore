@@ -102,17 +102,10 @@ int16_t cparam::getvalue(double &rOut)
     int64_t     nodt;             // time on previous step
 
     clock_gettime(CLOCK_MONOTONIC,&tv);
-<<<<<<< HEAD
     nctt = tv.tv_sec*1000000l + tv.tv_nsec/1000;
     nodt = m_ts.tv_sec*1000000l + m_ts.tv_nsec/1000;
     nD = abs(nctt-nodt);
 //   cout << nodt << " | " << nctt << " | " << nD << endl; 
-=======
-    nctt = tv.tv_sec*1000000l + tv.tv_nsec*1000;
-    nodt = m_ts.tv_sec*1000000l + m_ts.tv_nsec*1000;
-    nD = abs(nctt-nodt);
-    
->>>>>>> c19cf3f7fc3772195cc28bb929c7ce11616515b7
     if((res = getraw(nVal))==EXIT_SUCCESS) {
         double lraw, hraw, leng, heng;
         res = getproperty("minraw", lraw)   \
@@ -123,7 +116,6 @@ int16_t cparam::getvalue(double &rOut)
         if(res == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
             rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
             nTime = nTime*1000;
-<<<<<<< HEAD
             rVal = (m_dvalue*nTime+rVal*nD)/(nTime+nD); 
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
@@ -131,14 +123,6 @@ int16_t cparam::getvalue(double &rOut)
             rOut = rVal;
         }
     }
-=======
-            if(nD) rVal = (m_dvalue*nTime+rVal*nD)/(nTime+nD); 
-        }
-    }
-    m_dvalue = rVal;
-    memcpy(&m_ts, &tv, sizeof(tv));
-    rOut = rVal;
->>>>>>> c19cf3f7fc3772195cc28bb929c7ce11616515b7
     return res;
 }
 

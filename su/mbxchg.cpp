@@ -1,6 +1,9 @@
+#include "main.h"
 #include "mbxchg.h"
 #include <errno.h>
 #include <stdio.h>
+#include <time.h>
+#include <pthread.h>
 
 //
 using namespace std;
@@ -9,38 +12,42 @@ int16_t *cmbxchg::m_pReadData;
 int16_t *cmbxchg::m_pWriteData;
 
 ccmd::ccmd(const ccmd &s)
-    {
-        m_enable     =  s.m_enable;   
-        m_intAddress =  s.m_intAddress;
-        m_count      =  s.m_count;    
-        m_pollInt    =  s.m_pollInt;  
-        m_node       =  s.m_node;     
-        m_func       =  s.m_func;     
-        m_devAddr    =  s.m_devAddr;  
-        m_swap       =  s.m_swap;     
-    }
+{
+    m_enable     =  s.m_enable;   
+    m_intAddress =  s.m_intAddress;
+    m_count      =  s.m_count;    
+    m_pollInt    =  s.m_pollInt;  
+    m_node       =  s.m_node;     
+    m_func       =  s.m_func;     
+    m_devAddr    =  s.m_devAddr;  
+    m_swap       =  s.m_swap;     
+    m_err.first  =  s.m_err.first;
+    m_err.second =  s.m_err.second;
+}
 ccmd::ccmd(std::vector<int16_t> &v)
-    {
-        m_enable     = v[0];
-        m_intAddress = v[1]; 
-        m_count      = v[2]; 
-        m_pollInt    = v[3]; 
-        m_node       = v[4]; 
-        m_func       = v[5]; 
-        m_devAddr    = v[6]; 
-        m_swap       = v[7];
-        cout << ToString() << endl;
-    }
+{
+    m_enable     = v[0];
+    m_intAddress = v[1]; 
+    m_count      = v[2]; 
+    m_pollInt    = v[3]; 
+    m_node       = v[4]; 
+    m_func       = v[5]; 
+    m_devAddr    = v[6]; 
+    m_swap       = v[7];
+    m_err        = std::make_pair(0, "No Errors");
+    cout << ToString() << endl;
+}
+
 std::string ccmd::ToString()
-    {
-        std::string s;
-        char buf[100];
-        sprintf(buf,"en=%d intA=%d regCnt=%d poll=%d node=%d func=%d addr=%d swap=%d",
-            m_enable,m_intAddress,m_count,m_pollInt,m_node,
-            m_func,m_devAddr, m_swap);
-        s = buf;
-        return s;
-    }
+{
+    std::string s;
+    std::stringstream out;
+    out << "en="<<m_enable<<" int="<<m_intAddress<<" poll="<<m_pollInt<< \
+            " node="<<m_node<<" func="<<m_func<<" addr="<<m_devAddr<<" count="<<m_count<< \
+            " swap="<<m_swap<<" err="<<m_err.first<<" errDesc="<<m_err.second;
+    s = out.str();
+    return s;
+}
 
 content& cmbxchg::portProperty(const int i)
 {
@@ -92,6 +99,8 @@ cmbxchg::cmbxchg()
     ps.push_back( std::make_pair("commanderrorpointer", content(500)) );
     ps.push_back( std::make_pair("responsetimeout",     content(1000)) );
     ps.push_back( std::make_pair("retrycnt",            content(0)) );
+    m_maxReadData=500;
+    m_maxWriteData=500;
 }
 //
 //  Modbus connection initialization
@@ -121,20 +130,10 @@ int16_t cmbxchg::init()
 //        return -1;
     } 
     else {
-        struct timeval response_timeout;
         m_status = INITIALIZED;
-        //modbus_set_response_timeout( m_ctx, 0, portproperty("response")._n );
-        modbus_get_response_timeout(m_ctx, &response_timeout);
-        response_timeout.tv_sec = 0;
-        response_timeout.tv_usec = portProperty("response")._n*1000;
-        modbus_set_response_timeout(m_ctx, &response_timeout);
-        modbus_get_byte_timeout(m_ctx, &response_timeout);
-        response_timeout.tv_sec = 0;
-        response_timeout.tv_usec = 100000;
-        modbus_set_byte_timeout(m_ctx, &response_timeout);
         cout << "init serial | "<<portProperty("path")._s<<" | "<<portProperty("baud")._n<<" | "<< easytoupper(portProperty("parity")._c)<<" | "<<portProperty("databits")._n<<" | "<<portProperty("stop")._n<<" | "<<portProperty("response")._n<<endl;
-//    modbus_set_debug(m_ctx, TRUE);
-//    modbus_set_error_recovery(m_ctx, MODBUS_ERROR_RECOVERY_LINK | MODBUS_ERROR_RECOVERY_PROTOCOL);
+//      modbus_set_debug(m_ctx, TRUE);
+//      modbus_set_error_recovery(m_ctx, MODBUS_ERROR_RECOVERY_LINK | MODBUS_ERROR_RECOVERY_PROTOCOL);
     }
     return m_status;
 }
@@ -161,9 +160,9 @@ void* fieldXChange(void *args)
 {
     cmbxchg *mbx=(cmbxchg *)(args);
     if(mbx->init() == INITIALIZED) {
-        cout << "start xchg " << args << endl;
-        mbx->m_pReadData = new int16_t[500];
-        mbx->m_pWriteData = new int16_t[500];
+        mbx->m_pReadData = new int16_t[mbx->m_maxReadData+1];
+        mbx->m_pWriteData = new int16_t[mbx->m_maxWriteData+1];
+        cout << "start xchg " << mbx << " | " << mbx->m_pReadData <<endl;
         cout << "minimum command delay = " << mbx->portProperty("minimumcommand")._n*1000 << endl;
         while (mbx->getStatus()!=TERMINATE) {
             mbx->runCmdCycle();
@@ -179,22 +178,38 @@ void* fieldXChange(void *args)
 //
 int16_t cmbxchg::runCmdCycle() 
 {
-    int32_t res=0;
-    int16_t rc;
-    std::vector<ccmd>::iterator cmdi;
-    
-    cmdi = cmds.begin();
+    int32_t                 res=0;
+    int16_t                 rc, i;
+    mbcommands::iterator    cmdi;
+    timespec                rawtime;
+    struct tm              *ptm;
+    uint32_t                old_resp_to_sec;
+    uint32_t                old_resp_to_usec;
+    uint32_t                to_sec;
+    uint32_t                to_usec;
+
+    cmdi = cmds.begin(); i=0;
     while(cmdi!=cmds.end()) {
         ccmd cmd = *cmdi;
+
+        /*считываем текущее время контроллера с 1970*/
+//        time(&rawtime);
+        clock_gettime(CLOCK_MONOTONIC, &rawtime);
+        ptm = localtime(&(rawtime.tv_sec));
+        
+        
         if(cmd.m_enable){
-            rc=0;
+            rc=-1;
             if (portProperty("proto")._n == RTU) {
                 rc = modbus_set_slave(m_ctx, cmd.m_node);
-                if (rc==0) rc = modbus_connect(m_ctx);
-            }
-            if(rc==0) {
-//                cout << "cmd " << m_ctx << " | " << cmd.m_node << " | " << cmd.m_func << 
-//                        " | " << cmd.m_devAddr << " | " << cmd.m_count << endl;
+            }    
+            if (rc==0) rc = modbus_connect(m_ctx);
+            if (rc==0) rc = modbus_get_response_timeout( m_ctx, &old_resp_to_sec, &old_resp_to_usec );
+            if (rc==0) rc = modbus_get_byte_timeout( m_ctx, &to_sec, &to_usec );
+            if (rc==0) rc = modbus_set_response_timeout( m_ctx, 0, 1000*portProperty("response")._n );
+            if (rc==0) rc = modbus_set_byte_timeout( m_ctx, 0, 10000);
+            if (rc==0) {
+                pthread_mutex_lock( &mutex_param );
                 switch(cmd.m_func) {
                     case 0x03: 
                         rc = modbus_read_registers(
@@ -202,7 +217,7 @@ int16_t cmbxchg::runCmdCycle()
                                 cmd.m_devAddr, 
                                 cmd.m_count, 
                                 (uint16_t *)m_pReadData+cmd.m_intAddress
-                                ); // здесь потом по желанию добавить чтение float
+                                ); 
                         break;
                     case 0x04: 
                         rc = modbus_read_input_registers(
@@ -215,18 +230,21 @@ int16_t cmbxchg::runCmdCycle()
                 }
             }
             if (rc == -1) {
-                cout << modbus_strerror(errno) << endl;
+                (*cmdi).m_err.first   = errno;
+                (*cmdi).m_err.second  = modbus_strerror(errno);
+                m_pReadData[portProperty("commanderror")._n+i] =       \
+                                    (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
+                outtext((*cmdi).ToString());
 //              fprintf(stderr, "%s\n", modbus_strerror(errno));
-//              return -1;
             }
-            else {
-                cout << "resp = | " << m_pReadData[cmd.m_intAddress] << " | " << m_pReadData[cmd.m_intAddress+1] << " | "<< m_pReadData[cmd.m_intAddress+2] << " | "<< m_pReadData[cmd.m_intAddress+3] << " "<<endl;
-               modbus_close(m_ctx);            
-            }
+            pthread_cond_signal( &start_param );
+            pthread_mutex_unlock( &mutex_param );
+            modbus_set_byte_timeout( m_ctx, to_sec, to_usec );
+            modbus_set_response_timeout( m_ctx, old_resp_to_sec, old_resp_to_usec );
+            modbus_close(m_ctx);            
         }
-//        usleep(portProperty("minimumcommand")._n*1000);
-        sleep(1);
-        ++cmdi;
+        usleep(portProperty("minimumcommand")._n*1000);
+        ++cmdi; ++i;
     }
     return res;
 }

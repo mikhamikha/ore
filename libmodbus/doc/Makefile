@@ -77,10 +77,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
-#am__append_1 = $(MAN_HTML)
 subdir = doc
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(dist_man_MANS)
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -143,27 +141,27 @@ man3dir = $(mandir)/man3
 am__installdirs = "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man7dir)"
 man7dir = $(mandir)/man7
 NROFF = nroff
-MANS = $(dist_man_MANS)
+MANS = $(man3_MANS) $(man7_MANS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing aclocal-1.14
+ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing aclocal-1.14
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
 AS = as
-AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoconf
-AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoheader
-AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing automake-1.14
-AWK = mawk
-CC = gcc
+AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing automake-1.14
+AWK = gawk
+CC = gcc -std=gnu99
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -Wall -Werror
-CPP = gcc -E
+CFLAGS = -g -O2
+CPP = gcc -std=gnu99 -E
 CPPFLAGS = 
 CXX = g++
-CXXCPP = g++ -E
-CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXCPP = 
+CXXDEPMODE = depmode=none
+CXXFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -184,18 +182,18 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LD = /usr/bin/ld
 LDFLAGS = 
-LIBMODBUS_LT_VERSION_INFO = 5:5:0
-LIBMODBUS_VERSION = 3.0.6
+LIBMODBUS_LT_VERSION_INFO = 6:0:1
+LIBMODBUS_VERSION = 3.1.4
 LIBMODBUS_VERSION_MAJOR = 3
-LIBMODBUS_VERSION_MICRO = 6
-LIBMODBUS_VERSION_MINOR = 0
+LIBMODBUS_VERSION_MICRO = 4
+LIBMODBUS_VERSION_MINOR = 1
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing makeinfo
+MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -207,32 +205,32 @@ OTOOL64 =
 PACKAGE = libmodbus
 PACKAGE_BUGREPORT = https://github.com/stephane/libmodbus/issues
 PACKAGE_NAME = libmodbus
-PACKAGE_STRING = libmodbus 3.0.6
+PACKAGE_STRING = libmodbus 3.1.4
 PACKAGE_TARNAME = libmodbus
-PACKAGE_URL = 
-PACKAGE_VERSION = 3.0.6
+PACKAGE_URL = http://libmodbus.org/
+PACKAGE_VERSION = 3.1.4
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = strip
-VERSION = 3.0.6
+VERSION = 3.1.4
 abs_builddir = /home/admin/work/dep/ore/libmodbus/doc
 abs_srcdir = /home/admin/work/dep/ore/libmodbus/doc
 abs_top_builddir = /home/admin/work/dep/ore/libmodbus
 abs_top_srcdir = /home/admin/work/dep/ore/libmodbus
 ac_ct_AR = ar
 ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CXX = 
 ac_ct_DUMPBIN = 
 ac_libmodbus_have_asciidoc = no
 ac_libmodbus_have_xmlto = no
 am__include = include
 am__leading_dot = .
 am__quote = 
-am__tar = $${TAR-tar} chof - "$$tardir"
-am__untar = $${TAR-tar} xf -
+am__tar = tar --format=posix -chf - "$$tardir"
+am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
 build = i686-pc-linux-gnu
 build_alias = 
@@ -253,13 +251,14 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/install-sh
+install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
 mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
+my_CFLAGS = -Wall -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpointer-arith -Wsign-compare -Wchar-subscripts -Wstrict-prototypes -Wshadow -Wformat-security
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 prefix = /usr/local
@@ -273,64 +272,81 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-MAN3 = \
-        modbus_close.3 \
-        modbus_connect.3 \
-        modbus_flush.3 \
-        modbus_free.3 \
-        modbus_get_byte_from_bits.3 \
-        modbus_get_byte_timeout.3 \
-        modbus_get_float.3 \
-        modbus_get_header_length.3 \
-        modbus_get_response_timeout.3 \
-        modbus_get_socket.3 \
-        modbus_mapping_free.3 \
-        modbus_mapping_new.3 \
-        modbus_new_rtu.3 \
-        modbus_new_tcp_pi.3 \
-        modbus_new_tcp.3 \
-        modbus_read_bits.3 \
-        modbus_read_input_bits.3 \
-        modbus_read_input_registers.3 \
-        modbus_read_registers.3 \
-        modbus_receive_confirmation.3 \
-        modbus_receive_from.3 \
-        modbus_receive.3 \
-        modbus_reply_exception.3 \
-        modbus_reply.3 \
-        modbus_report_slave_id.3 \
-        modbus_rtu_get_serial_mode.3 \
-        modbus_rtu_set_serial_mode.3 \
-        modbus_send_raw_request.3 \
-        modbus_set_bits_from_bytes.3 \
-        modbus_set_bits_from_byte.3 \
-        modbus_set_byte_timeout.3 \
-        modbus_set_debug.3 \
-        modbus_set_error_recovery.3 \
-        modbus_set_float.3 \
-        modbus_set_response_timeout.3 \
-        modbus_set_slave.3 \
-        modbus_set_socket.3 \
-        modbus_strerror.3 \
-        modbus_tcp_listen.3 \
-        modbus_write_and_read_registers.3 \
-        modbus_write_bits.3 \
-        modbus_write_bit.3 \
-        modbus_write_registers.3 \
-        modbus_write_register.3
+TXT3 = \
+        modbus_close.txt \
+        modbus_connect.txt \
+        modbus_flush.txt \
+        modbus_free.txt \
+        modbus_get_byte_from_bits.txt \
+        modbus_get_byte_timeout.txt \
+        modbus_get_float.txt \
+        modbus_get_float_abcd.txt \
+        modbus_get_float_badc.txt \
+        modbus_get_float_cdab.txt \
+        modbus_get_float_dcba.txt \
+        modbus_get_header_length.txt \
+        modbus_get_response_timeout.txt \
+        modbus_get_socket.txt \
+        modbus_mapping_free.txt \
+        modbus_mapping_new.txt \
+        modbus_mapping_new_start_address.txt \
+        modbus_mask_write_register.txt \
+        modbus_new_rtu.txt \
+        modbus_new_tcp_pi.txt \
+        modbus_new_tcp.txt \
+        modbus_read_bits.txt \
+        modbus_read_input_bits.txt \
+        modbus_read_input_registers.txt \
+        modbus_read_registers.txt \
+        modbus_receive_confirmation.txt \
+        modbus_receive.txt \
+        modbus_reply_exception.txt \
+        modbus_reply.txt \
+        modbus_report_slave_id.txt \
+        modbus_rtu_get_serial_mode.txt \
+        modbus_rtu_set_serial_mode.txt \
+        modbus_rtu_get_rts.txt \
+        modbus_rtu_set_rts.txt \
+        modbus_rtu_set_custom_rts.txt \
+        modbus_rtu_get_rts_delay.txt \
+        modbus_rtu_set_rts_delay.txt \
+        modbus_send_raw_request.txt \
+        modbus_set_bits_from_bytes.txt \
+        modbus_set_bits_from_byte.txt \
+        modbus_set_byte_timeout.txt \
+        modbus_set_debug.txt \
+        modbus_set_error_recovery.txt \
+        modbus_set_float.txt \
+        modbus_set_float_abcd.txt \
+        modbus_set_float_badc.txt \
+        modbus_set_float_cdab.txt \
+        modbus_set_float_dcba.txt \
+        modbus_set_response_timeout.txt \
+        modbus_set_slave.txt \
+        modbus_set_socket.txt \
+        modbus_strerror.txt \
+        modbus_tcp_accept.txt \
+        modbus_tcp_pi_accept.txt \
+        modbus_tcp_listen.txt \
+        modbus_tcp_pi_listen.txt \
+        modbus_write_and_read_registers.txt \
+        modbus_write_bits.txt \
+        modbus_write_bit.txt \
+        modbus_write_registers.txt \
+        modbus_write_register.txt
 
-MAN7 = libmodbus.7
-MAN_DOC = $(MAN3) $(MAN7)
-MAN_TXT = $(MAN3:%.3=%.txt) $(MAN7:%.7=%.txt)
-MAN_HTML = $(MAN_TXT:%.txt=%.html)
-dist_man_MANS = $(MAN_DOC)
-EXTRA_DIST = asciidoc.conf $(MAN_TXT) $(am__append_1)
-MAINTAINERCLEANFILES = $(MAN_DOC) $(MAN_HTML)
-#SUFFIXES = .html .txt .xml .1 .3 .7
+TXT7 = libmodbus.txt
+EXTRA_DIST = asciidoc.conf $(TXT3) $(TXT7)
+MAN3 = $(TXT3:%.txt=%.3)
+MAN7 = $(TXT7:%.txt=%.7)
+#man3_MANS = $(MAN3)
+#man7_MANS = $(MAN7)
+HTML = $(TXT3:%.txt=%.html) $(TXT7:%.txt=%.html)
+CLEANFILES = *.3 *.7 *.html
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .html .txt .xml .1 .3 .7
+.SUFFIXES: .3 .7 .html .txt
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -367,10 +383,10 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-install-man3: $(dist_man_MANS)
+install-man3: $(man3_MANS)
 	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(dist_man_MANS)'; \
+	@list1='$(man3_MANS)'; \
+	list2=''; \
 	test -n "$(man3dir)" \
 	  && test -n "`echo $$list1$$list2`" \
 	  || exit 0; \
@@ -403,17 +419,15 @@ install-man3: $(dist_man_MANS)
 
 uninstall-man3:
 	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man3dir)" || exit 0; \
+	@list='$(man3_MANS)'; test -n "$(man3dir)" || exit 0; \
 	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(dist_man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.3[a-z]*$$/p'; \
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
 	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
 	dir='$(DESTDIR)$(man3dir)'; $(am__uninstall_files_from_dir)
-install-man7: $(dist_man_MANS)
+install-man7: $(man7_MANS)
 	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(dist_man_MANS)'; \
+	@list1='$(man7_MANS)'; \
+	list2=''; \
 	test -n "$(man7dir)" \
 	  && test -n "`echo $$list1$$list2`" \
 	  || exit 0; \
@@ -446,10 +460,8 @@ install-man7: $(dist_man_MANS)
 
 uninstall-man7:
 	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man7dir)" || exit 0; \
+	@list='$(man7_MANS)'; test -n "$(man7dir)" || exit 0; \
 	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(dist_man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.7[a-z]*$$/p'; \
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^7][0-9a-z]*$$,7,;x' \
 	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
 	dir='$(DESTDIR)$(man7dir)'; $(am__uninstall_files_from_dir)
@@ -490,9 +502,6 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	$(MAKE) $(AM_MAKEFLAGS) \
-	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
-	  dist-hook
 check-am: all-am
 check: check-am
 all-am: Makefile $(MANS)
@@ -522,6 +531,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -530,7 +540,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -602,7 +611,7 @@ uninstall-man: uninstall-man3 uninstall-man7
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
-	cscopelist-am ctags-am dist-hook distclean distclean-generic \
+	cscopelist-am ctags-am distclean distclean-generic \
 	distclean-libtool distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
@@ -614,27 +623,14 @@ uninstall-man: uninstall-man3 uninstall-man7
 	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
 	uninstall-am uninstall-man uninstall-man3 uninstall-man7
 
-doc: $(MAN_DOC)
-#html: $(MAN_HTML)
 
-dist-hook: $(MAN_DOC) $(MAN_HTML)
+htmldoc: $(HTML)
 
-#.txt.html:
-#	asciidoc -d manpage -b xhtml11 -f asciidoc.conf \
-#		-alibmodbus_version=3.0.6 $<
-#.txt.xml:
-#	asciidoc -d manpage -b docbook -f asciidoc.conf \
-#		-alibmodbus_version=3.0.6 $<
-#.xml.1:
-#	xmlto man $<
-#.xml.3:
-#	xmlto man $<
-#.xml.7:
-#	xmlto man $<
+.txt.html:
+	asciidoc -d manpage -b xhtml11 -f asciidoc.conf -alibmodbus_version=3.1.4 $<
 
-#clean:
-#	rm -f *.1 *.3 *.7
-#	rm -f *.html
+.txt.3 .txt.7:
+	a2x --doctype manpage --format manpage -alibmodbus_version=3.1.4 $<
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

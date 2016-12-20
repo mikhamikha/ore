@@ -1,3 +1,4 @@
+#include "main.h"
 #include "param.h"
 #include "mbxchg.h"
 
@@ -12,12 +13,12 @@
 
 using namespace std;
 
-
+pthread_mutex_t mutex_param     = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  start_param     = PTHREAD_COND_INITIALIZER;
 paramlist tags;
 bool fParamThreadInitialized;
 
-string to_string(int16_t i)
-{
+string to_string(int16_t i) {
     std::string s;
     std::stringstream out;
     out << i;
@@ -37,7 +38,6 @@ char easytoupper(char in){
 
 // example of usage:
 // removeCharsFromString( str, "()-" );
-//
 void removeCharsFromString( string &str, char* charsToRemove ) {
     for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
         str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
@@ -54,6 +54,164 @@ enum {
     _parse_ai
 };
 
+cparam::cparam()
+{
+    addproperty(std::string("raw"), std::string(""));
+}
+
+void cparam::addproperty(std::string na, std::string v="")
+{
+    cfield fld;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(na));
+    if(ifi == m_prop.end()) {
+        fld._n = na;
+        fld._v = v;
+        m_prop.push_back(fld);
+    }
+    return;
+}
+
+int16_t cparam::getraw(int16_t &nOut)
+{
+    int16_t res=EXIT_FAILURE;
+    cmbxchg *mb;
+    int16_t nOff;
+
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp("readdata"));
+    if(ifi != m_prop.end()) {
+        mb = (cmbxchg *)p_conn;
+        nOff=(*ifi).ToInt();
+        if(nOff<mb->m_maxReadData) {
+            nOut = mb->m_pReadData[nOff];
+            res=EXIT_SUCCESS;
+        }
+    }
+    return res;
+}
+
+int16_t cparam::getvalue(double &rOut)
+{
+    int16_t res=EXIT_FAILURE;
+    cmbxchg     *mb;
+    int16_t     nOff, nVal;
+    double      rVal;
+    timespec    tv;
+    int32_t     nTime;
+    int64_t     nctt;
+    int64_t     nD;
+    int64_t     nodt;             // time on previous step
+
+    clock_gettime(CLOCK_MONOTONIC,&tv);
+    nctt = tv.tv_sec*1000000l + tv.tv_nsec/1000;
+    nodt = m_ts.tv_sec*1000000l + m_ts.tv_nsec/1000;
+    nD = abs(nctt-nodt);
+//   cout << nodt << " | " << nctt << " | " << nD << endl; 
+    if((res = getraw(nVal))==EXIT_SUCCESS) {
+        double lraw, hraw, leng, heng;
+        res = getproperty("minraw", lraw)   \
+            | getproperty("maxraw", hraw)   \
+            | getproperty("mineng", leng)   \
+            | getproperty("maxeng", heng)   \
+            | getproperty("flttime", nTime);
+        if(res == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
+            rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
+            nTime = nTime*1000;
+            rVal = (m_dvalue*nTime+rVal*nD)/(nTime+nD); 
+            m_ts.tv_sec = tv.tv_sec;
+            m_ts.tv_nsec = tv.tv_nsec;
+            m_dvalue = rVal;
+            rOut = rVal;
+        }
+    }
+    return res;
+}
+
+
+cfield* cparam::getproperty(int16_t n)
+{
+    cfield *res=NULL;
+    if(n<m_prop.size()) {
+        res=&m_prop[n];
+    }
+    return res;
+}
+
+std::string cparam::getproperty(std::string s)
+{
+    std::string sOut = "no value";
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+    if(ifi != m_prop.end()) {
+        sOut=(*ifi)._v;
+    }
+    return sOut;
+}
+
+int16_t cparam::getproperty(std::string s, int32_t &nOut)
+{
+    int16_t res=EXIT_FAILURE;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+    if(ifi != m_prop.end()) {
+        nOut=(*ifi).ToInt();
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
+int16_t cparam::getproperty(std::string s, int16_t &nOut)
+{
+    int16_t res=EXIT_FAILURE;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+    if(ifi != m_prop.end()) {
+        nOut=(*ifi).ToInt();
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
+int16_t cparam::getproperty(std::string s, double &rOut)
+{
+    int16_t res=EXIT_FAILURE;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+    if(ifi != m_prop.end()) {
+        rOut=(*ifi).ToReal();
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
+int16_t cparam::setproperty(int16_t n, std::string na, std::string v)
+{
+    int16_t res=EXIT_FAILURE;
+    if(n<m_prop.size()) {
+        m_prop[n]._n = na;
+        m_prop[n]._v = v;
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
+int16_t cparam::setproperty(std::string s, std::string &sIn)
+{
+    int16_t res=EXIT_FAILURE;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+   if(ifi != m_prop.end()) {
+        (*ifi)._v = sIn;
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
+int16_t cparam::setproperty(std::string s, int16_t &nIn)
+{
+    int16_t res=EXIT_FAILURE;
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
+    if(ifi != m_prop.end()) {
+        (*ifi)._v = to_string(nIn);
+        res=EXIT_SUCCESS;
+    }
+    return res;
+}
+
 int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
 {    
     std::string line;
@@ -65,7 +223,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
 
 //    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl;
     while( std::getline( fstr, line ) ) {
-        cout << line.c_str() << endl;
+//        cout << line.c_str() << endl;
         removeCharsFromString(line, (char *)" \t\r");
         lineL = line;
         std::transform(lineL.begin(), lineL.end(), lineL.begin(), easytolower);
@@ -148,14 +306,14 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                 cout << endl;
             }
             else {
-                CParam  p;
+                cparam  p;
                 int32_t nI=0;
                 while( std::getline( iss, sVal, ';') ) {
-                    p.addProperty( prop[nI]._n, sVal );
+                    p.addproperty( prop[nI]._n, sVal );
                     nI++;
                 }
-                p.m_conn_id = ((cmbxchg *)obj)->m_id;
-                cout << "prop size " << p.getPropertySize() << endl;
+                p.p_conn = obj;
+                cout << "prop size " << p.getpropertysize() << endl;
                 tags.push_back(p);
             }
         }
@@ -192,8 +350,8 @@ int16_t readCfg()
 //    cout << tags.size() << endl;
     for(i=0; i<tags.size(); i++) {
 //        cout << tags[i].getPropertySize() << endl;
-        for(j=0; j<tags[i].getPropertySize(); j++) {
-            cout << tags[i].getProperty(j)->ToText() << endl;
+        for(j=0; j<tags[i].getpropertysize(); j++) {
+            cout << tags[i].getproperty(j)->ToText() << endl;
         }    
     }
     return res;
@@ -203,24 +361,39 @@ int16_t readCfg()
 //
 void* paramProcessing(void *args) 
 {
-    cout << "start parameters processing " << args << endl;
-    paramlist::iterator ih, ie;
+    paramlist::iterator ih;
     fieldconnections::iterator icn;    
-    ie = tags.end();
-    int16_t nRes, nVal;
+    int16_t nRes, nRes1, nVal;
+    double  rVal;
+    int32_t nCnt=0;
+    struct tm * ptm;
+    cout << "start parameters processing " << args << endl;
 
     while (fParamThreadInitialized) {
+        
         ih = tags.begin();
-        while ( ih != ie) {
-            icn = find_if(conn.begin(), conn.end(), equalID((*ih).m_conn_id));
-            nRes = (*ih).getProperty("readdata", nVal);
-            (*ih).addProperty("adc");
-            if(nRes==EXIT_SUCCESS) (*ih).setProperty("adc", (*icn)->m_pReadData[nVal]);
-            cout << (*ih).getProperty("name") << " = " <<  (*ih).getProperty("adc")<< endl;
+        pthread_mutex_lock( &mutex_param );
+        pthread_cond_wait( &start_param, &mutex_param );        
+        while ( ih != tags.end()) {
+            nRes = (*ih).getraw( nVal );
+            nRes1= (*ih).getvalue( rVal );
+
+            ptm = localtime( (*ih).getTS() );
+            if((nCnt%10)==0) {
+                    std::string s;
+                    std::stringstream out;
+                    out <<setfill(' ')<<setw(8)<<(*ih).getproperty("name")<<" = "<< \
+                    setfill(' ') << setw(7) << nVal << " | " << \
+                    setfill(' ') << setw(8) << fixed << setprecision(3) << rVal << " | " << \
+                    ((nRes==0 && nRes1==0)?"OK":"FAULT");
+                    outtext(out.str());
+            }
             ++ih;
         }
-        cout << endl;
-        sleep(5);
+        if((nCnt++%10)==0) cout << endl;
+        
+        pthread_mutex_unlock( &mutex_param );
+        usleep(100000);
     }     
     
     cout << "end parameters processing" << endl;

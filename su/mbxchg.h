@@ -73,6 +73,7 @@ struct ccmd {
     int16_t    m_devAddr;      // address in device for read (write) 
     int16_t    m_count;        // registers number
     int16_t    m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
+    std::pair<uint16_t,std::string> m_err;
     ccmd(const ccmd &s);
     ccmd(std::vector<int16_t> &v);
     std::string ToString();
@@ -94,6 +95,8 @@ class cmbxchg {
 
     public:
         int32_t             m_id;
+        int32_t             m_maxReadData;
+        int32_t             m_maxWriteData;
         cmbxchg();
         ~cmbxchg()
         {
@@ -108,8 +111,8 @@ class cmbxchg {
         int32_t mbCommandsCount() {return cmds.size();}
         ccmd* mbCommand(const int i) {return &cmds[i];}
         void mbCommandAdd(ccmd &cmd) { cmds.push_back(cmd); }
-        static  int16_t    *m_pWriteData;      // write data area
-        static  int16_t    *m_pReadData;       // read data area
+        static  int16_t    *m_pWriteData;       // write data area
+        static  int16_t    *m_pReadData;        // read data area
         int16_t init();
         int16_t runCmdCycle();
         int16_t getStatus();

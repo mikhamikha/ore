@@ -81,7 +81,7 @@ build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(srcdir)/modbus-version.h.in $(top_srcdir)/depcomp \
+	$(srcdir)/modbus-version.h.in $(top_srcdir)/build-aux/depcomp \
 	$(libmodbusinclude_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -149,7 +149,7 @@ am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I. -I$(top_builddir) -I$(top_builddir)/tests
-depcomp = $(SHELL) $(top_srcdir)/depcomp
+depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -198,24 +198,24 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing aclocal-1.14
+ACLOCAL = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing aclocal-1.14
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = ar
 AS = as
-AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoconf
-AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing autoheader
-AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing automake-1.14
-AWK = mawk
-CC = gcc
+AUTOCONF = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing automake-1.14
+AWK = gawk
+CC = gcc -std=gnu99
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -Wall -Werror
-CPP = gcc -E
+CFLAGS = -g -O2
+CPP = gcc -std=gnu99 -E
 CPPFLAGS = 
 CXX = g++
-CXXCPP = g++ -E
-CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXCPP = 
+CXXDEPMODE = depmode=none
+CXXFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -236,18 +236,18 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LD = /usr/bin/ld
 LDFLAGS = 
-LIBMODBUS_LT_VERSION_INFO = 5:5:0
-LIBMODBUS_VERSION = 3.0.6
+LIBMODBUS_LT_VERSION_INFO = 6:0:1
+LIBMODBUS_VERSION = 3.1.4
 LIBMODBUS_VERSION_MAJOR = 3
-LIBMODBUS_VERSION_MICRO = 6
-LIBMODBUS_VERSION_MINOR = 0
+LIBMODBUS_VERSION_MICRO = 4
+LIBMODBUS_VERSION_MINOR = 1
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/missing makeinfo
+MAKEINFO = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -259,32 +259,32 @@ OTOOL64 =
 PACKAGE = libmodbus
 PACKAGE_BUGREPORT = https://github.com/stephane/libmodbus/issues
 PACKAGE_NAME = libmodbus
-PACKAGE_STRING = libmodbus 3.0.6
+PACKAGE_STRING = libmodbus 3.1.4
 PACKAGE_TARNAME = libmodbus
-PACKAGE_URL = 
-PACKAGE_VERSION = 3.0.6
+PACKAGE_URL = http://libmodbus.org/
+PACKAGE_VERSION = 3.1.4
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = strip
-VERSION = 3.0.6
+VERSION = 3.1.4
 abs_builddir = /home/admin/work/dep/ore/libmodbus/src
 abs_srcdir = /home/admin/work/dep/ore/libmodbus/src
 abs_top_builddir = /home/admin/work/dep/ore/libmodbus
 abs_top_srcdir = /home/admin/work/dep/ore/libmodbus
 ac_ct_AR = ar
 ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CXX = 
 ac_ct_DUMPBIN = 
 ac_libmodbus_have_asciidoc = no
 ac_libmodbus_have_xmlto = no
 am__include = include
 am__leading_dot = .
 am__quote = 
-am__tar = $${TAR-tar} chof - "$$tardir"
-am__untar = $${TAR-tar} xf -
+am__tar = tar --format=posix -chf - "$$tardir"
+am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
 build = i686-pc-linux-gnu
 build_alias = 
@@ -305,13 +305,14 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/install-sh
+install_sh = ${SHELL} /home/admin/work/dep/ore/libmodbus/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
 mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
+my_CFLAGS = -Wall -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpointer-arith -Wsign-compare -Wchar-subscripts -Wstrict-prototypes -Wshadow -Wformat-security
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 prefix = /usr/local
@@ -325,7 +326,15 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
+EXTRA_DIST = modbus-version.h.in
 lib_LTLIBRARIES = libmodbus.la
+AM_CPPFLAGS = \
+    -include $(top_builddir)/config.h \
+    -DSYSCONFDIR=\""$(sysconfdir)"\" \
+    -DLIBEXECDIR=\""$(libexecdir)"\" \
+    -I${top_srcdir}/src
+
+AM_CFLAGS = ${my_CFLAGS}
 libmodbus_la_SOURCES = \
         modbus.c \
         modbus.h \
@@ -339,15 +348,16 @@ libmodbus_la_SOURCES = \
         modbus-tcp-private.h \
         modbus-version.h
 
+libmodbus_la_LDFLAGS = -no-undefined \
+        -version-info $(LIBMODBUS_LT_VERSION_INFO)
+
 #libmodbus_la_LIBADD = -lsocket
 #libmodbus_la_LIBADD = -lwsock32
-libmodbus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined -version-info $(LIBMODBUS_LT_VERSION_INFO)
 
 # Header files to install
 libmodbusincludedir = $(includedir)/modbus
 libmodbusinclude_HEADERS = modbus.h modbus-version.h modbus-rtu.h modbus-tcp.h
 DISTCLEANFILES = modbus-version.h
-EXTRA_DIST = modbus-version.h.in
 CLEANFILES = *~
 all: all-am
 
@@ -436,22 +446,25 @@ include ./$(DEPDIR)/modbus-tcp.Plo
 include ./$(DEPDIR)/modbus.Plo
 
 .c.o:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Po
 #	$(AM_V_CC)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Po
 #	$(AM_V_CC)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Plo
 #	$(AM_V_CC)source='$<' object='$@' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(LTCOMPILE) -c -o $@ $<

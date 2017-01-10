@@ -6,10 +6,10 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <ctype.h>
+#include "utils.h"
 
 using namespace std;
-
-void outtext(std::string tx);
 
 #ifndef __OPCDA_Qualities_MODULE_DEFINED__
 #define __OPCDA_Qualities_MODULE_DEFINED__

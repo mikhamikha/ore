@@ -9,12 +9,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <sstream>
+#include "utils.h" 
 /*
 */
-std::string to_string(int16_t i);
-char easytoupper(char in);
-char easytolower(char in);
 
 struct cfield {
     std::string _n;
@@ -36,15 +33,8 @@ typedef std::vector<cfield> fields;
 struct compProp
 {
     std::string _s;
-    compProp(std::string const& s) {
-        _s = s;
-        std::transform(_s.begin(), _s.end(), _s.begin(), easytolower);
-    }
-    bool operator () (cfield const& p) {
-        std::string tmp = p._n;
-        std::transform(tmp.begin(), tmp.end(), tmp.begin(), easytolower);
-        return (tmp.find(_s)==0);
-    }
+    compProp(std::string const& s);     
+    bool operator () (cfield const& p); 
 };
 
 
@@ -59,6 +49,8 @@ protected: 				// спецификатор доступа protected
     timespec		m_oldts;
     double			m_dvalue;
     fields          m_prop;             // tag fields
+    int16_t         m_task;             // task to out
+    bool            m_task_go;          // flag 4 task to out
 
 	int8_t 	        m_quality;
     int8_t          m_type;
@@ -98,8 +90,10 @@ public: 				// спецификатор доступа public
         return &(m_ts.tv_sec);
     }
     void addproperty(std::string na, std::string v);
-    int16_t getraw(int16_t &nOut);                            // get raw data from readdata buffer
-    int16_t getvalue(double &rOut);                           // get value in EU
+    int16_t getraw(int16_t &nOut);                           // get raw data from readdata buffer
+    int16_t getvalue(double &rOut);                          // get value in EU
+    int16_t taskprocess();                                   // write tasks to modbus writedata area
+    bool    taskset() { return m_task_go; }
     cfield* getproperty(int16_t n);
     std::string getproperty(std::string s);
     int16_t getproperty(std::string s, int16_t &nOut);
@@ -114,6 +108,7 @@ public: 				// спецификатор доступа public
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
+int16_t taskparam(std::string, std::string);
 
 typedef std::vector< cparam, std::allocator<cparam> > paramlist;
 extern paramlist tags;

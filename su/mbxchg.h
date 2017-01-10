@@ -10,6 +10,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include "main.h"
 #include "param.h"
 
 #define EXIT_SUCCESS    0
@@ -73,10 +74,12 @@ struct ccmd {
     int16_t    m_devAddr;      // address in device for read (write) 
     int16_t    m_count;        // registers number
     int16_t    m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
+    bool       m_first;        // first scan
     std::pair<uint16_t,std::string> m_err;
     ccmd(const ccmd &s);
     ccmd(std::vector<int16_t> &v);
     std::string ToString();
+    cton       m_time;
 };
 
 const char _parities[] = {'N','O','E'};
@@ -112,6 +115,7 @@ class cmbxchg {
         ccmd* mbCommand(const int i) {return &cmds[i];}
         void mbCommandAdd(ccmd &cmd) { cmds.push_back(cmd); }
         static  int16_t    *m_pWriteData;       // write data area
+        static  int16_t    *m_pLastWriteData;   // write data area
         static  int16_t    *m_pReadData;        // read data area
         int16_t init();
         int16_t runCmdCycle();

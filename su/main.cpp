@@ -18,19 +18,7 @@ using namespace std;
  
 int arrivedcount = 0;
 
-void outtext(std::string tx) {
-  time_t      rawtime;
-//    timespec    rawtime;
-    struct tm   *ptm;
-    
-      time(&rawtime);
-//    clock_gettime(CLOCK_MONOTONIC, &rawtime);
-//    ptm = localtime(&(rawtime.tv_sec));
-    ptm = localtime(&rawtime);
-    cout<<setfill('0')<<setw(2)<<ptm->tm_hour<<":"<<\
-          setfill('0')<<setw(2)<<ptm->tm_min<<":"<< \
-          setfill('0')<<setw(2)<<ptm->tm_sec<<"\t"<<tx<<endl;
-}
+
 
 void messageArrived(MQTT::MessageData& md)
 {
@@ -49,6 +37,7 @@ int main(int argc, char* argv[])
     pthread_t   *thMBX;
     
     if (readCfg()==EXIT_SUCCESS) {
+        cout << "readCFG OK!" << endl;
         thMBX = new pthread_t[conn.size()+1]; 
         fieldconnections::iterator coni;
         fParamThreadInitialized=1;
@@ -74,7 +63,12 @@ int main(int argc, char* argv[])
         tcsetattr( STDIN_FILENO, TCSANOW, &newt );
         while (ch!='q' && ch!='Q') {
             ch = getchar();
-            cout << ch << endl;
+            cout << "Pressed " << ch;
+            if(isdigit(ch)) {
+                conn[0]->m_pWriteData[ch-49]=(conn[0]->m_pWriteData[ch-49]==0);
+                cout << " == " << ch-49 << " | " << conn[0]->m_pWriteData[ch-49];
+            }
+            cout << endl;
         }
         tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 // ---------- end terminate block ------------

@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define _param_prc_delay    10000
+
 using namespace std;
 
 pthread_mutex_t mutex_param     = PTHREAD_MUTEX_INITIALIZER;
@@ -18,41 +20,23 @@ pthread_cond_t  start_param     = PTHREAD_COND_INITIALIZER;
 paramlist tags;
 bool fParamThreadInitialized;
 
-string to_string(int16_t i) {
-    std::string s;
-    std::stringstream out;
-    out << i;
-    s = out.str();
-    return s;
-}
-
-char easytolower(char in){
-    if(in<='Z' && in>='A') return in-('Z'-'z');
-    return in;
-} 
-
-char easytoupper(char in){
-    if(in<='z' && in>='a') return in+('Z'-'z');
-    return in;
-} 
-
-// example of usage:
-// removeCharsFromString( str, "()-" );
-void removeCharsFromString( string &str, char* charsToRemove ) {
-    for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
-        str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
-    }
-    std::istringstream iss( str );
-    std::getline( iss, str , '#');    // remove comment
-//    std::transform(str.begin(), str.end(), str.begin(), easytolower);
-}
-
 enum {
     _parse_root,
     _parse_mbport,
     _parse_mbcmd,
     _parse_ai
 };
+
+compProp::compProp(std::string const& s) {
+    _s = s;
+    std::transform(_s.begin(), _s.end(), _s.begin(), easytolower);
+}
+
+bool compProp::operator () (cfield const& p) {
+    std::string tmp = p._n;
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(), easytolower);
+    return (tmp.find(_s)==0);
+}
 
 cparam::cparam()
 {
@@ -107,18 +91,22 @@ int16_t cparam::getvalue(double &rOut)
     nD = abs(nctt-nodt);
 //   cout << nodt << " | " << nctt << " | " << nD << endl; 
     if((res = getraw(nVal))==EXIT_SUCCESS) {
-        double lraw, hraw, leng, heng;
+        double  lraw, hraw, leng, heng;
+        int16_t isbool, nstep;
         res = getproperty("minraw", lraw)   \
             | getproperty("maxraw", hraw)   \
             | getproperty("mineng", leng)   \
             | getproperty("maxeng", heng)   \
-            | getproperty("flttime", nTime);
+            | getproperty("flttime", nTime) \
+            | getproperty("isbool", isbool) \
+            | getproperty("hihi", nstep);
         if(res == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
             rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
             nTime = nTime*1000;
             rVal = (m_dvalue*nTime+rVal*nD)/(nTime+nD); 
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
+            if(isbool) rVal = (rVal>nstep);     // if it is a discret parameter
             m_dvalue = rVal;
             rOut = rVal;
         }
@@ -126,6 +114,24 @@ int16_t cparam::getvalue(double &rOut)
     return res;
 }
 
+int16_t cparam::taskprocess()
+{
+    int16_t res=EXIT_FAILURE;
+    cmbxchg *mb;
+    int16_t nOff;
+
+    fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp("writedata"));
+    if(ifi != m_prop.end()) {
+        mb = (cmbxchg *)p_conn;
+        nOff=(*ifi).ToInt();
+        if(nOff<mb->m_maxWriteData) {
+            mb->m_pWriteData[nOff] = m_task;
+            m_task_go = false; 
+            res=EXIT_SUCCESS;
+        }
+    }
+    return res;
+}
 
 cfield* cparam::getproperty(int16_t n)
 {
@@ -138,7 +144,7 @@ cfield* cparam::getproperty(int16_t n)
 
 std::string cparam::getproperty(std::string s)
 {
-    std::string sOut = "no value";
+    std::string sOut = "";
     fields::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compProp(s));
     if(ifi != m_prop.end()) {
         sOut=(*ifi)._v;
@@ -221,7 +227,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
     cmbxchg     *mb = (cmbxchg *)obj;
     std::string::size_type found;
 
-//    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl;
+//    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl<< endl;
     while( std::getline( fstr, line ) ) {
 //        cout << line.c_str() << endl;
         removeCharsFromString(line, (char *)" \t\r");
@@ -259,7 +265,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                 else {
 //                  cout << " ports \n";
                     mb = new cmbxchg();
-                    cout << "new conn " << mb << endl;
+//                    cout << "new conn " << mb << endl;
                     conn.push_back(mb);
                     line.erase(0, strlen("modbusport")+1);
                     line.erase(line.length()-1);
@@ -303,7 +309,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                     fld._n = sVal;
                     prop.push_back(fld);
                 }
-                cout << endl;
+//                cout << endl;
             }
             else {
                 cparam  p;
@@ -313,7 +319,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                     nI++;
                 }
                 p.p_conn = obj;
-                cout << "prop size " << p.getpropertysize() << endl;
+//                cout << "prop size " << p.getpropertysize() << endl;
                 tags.push_back(p);
             }
         }
@@ -331,27 +337,27 @@ int16_t readCfg()
     cmbxchg     *mb=NULL;  
 
 //    cout << "conn size = " << conn.size() << endl;
-    cout << "readcfg" << endl;
+//    cout << "readcfg" << endl;
 	std::fstream filestr("map.cfg");
     parseBuff(filestr, _parse_root, (void *)mb);
 
-    cout << "conn size = " << conn.size() << endl;
+//    cout << "conn size = " << conn.size() << endl;
     for(i=0; i<conn.size(); i++) {
         mb = conn[i];
-        cout << mb << " | port settings " << mb->portPropertyCount() << endl;
+//        cout << mb << " | port settings " << mb->portPropertyCount() << endl;
         for(j=0; j < mb->portPropertyCount(); ++j) {
-            cout << setfill(' ') << setw(2) << j << " | " <<  mb->portProperty2Text(j) << endl;
+//            cout << setfill(' ') << setw(2) << j << " | " <<  mb->portProperty2Text(j) << endl;
         }
-        cout << "mb commands " << mb->mbCommandsCount() << endl;
+//        cout << "mb commands " << mb->mbCommandsCount() << endl;
         for(j=0; j < mb->mbCommandsCount(); ++j) {
-            cout << mb->mbCommand(j)->ToString() << endl;
+//            cout << mb->mbCommand(j)->ToString() << endl;
         }
     }
 //    cout << tags.size() << endl;
     for(i=0; i<tags.size(); i++) {
 //        cout << tags[i].getPropertySize() << endl;
         for(j=0; j<tags[i].getpropertysize(); j++) {
-            cout << tags[i].getproperty(j)->ToText() << endl;
+//            cout << tags[i].getproperty(j)->ToText() << endl;
         }    
     }
     return res;
@@ -361,7 +367,7 @@ int16_t readCfg()
 //
 void* paramProcessing(void *args) 
 {
-    paramlist::iterator ih;
+    paramlist::iterator ih, iend;
     fieldconnections::iterator icn;    
     int16_t nRes, nRes1, nVal;
     double  rVal;
@@ -371,29 +377,33 @@ void* paramProcessing(void *args)
 
     while (fParamThreadInitialized) {
         
-        ih = tags.begin();
         pthread_mutex_lock( &mutex_param );
-        pthread_cond_wait( &start_param, &mutex_param );        
-        while ( ih != tags.end()) {
-            nRes = (*ih).getraw( nVal );
-            nRes1= (*ih).getvalue( rVal );
+        pthread_cond_wait( &start_param, &mutex_param );// start processing after data receive     
+        ih   = tags.begin();
+        iend = tags.end();
+        while ( ih != iend ) {
+            if(!((*ih).getproperty("readdata").empty())) {
+                nRes = (*ih).getraw( nVal );
+                nRes1= (*ih).getvalue( rVal );
 
-            ptm = localtime( (*ih).getTS() );
-            if((nCnt%10)==0) {
-                    std::string s;
-                    std::stringstream out;
-                    out <<setfill(' ')<<setw(8)<<(*ih).getproperty("name")<<" = "<< \
-                    setfill(' ') << setw(7) << nVal << " | " << \
-                    setfill(' ') << setw(8) << fixed << setprecision(3) << rVal << " | " << \
-                    ((nRes==0 && nRes1==0)?"OK":"FAULT");
-                    outtext(out.str());
+                ptm = localtime( (*ih).getTS() );
+                if((nCnt%int(100000l/_param_prc_delay))==0) {
+                        std::string s;
+                        std::stringstream out;
+                        out <<setfill(' ')<<setw(8)<<(*ih).getproperty("name")<<" = "<< \
+                        setfill(' ') << setw(7) << nVal << " | " << \
+                        setfill(' ') << setw(8) << fixed << setprecision(3) << rVal << " | " << \
+                        ((nRes==0 && nRes1==0)?"OK":"FAULT");
+                        outtext(out.str());
+                }
             }
+            else if( (*ih).taskset() ) (*ih).taskprocess();
             ++ih;
         }
-        if((nCnt++%10)==0) cout << endl;
+        if((nCnt++%int(100000l/_param_prc_delay))==0) cout << endl;
         
         pthread_mutex_unlock( &mutex_param );
-        usleep(100000);
+        usleep(_param_prc_delay);
     }     
     
     cout << "end parameters processing" << endl;

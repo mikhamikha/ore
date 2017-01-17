@@ -10,33 +10,25 @@
 #include <stdlib.h>
 
 #include "utils.h" 
-/*
-*/
 
-struct cfield {
-    std::string _n;
-    int8_t      _t;
-    std::string _v;
-    float ToReal() {
-        return atof(_v.c_str());
-    }
-    int32_t ToInt() {
-        return atoi(_v.c_str());
-    }
-    std::string ToText() {
-        return _n + std::string(" = ") + _v;
-    }
+enum {
+    _parse_root,
+    _parse_mbport,
+    _parse_mbcmd,
+    _parse_ai,
+    _parse_upcon
 };
 
-typedef std::vector<cfield> fields;
+inline int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
+    string line = in;
+    int32_t res=-1;
+    line.erase(0, line.find(st)+st.length()+1);
+//    line.erase(line.find(fin));
+    if(isdigit(line[0])) res = atoi(line.c_str());
+    return res;
+}
 
-struct compProp
-{
-    std::string _s;
-    compProp(std::string const& s);     
-    bool operator () (cfield const& p); 
-};
-
+//typedef std::vector<std::pair<std::string, content> > fields; 
 
 // интерфейс класса
 // объявление класса Параметр
@@ -47,14 +39,15 @@ protected: 				// спецификатор доступа protected
     
     timespec		m_ts;
     timespec		m_oldts;
-    double			m_dvalue;
-    fields          m_prop;             // tag fields
+    double			m_rvalue;
+    settings        m_prop;             // tag fields
     int16_t         m_task;             // task to out
     bool            m_task_go;          // flag 4 task to out
+    int16_t         m_raw;              // raw value from module
+	uint8_t         m_quality;          // quality of value
+    bool            m_valueupdated;     // new value arrived
 
-	int8_t 	        m_quality;
     int8_t          m_type;
-	int32_t         m_adc;
     float           m_minEng;
     float           m_maxEng;
     float           m_minRaw;
@@ -89,31 +82,41 @@ public: 				// спецификатор доступа public
     time_t*     getTS() {
         return &(m_ts.tv_sec);
     }
+    void addproperty(std::string na, int32_t);
+    void addproperty(std::string na, double);
     void addproperty(std::string na, std::string v);
-    int16_t getraw(int16_t &nOut);                           // get raw data from readdata buffer
-    int16_t getvalue(double &rOut);                          // get value in EU
-    int16_t taskprocess();                                   // write tasks to modbus writedata area
+    int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
+    int16_t getvalue(double &rOut, uint8_t &nQual);             // get value in EU
+    int16_t setvalue(int16_t nIn);                              // set value 
+    int16_t taskprocess();                                      // write tasks to modbus writedata area
     bool    taskset() { return m_task_go; }
-    cfield* getproperty(int16_t n);
-    std::string getproperty(std::string s);
-    int16_t getproperty(std::string s, int16_t &nOut);
-    int16_t getproperty(std::string s, int32_t &nOut);
-    int16_t getproperty(std::string s, double &rOut);
-    int16_t setproperty(int16_t n, std::string na, std::string v);
-    int16_t setproperty(std::string s, std::string &sIn);
-    int16_t setproperty(std::string s, int16_t &nIn);
+
     int32_t getpropertysize() { return m_prop.size(); }
-}; // конец объявления класса cparam
+    content* getproperty(int16_t n);
+    content* getproperty(std::string s);
+    template <class T> 
+    int16_t getproperty(std::string s, T &rOut);
+
+    int16_t setproperty(int16_t n, std::string na, std::string v);
+//    int16_t setproperty(std::string s, std::string &sIn);
+    template <class T> 
+    int16_t setproperty(std::string s, T nIn);
+    bool    hasnewvalue() { return m_valueupdated; }
+    bool    acceptnewvalue() { m_valueupdated = false; }
+    int16_t getupcon() { return getproperty("pub")->_n-1; }    
+ }; // конец объявления класса cparam
 
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
 int16_t taskparam(std::string, std::string);
+typedef std::vector<std::pair<std::string, cparam> > paramlist;
 
-typedef std::vector< cparam, std::allocator<cparam> > paramlist;
 extern paramlist tags;
 extern bool fParamThreadInitialized;
 extern pthread_mutex_t mutex_param;
-extern pthread_cond_t  start_param;
+extern pthread_cond_t  data_ready;
+extern pthread_mutex_t mutex_pub;
+extern pthread_cond_t  pub_ready;
 
 #endif // _PARAM_H

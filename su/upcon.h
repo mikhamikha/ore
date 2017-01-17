@@ -1,0 +1,60 @@
+#ifndef _upcon_h
+    #define _upcon_h
+
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <vector>
+#include <iterator>
+#include <algorithm>
+#include "main.h"
+#include "linux.h"
+#include "utils.h"
+
+#include "MQTTClient.h"
+
+#define DEFAULT_STACK_SIZE -1
+#define _pub_buf_max 100000
+
+typedef std::vector<std::pair<std::string, std::string> > pubdata;
+
+class upcon {
+    settings                            m_settings;
+    IPStack                             m_ipstack;
+    MQTT::Client<IPStack, Countdown>    *m_client;
+//    MQTTPacket_connectData              m_data;
+//    MQTT::Message                       m_message;
+    pubdata pubs;
+    int                 m_status;
+
+    public:
+        int32_t m_id; 
+       
+        upcon();
+        ~upcon();
+        int16_t setproperty(std::string &, std::string &);   // fill settings
+//        int16_t getproperty(std::string, std::string &);            
+//        int16_t getproperty(const char *, std::string &);        
+        template <class T>
+        int16_t getproperty(std::string, T &);    
+//        int16_t getproperty(const char *, int32_t &);        
+        int16_t property2text(int32_t, std::string &); 
+        int32_t getpropertysize() { return m_settings.size(); }
+        int16_t connect();                                   // connect to broker
+        int16_t publish(cparam &);
+        int16_t pubdataproc();              // publication of data from buffer
+        int16_t getStatus() { return m_status; };
+        int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
+};
+
+typedef std::vector< upcon * > upconnections;
+extern upconnections upc;
+
+void messageArrived(MQTT::MessageData& md);
+void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
+
+
+#endif

@@ -4,7 +4,7 @@ TARGET = bu
 PREFIX ?= /usr/local
 S_FLAGS = -I ../libmodbus/src/ -I ../libmodbus/ -I ../mqtt/MQTTClient/src -I ../mqtt/MQTTClient/src/linux -I ../mqtt/MQTTPacket/src -I ../noritake/src -pthread -D_REENTRANT
 S_SRCS=../libmodbus/src/modbus.c ../libmodbus/src/modbus-tcp.c ../libmodbus/src/modbus-rtu.c ../libmodbus/src/modbus-data.c  
-G_SRCS=main.cpp utils.cpp param.cpp mbxchg.cpp ../noritake/src/Noritake_VFD_GU3000.cpp  ../noritake/src/linux_serial.cpp \
+G_SRCS=main.cpp utils.cpp param.cpp mbxchg.cpp upcon.cpp ../mqtt/MQTTClient/src/linux/linux.cpp ../noritake/src/Noritake_VFD_GU3000.cpp  ../noritake/src/linux_serial.cpp \
 ../mqtt/MQTTPacket/src/MQTTPacket.cpp ../mqtt/MQTTPacket/src/MQTTDeserializePublish.cpp ../mqtt/MQTTPacket/src/MQTTConnectClient.cpp \
 ../mqtt/MQTTPacket/src/MQTTSubscribeClient.cpp ../mqtt/MQTTPacket/src/MQTTSerializePublish.cpp ../mqtt/MQTTPacket/src/MQTTUnsubscribeClient.cpp   
 G_OBJS = $(G_SRCS:.cpp=.o) 

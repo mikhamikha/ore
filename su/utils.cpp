@@ -94,3 +94,5 @@ string replaceString(string subject, const string& search, const string& replace
     }
     return subject;
 }
+
+

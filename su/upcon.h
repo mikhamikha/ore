@@ -21,12 +21,9 @@
 
 typedef std::vector<std::pair<std::string, std::string> > pubdata;
 
-class upcon {
-    settings                            m_settings;
+class upcon: public cproperties {
     IPStack                             m_ipstack;
     MQTT::Client<IPStack, Countdown>    *m_client;
-//    MQTTPacket_connectData              m_data;
-//    MQTT::Message                       m_message;
     pubdata pubs;
     int                 m_status;
 
@@ -35,14 +32,6 @@ class upcon {
        
         upcon();
         ~upcon();
-        int16_t setproperty(std::string &, std::string &);   // fill settings
-//        int16_t getproperty(std::string, std::string &);            
-//        int16_t getproperty(const char *, std::string &);        
-        template <class T>
-        int16_t getproperty(std::string, T &);    
-//        int16_t getproperty(const char *, int32_t &);        
-        int16_t property2text(int32_t, std::string &); 
-        int32_t getpropertysize() { return m_settings.size(); }
         int16_t connect();                                   // connect to broker
         int16_t publish(cparam &);
         int16_t pubdataproc();              // publication of data from buffer

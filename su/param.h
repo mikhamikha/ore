@@ -32,15 +32,15 @@ inline int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
 
 // интерфейс класса
 // объявление класса Параметр
-class cparam 			// имя класса
-{
+class cparam: public cproperties { 			// имя класса
+
 private: 				// спецификатор доступа private
 protected: 				// спецификатор доступа protected
     
     timespec		m_ts;
     timespec		m_oldts;
     double			m_rvalue;
-    settings        m_prop;             // tag fields
+//    settings        m_prop;             // tag fields
     int16_t         m_task;             // task to out
     bool            m_task_go;          // flag 4 task to out
     int16_t         m_raw;              // raw value from module
@@ -82,28 +82,14 @@ public: 				// спецификатор доступа public
     time_t*     getTS() {
         return &(m_ts.tv_sec);
     }
-    void addproperty(std::string na, int32_t);
-    void addproperty(std::string na, double);
-    void addproperty(std::string na, std::string v);
     int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
     int16_t getvalue(double &rOut, uint8_t &nQual);             // get value in EU
     int16_t setvalue(int16_t nIn);                              // set value 
     int16_t taskprocess();                                      // write tasks to modbus writedata area
     bool    taskset() { return m_task_go; }
-
-    int32_t getpropertysize() { return m_prop.size(); }
-    content* getproperty(int16_t n);
-    content* getproperty(std::string s);
-    template <class T> 
-    int16_t getproperty(std::string s, T &rOut);
-
-    int16_t setproperty(int16_t n, std::string na, std::string v);
-//    int16_t setproperty(std::string s, std::string &sIn);
-    template <class T> 
-    int16_t setproperty(std::string s, T nIn);
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }
-    int16_t getupcon() { return getproperty("pub")->_n-1; }    
+    int16_t getupcon() { int16_t u=0; getproperty("pub", u); return --u; }    
  }; // конец объявления класса cparam
 
 int16_t readCfg();

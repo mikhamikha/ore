@@ -68,10 +68,8 @@ struct cton {
 struct content {
     content(int32_t n) : _n(n) { _t=0; _r=n; _s=to_string(n); }
     content(double n) : _r(n) { _t=1; _n=int(n); _s=to_string(n); }
-    content(char c) : _c(c) { _t=2; _s[0]=c; _s[1]=0; }
     content(std::string s) : _s(s) { 
-        _t = 3;
-        _c = s[0];
+        _t = 2;
         _n = atoi(s.c_str());
         _r = atof(s.c_str());
     }
@@ -111,7 +109,6 @@ struct content {
     double      _r; 
     int32_t     _n;
     std::string _s;
-    char        _c;
     int16_t     _t;
 };
 
@@ -131,5 +128,53 @@ struct compareP
 };
 
 typedef std::vector<std::pair<std::string, content> > settings;
+
+
+class cproperties {
+    settings    m_set;
+
+    public:
+        template <class T>
+        int16_t setproperty( std::string na, T va) {       // fill settings
+            int16_t res = EXIT_FAILURE;
+            settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
+            
+            if (i != m_set.end()) {
+                i->second.setvalue(va);
+                res = EXIT_SUCCESS;
+            }
+            else {
+                m_set.push_back(make_pair(na, content(va)));
+                res = EXIT_SUCCESS;
+            }
+            return res;
+        }        
+
+        template <class T>
+        int16_t getproperty( std::string na, T& va) {
+            int16_t res = EXIT_FAILURE;
+            settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
+    
+            if (i != m_set.end()) {
+                i->second.getvalue(va);
+                res = EXIT_SUCCESS;
+            }
+            return res;
+        }
+
+        int32_t getpropertysize() { return m_set.size(); }
+        
+        int16_t property2text(int32_t n, std::string& va) {
+            int16_t res = EXIT_FAILURE;
+            
+            if (n < getpropertysize()) {
+                va = m_set[n].first + " = " + m_set[n].second.ToString();
+                res = EXIT_SUCCESS;
+            }
+            return res;
+        }
+ 
+};
+
 
 #endif

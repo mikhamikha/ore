@@ -59,44 +59,6 @@ int16_t upcon::connect() {
     
     return res;
 }
-
-int16_t upcon::setproperty(std::string &na, std::string &va) {
-    int16_t res = EXIT_FAILURE;
-    settings::iterator i = std::find_if(m_settings.begin(), m_settings.end(), compareP<content>(na));
-    
-    if (i != m_settings.end()) {
-        i->second = va;
-        res = EXIT_SUCCESS;
-    }
-    else {
-        m_settings.push_back(make_pair(na, content(va)));
-        res = EXIT_SUCCESS;
-    }
-    return res;
-}
-
-template <class T>
-int16_t upcon::getproperty(std::string na, T &va) {
-    int16_t res = EXIT_FAILURE;
-    settings::iterator i = std::find_if(m_settings.begin(), m_settings.end(), compareP<content>(na));
-    
-    if (i != m_settings.end()) {
-        i->second.getvalue(va);
-        res = EXIT_SUCCESS;
-    }
-    return res;
-}
-
-int16_t upcon::property2text(int32_t n, string &va) {
-    int16_t res = EXIT_FAILURE;
-    
-    if (n < getpropertysize()) {
-        va = m_settings[n].first + " = " + m_settings[n].second.ToString();
-        res = EXIT_SUCCESS;
-    }
-    return res;
-}
-
 int16_t upcon::publish(cparam &tag) {    
     int16_t         res = EXIT_FAILURE;
     string          topic;

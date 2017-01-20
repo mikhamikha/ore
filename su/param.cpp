@@ -1,6 +1,6 @@
 #include "main.h"
-#include "param.h"
-#include "mbxchg.h"
+//#include "param.h"
+//#include "mbxchg.h"
 
 #include <fstream>	
 #include <sstream>	
@@ -25,17 +25,17 @@ bool fParamThreadInitialized;
 
 cparam::cparam()
 {
-    addproperty( string("raw"),         int(0)      );
-    addproperty( string("value"),       double(0)   );
-    addproperty( string("quality"),     int32_t(0)  );
-    addproperty( string("timestamp"),   string("")  );  
-    addproperty( string("deadband"),    double(0)   );
-    addproperty( string("sec"),         int32_t(0)  );
-    addproperty( string("msec"),        int32_t(0)  );
+    setproperty( string("raw"),         int(0)      );
+    setproperty( string("value"),       double(0)   );
+    setproperty( string("quality"),     int32_t(0)  );
+    setproperty( string("timestamp"),   string("")  );  
+    setproperty( string("deadband"),    double(0)   );
+    setproperty( string("sec"),         int32_t(0)  );
+    setproperty( string("msec"),        int32_t(0)  );
     m_task = 0;
     m_task_go = false;
 }
-
+/*
 void cparam::addproperty(std::string na, std::string v)
 {
     settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(na));
@@ -62,17 +62,16 @@ void cparam::addproperty(std::string na, double v=0)
     }
     return;
 }
-
+*/
 int16_t cparam::getraw(int16_t &nOut)
 {
     int16_t res=EXIT_FAILURE;
     cmbxchg *mb;
     int16_t nOff;
 
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("readdata"));
-    if(ifi != m_prop.end()) {
+//    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("readdata"));
+    if(getproperty("readdata", nOff)==0) {
         mb = (cmbxchg *)p_conn;
-        nOff=(*ifi).second.ToInt();
         if(nOff<mb->m_maxReadData) {
             m_raw = mb->m_pReadData[nOff];
             setproperty("raw", m_raw);
@@ -125,7 +124,7 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
             rOut = rVal;                                            // current value
 
             int16_t nPortErrOff, nErrOff;
-            nPortErrOff = mb->portProperty("commanderror")._n;
+            mb->getproperty("commanderror", nPortErrOff);
 
             if (getproperty("ErrPtr", nErrOff)==EXIT_SUCCESS) {     // read errors of read modbus operations
                 nErrOff += nPortErrOff;
@@ -169,80 +168,15 @@ int16_t cparam::taskprocess()
     cmbxchg *mb;
     int16_t nOff;
 
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("writedata"));
-    if(ifi != m_prop.end()) {
+//    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("writedata"));
+    if(getproperty("writedata", nOff)==0) {
         mb = (cmbxchg *)p_conn;
-        nOff=(*ifi).second.ToInt();
+//        nOff=(*ifi).second.ToInt();
         if(nOff<mb->m_maxWriteData) {
             mb->m_pWriteData[nOff] = m_task;
             m_task_go = false; 
             res=EXIT_SUCCESS;
         }
-    }
-    return res;
-}
-
-content* cparam::getproperty(int16_t n)
-{
-    content *res=NULL;
-    if(n<m_prop.size()) {
-        res=&m_prop[n].second;
-    }
-    return res;
-}
-
-content* cparam::getproperty(std::string s)
-{
-    content *res=NULL;
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(s));
-    if(ifi != m_prop.end()) {
-        res=&((*ifi).second);
-    }
-    return res;
-}
-
-template <class T>
-int16_t cparam::getproperty(std::string s, T &rOut)
-{
-    int16_t res=EXIT_FAILURE;
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(s));
-    if(ifi != m_prop.end()) {
-        (*ifi).second.getvalue(rOut);
-        res=EXIT_SUCCESS;
-    }
-    return res;
-}
-
-int16_t cparam::setproperty(int16_t n, std::string na, std::string v)
-{
-    int16_t res=EXIT_FAILURE;
-    if(n<m_prop.size()) {
-        m_prop[n].first = na;
-        m_prop[n].second._s   = v;
-        res=EXIT_SUCCESS;
-    }
-    return res;
-}
-/*
-int16_t cparam::setproperty(std::string s, std::string &sIn)
-{
-    int16_t res=EXIT_FAILURE;
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(s));
-    if(ifi != m_prop.end()) {
-        (*ifi).second._s = sIn;
-        res=EXIT_SUCCESS;
-    }
-    return res;
-}
-*/
-template <class T> 
-int16_t cparam::setproperty(std::string s, T nIn)
-{
-    int16_t res=EXIT_FAILURE;
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(s));
-    if(ifi != m_prop.end()) {
-        (*ifi).second.setvalue(nIn);
-        res=EXIT_SUCCESS;
     }
     return res;
 }
@@ -322,7 +256,8 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
             std::string sVal;
             if( std::getline( iss, sTag, '=') ) {
                 std::getline( iss, sVal );
-                up->setproperty( sTag, sVal );
+                up->setproperty<string>( sTag, sVal );
+//                propp.setproperty<string>( sTag, sVal );
             }
         }
         else
@@ -332,8 +267,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
             std::string sVal;
             if( std::getline( iss, sTag, '=') ) {
                 std::getline( iss, sVal );
-                content oVal(sVal);
-                mb->portPropertySet( sTag.c_str(), oVal );
+                mb->setproperty( sTag.c_str(), sVal );
             }
         }
         else
@@ -363,7 +297,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                 int32_t nI=0;
                 string s;
                 while( std::getline( iss, sVal, ';') ) {
-                    p.addproperty( prop[nI].first, sVal );
+//                    p.addproperty( prop[nI].first, sVal );
                     p.setproperty( prop[nI].first, sVal );
                     nI++;
                 }
@@ -394,7 +328,7 @@ int16_t readCfg()
     for(i=0; i<conn.size(); i++) {
         mb = conn[i];
 //        cout << mb << " | port settings " << mb->portPropertyCount() << endl;
-        for(j=0; j < mb->portPropertyCount(); ++j) {
+        for(j=0; j < mb->getpropertysize(); ++j) {
 //            cout << setfill(' ') << setw(2) << j << " | " <<  mb->portProperty2Text(j) << endl;
         }
 //        cout << "mb commands " << mb->mbCommandsCount() << endl;
@@ -458,7 +392,9 @@ void* paramProcessing(void *args)
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
-            if(!((*ih).second.getproperty("readdata")->_s.empty())) {
+            string sOff;
+            int rc = ih->second.getproperty("readdata", sOff);
+            if(!rc && !sOff.empty()) {
                 int16_t nu;
                 nRes = (*ih).second.getraw( nVal );
                 nRes1= (*ih).second.getvalue( rVal, nQ );

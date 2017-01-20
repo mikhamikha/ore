@@ -58,11 +58,10 @@ typedef std::vector<ccmd> mbcommands;
 //
 // Connection class
 //
-class cmbxchg {
+class cmbxchg: public cproperties {
 
         int16_t             m_status;
         modbus_t            *m_ctx;
-        settings            ps;                   // serial port settings
         mbcommands          cmds;                 // command list
 
     public:
@@ -75,11 +74,6 @@ class cmbxchg {
             modbus_close(m_ctx);
             modbus_free(m_ctx);
         }   
-        int32_t portPropertyCount() {return ps.size();} 
-        content& portProperty(const char *); 
-        content& portProperty(const int); 
-        std::string portProperty2Text(const int i);
-        int32_t portPropertySet(const char *, content& ); 
         int32_t mbCommandsCount() {return cmds.size();}
         ccmd* mbCommand(const int i) {return &cmds[i];}
         void mbCommandAdd(ccmd &cmd) { cmds.push_back(cmd); }

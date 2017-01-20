@@ -48,4 +48,5 @@ const uint8_t OPC_LIMIT_CONST                      =   0x03;
 
 #endif /* __OPCDA_Qualities_MODULE_DEFINED__ */
 
+
 #endif

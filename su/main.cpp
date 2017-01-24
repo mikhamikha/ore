@@ -30,8 +30,9 @@ int main(int argc, char* argv[])
             }
             ++i;
         }            
-        for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) { 
-            nResult = pthread_create(thMBX+i, NULL, upProcessing, (void *)(*up));
+        for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) {
+            if( (*up)->connect()==EXIT_SUCCESS )
+                nResult = pthread_create(thMBX+i, NULL, upProcessing, (void *)(*up));
             if (nResult != 0) {
 //              perror("Создание первого потока!");
 //              return EXIT_FAILURE;

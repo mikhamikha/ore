@@ -11,38 +11,73 @@
 #include <iterator>
 #include <algorithm>
 #include "main.h"
-#include "linux.h"
 #include "utils.h"
 
-#include "MQTTClient.h"
+#include <signal.h>
+#include <memory.h>
+
+#include <sys/time.h>
+#include <unistd.h>
+
+//
+// add paho 
+//
+extern "C" {
+    #include "MQTTAsync.h"
+    #include "MQTTClientPersistence.h"
+}
 
 #define DEFAULT_STACK_SIZE -1
 #define _pub_buf_max 100000
 
+typedef struct
+{
+	char* clientid;
+	int nodelimiter;
+	char delimiter;
+	int qos;
+	char* username;
+	char* password;
+	char* host;
+	char* port;
+	int showtopics;
+	int keepalive;
+} mqtt_create_options; 
+/* =
+{
+	"stdout-subscriber-async", 1, '\n', 2, NULL, NULL, "localhost", "1883", 0, 10
+};
+*/
+
 typedef std::vector<std::pair<std::string, std::string> > pubdata;
 
 class upcon: public cproperties {
-    IPStack                             m_ipstack;
-    MQTT::Client<IPStack, Countdown>    *m_client;
-    pubdata pubs;
-    int                 m_status;
-
+    pubdata                     pubs;
+    int                         m_status;
+    MQTTAsync                   m_client;
+    mqtt_create_options         m_opts;
+    MQTTAsync_connectOptions    *conn_opts;   
+        
     public:
         int32_t m_id; 
        
         upcon();
         ~upcon();
         int16_t connect();                                   // connect to broker
+        int16_t disconnect();
         int16_t publish(cparam &);
+        int16_t subscribe(cparam &);
         int16_t pubdataproc();              // publication of data from buffer
-        int16_t getStatus() { return m_status; };
+        int16_t getstatus() { return m_status; };
         int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
 };
 
 typedef std::vector< upcon * > upconnections;
 extern upconnections upc;
-
-void messageArrived(MQTT::MessageData& md);
+extern MQTTAsync_connectOptions _conn_opts;
+   
+int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message);
+void connectionLost(void *context, char *cause);
 void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
 
 

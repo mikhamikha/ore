@@ -47,6 +47,7 @@ protected: 				// спецификатор доступа protected
 	uint8_t         m_quality;          // quality of value
     bool            m_valueupdated;     // new value arrived
 
+    
     int8_t          m_type;
     float           m_minEng;
     float           m_maxEng;
@@ -76,6 +77,7 @@ public: 				// спецификатор доступа public
     cparam();			// конструктор класса
     ~cparam(){};   
 	std::string	name;
+    int16_t     m_sub;    
     void		*p_conn;	
 	void 		setValue();
     void 		getValue(); 				//                     
@@ -89,8 +91,9 @@ public: 				// спецификатор доступа public
     bool    taskset() { return m_task_go; }
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }
-    int16_t getupcon() { int16_t u=0; getproperty("pub", u); return --u; }    
- }; // конец объявления класса cparam
+    int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
+    int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }    
+}; // конец объявления класса cparam
 
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием

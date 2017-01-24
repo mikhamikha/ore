@@ -34,35 +34,9 @@ cparam::cparam()
     setproperty( string("msec"),        int32_t(0)  );
     m_task = 0;
     m_task_go = false;
-}
-/*
-void cparam::addproperty(std::string na, std::string v)
-{
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(na));
-    if(ifi == m_prop.end()) {
-        m_prop.push_back(std::make_pair(na, content(v)));
-    }
-    return;
+    m_sub = -2;
 }
 
-void cparam::addproperty(std::string na, int32_t v=0)
-{
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(na));
-    if(ifi == m_prop.end()) {
-        m_prop.push_back(std::make_pair(na, content(v)));
-    }
-    return;
-}
-
-void cparam::addproperty(std::string na, double v=0)
-{
-    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>(na));
-    if(ifi == m_prop.end()) {
-        m_prop.push_back(std::make_pair(na, content(v)));
-    }
-    return;
-}
-*/
 int16_t cparam::getraw(int16_t &nOut)
 {
     int16_t res=EXIT_FAILURE;
@@ -393,15 +367,16 @@ void* paramProcessing(void *args)
         iend = tags.end();
         while ( ih != iend ) {
             string sOff;
+            int16_t nu;
             int rc = ih->second.getproperty("readdata", sOff);
             if(!rc && !sOff.empty()) {
-                int16_t nu;
                 nRes = (*ih).second.getraw( nVal );
                 nRes1= (*ih).second.getvalue( rVal, nQ );
                 
-                if( (*ih).second.hasnewvalue() && (nu=(*ih).second.getupcon())>=0 && nu<upc.size()) {
+                if( (*ih).second.hasnewvalue() && (nu=(*ih).second.getpubcon())>=0 && nu<upc.size()) {
                     upc[nu]->publish((*ih).second);                        
                 }
+                        
 /*
                 ptm = localtime( (*ih).second.getTS() );
                 if((nCnt%int(1000000l/_param_prc_delay))==0) {
@@ -415,6 +390,14 @@ void* paramProcessing(void *args)
 */
             }
             else if( (*ih).second.taskset() ) (*ih).second.taskprocess();
+
+            if( (*ih).second.m_sub==-2) {
+                if( (nu=(*ih).second.getsubcon())>=0 && nu<upc.size()) {
+                    upc[nu]->subscribe((*ih).second);
+                    (*ih).second.m_sub = nu;
+                }
+                else (*ih).second.m_sub = -1;
+            }
             ++ih;
         }
 //        if((nCnt++%int(1000000l/_param_prc_delay))==0) cout << endl;

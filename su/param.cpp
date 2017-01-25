@@ -149,17 +149,20 @@ int16_t cparam::setvalue() {
 
 int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
 {    
-    std::string line;
-    std::string lineL;                  // line in low register
-    int16_t     nTmp;
-    settings    prop;
-    cmbxchg     *mb = (cmbxchg *)obj;
-    upcon       *up = (upcon *)obj;
-    std::string::size_type found;
+    std::string             line;
+    std::string             lineL;                  // line in low register
+    std::string             lineorig;
+    int16_t                 nTmp;
+    settings                prop;
+    cmbxchg                 *mb = (cmbxchg *)obj;
+    upcon                   *up = (upcon *)obj;
+    std::string::size_type  found;
+    static int16_t          nline;
 
 //    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl<< endl;
     while( std::getline( fstr, line ) ) {
 //        cout << line.c_str() << endl;
+        lineorig = line;
         removeCharsFromString(line, (char *)" \t\r");
         lineL = line;
         std::transform(lineL.begin(), lineL.end(), lineL.begin(), easytolower);
@@ -198,9 +201,24 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                 up->m_id = getnumfromstr(lineL, "connection", "]");
                 parseBuff(fstr, _parse_upcon, (void *)up);
             }
+            else if(lineL.find("display") == 1 && lineL.find("view")) {
+                int32_t num = getnumfromstr(lineL, "view", "]");
+                nline = 0;
+                parseBuff(fstr, _parse_display, (void *)num);
+//                cout << "parse disp 1 " << num << endl;       
+            }
         }
         else if( obj ) {
             switch ( type ) {
+                case _parse_display: {
+                        int32_t ndisp  = int32_t(obj);
+                        std::istringstream iss( lineorig );
+                        std::string sval;
+                        std::getline( iss, sval );
+                        dsp.definedspline( ndisp, ++nline, sval );
+//                        cout << "parse disp 2 " << ndisp << " " << nline << " " << sval << endl;
+                    }
+                    break;
                 case _parse_mbport: 
                 case _parse_upcon: {
                         std::istringstream iss( line );

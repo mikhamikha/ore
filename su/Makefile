@@ -7,7 +7,7 @@ S_SRCS=../libmodbus/src/modbus.c ../libmodbus/src/modbus-tcp.c ../libmodbus/src/
 	   ../mqtt/paho/Clients.c ../mqtt/paho/Heap.c ../mqtt/paho/LinkedList.c ../mqtt/paho/Log.c ../mqtt/paho/Messages.c ../mqtt/paho/MQTTAsync.c ../mqtt/paho/MQTTPacket.c \
 	   ../mqtt/paho/MQTTPacketOut.c ../mqtt/paho/MQTTPersistence.c ../mqtt/paho/MQTTPersistenceDefault.c ../mqtt/paho/MQTTProtocolClient.c ../mqtt/paho/MQTTProtocolOut.c \
 	   ../mqtt/paho/SocketBuffer.c ../mqtt/paho/Socket.c ../mqtt/paho/SSLSocket.c ../mqtt/paho/StackTrace.c ../mqtt/paho/Thread.c ../mqtt/paho/Tree.c ../mqtt/paho/utf-8.c
-G_SRCS=main.cpp utils.cpp param.cpp mbxchg.cpp upcon.cpp ../noritake/src/Noritake_VFD_GU3000.cpp  ../noritake/src/linux_serial.cpp    
+G_SRCS=main.cpp utils.cpp param.cpp mbxchg.cpp upcon.cpp display.cpp ../noritake/src/Noritake_VFD_GU3000.cpp  ../noritake/src/linux_serial.cpp    
 G_OBJS = $(G_SRCS:.cpp=.o) 
 S_OBJS = $(S_SRCS:.c=.o) 
 

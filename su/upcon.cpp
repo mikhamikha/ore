@@ -260,7 +260,7 @@ int16_t upcon::publish(cparam &tag) {
             res = EXIT_SUCCESS;
         }
 
-        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
+//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
         tag.acceptnewvalue();
     }
     return res;

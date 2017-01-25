@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "upcon.h"
 #include "mbxchg.h"
-
+#include "display.h"
 
 using namespace std;
 

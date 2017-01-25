@@ -16,13 +16,18 @@ enum {
     _parse_mbport,
     _parse_mbcmd,
     _parse_ai,
-    _parse_upcon
+    _parse_upcon,
+    _parse_display
 };
 
 inline int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
     string line = in;
     int32_t res=-1;
-    line.erase(0, line.find(st)+st.length()+1);
+//    cout<<"numfromstr"<<in;
+    line.erase(0, line.find(st)+st.length());
+//    cout<<" "<<line;
+    line.erase(line.find(fin));
+//    cout<<" "<<line<<endl;
     if(isdigit(line[0])) res = atoi(line.c_str());
     return res;
 }

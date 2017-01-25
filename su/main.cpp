@@ -42,7 +42,8 @@ int main(int argc, char* argv[])
         }
         nResult = pthread_create(thMBX+i, NULL,  paramProcessing, (void *)NULL);
 
-       
+        dsp.outview(0);
+
 //        cout << "param thread " << i <<endl;
        
 // ----------- terminate block -------------

@@ -180,14 +180,14 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     
     if(rc==0)
     while(cmdi!=cmds.end()) {
-//        cout<<"cmd="<<i<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<"\n";
-//        outtext((*cmdi).ToString());
+//      cout<<"cmd="<<i<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<"\n";
+//      outtext((*cmdi).ToString());
         if( (*cmdi).m_enable && ( (*cmdi).m_first || (*cmdi).m_time.isDone() ) ) {
-            rc=-1;fTook=true;
+            fTook=true;
             if (proto == RTU) {
                 rc = modbus_set_slave(m_ctx, (*cmdi).m_node);
             }    
-            if (rc==0) rc = modbus_connect(m_ctx);
+            rc = modbus_connect(m_ctx);
             if (rc==0) {
                 modbus_get_response_timeout( m_ctx, &old_resp_to_sec, &old_resp_to_usec );
                 modbus_get_byte_timeout( m_ctx, &to_sec, &to_usec );
@@ -239,8 +239,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 outtext((*cmdi).ToString());
 //              fprintf(stderr, "%s\n", modbus_strerror(errno));
             }
-//            pthread_cond_broadcast( &data_ready );
-            pthread_cond_signal( &data_ready );
+//          pthread_cond_broadcast( &data_ready );
+//          pthread_cond_signal( &data_ready );
             pthread_mutex_unlock( &mutex_param );
             modbus_set_byte_timeout( m_ctx, to_sec, to_usec );
             modbus_set_response_timeout( m_ctx, old_resp_to_sec, old_resp_to_usec );

@@ -71,11 +71,34 @@ void connectionLost(void *context, char *cause)
 
 int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
 {
-	printf("Received: %s %.*s", topicName, message->payloadlen, (char*)message->payload);
-	fflush(stdout);
-	MQTTAsync_freeMessage(&message);
+    std::string::size_type  found;
+    std::string             top(topicName, strlen(topicName));
+    std::string             val((char*)message->payload, message->payloadlen);
+    upconnections::iterator ib, ie;
+    int32_t                 rc = EXIT_FAILURE;
+    
+//    cout<<"Received: "<< top <<" value "<< val << endl;
+//    cout.flush();
+
+    ib = upc.begin(); ie = upc.end(); 
+    while( ib != ie ) {
+        if((*ib)->handle() == uint32_t(context)) {
+            std::string sf;
+            if( (*ib)->getproperty("subf", sf) == EXIT_SUCCESS &&
+                  (found=top.find_last_of("/"+sf)) != std::string::npos ) {
+                top.erase(found - sf.length());
+                top.erase( 0, top.find_last_of("/")+1 );
+                taskparam( top, val );
+                rc = EXIT_SUCCESS;
+            }
+            break;
+        }
+        ++ib;
+    }
+
+    MQTTAsync_freeMessage(&message);
 	MQTTAsync_free(topicName);
-    return 1;
+    return rc;
 }
 
 void onPublishFailure(void* context, MQTTAsync_failureData* response)

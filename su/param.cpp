@@ -128,31 +128,23 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
     return res;
 }
 
-        
-int16_t cparam::setvalue(int16_t nIn)
-{
-    m_task = nIn;
-    m_task_go = true;
-    return EXIT_SUCCESS;
-}
-
-int16_t cparam::taskprocess()
-{
-    int16_t res=EXIT_FAILURE;
+int16_t cparam::setvalue() {
+    int16_t rc = EXIT_FAILURE;
     cmbxchg *mb;
     int16_t nOff;
 
-//    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("writedata"));
-    if(getproperty("writedata", nOff)==0) {
+    if(getproperty("writedata", nOff)==EXIT_SUCCESS) {
+/*      std::string s;
+        getproperty("name", s);
+        cout << "setvalue name="<<s<<" val="<<m_task<<endl; */
         mb = (cmbxchg *)p_conn;
-//        nOff=(*ifi).second.ToInt();
         if(nOff<mb->m_maxWriteData) {
             mb->m_pWriteData[nOff] = m_task;
             m_task_go = false; 
-            res=EXIT_SUCCESS;
+            rc = EXIT_SUCCESS;
         }
     }
-    return res;
+    return rc;
 }
 
 int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
@@ -171,7 +163,6 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
         removeCharsFromString(line, (char *)" \t\r");
         lineL = line;
         std::transform(lineL.begin(), lineL.end(), lineL.begin(), easytolower);
-//      cout << "|" << lineL.c_str() << endl;
         if(lineL.length()==0 || lineL[0]=='#') continue;
         if(lineL.find("start",0,5)!=std::string::npos) {
             continue;
@@ -183,35 +174,20 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
             found = lineL.find("modbusport");
             if(found != std::string::npos) {
                 found = lineL.find("commands");
-//              cout << "found = " << found << endl;
                 if (obj && found != std::string::npos) {
-//                  cout << " commands \n";
-//                    line.erase(found);
-//                    line.erase(0, strlen("modbusport")+1);
-//                    if(atoi(line.c_str()) == 
-//                            ((cmbxchg *)obj)->m_id) {
                     if(getnumfromstr(lineL, "modbusport", "commands") == ((cmbxchg *)obj)->m_id) {
                         parseBuff(fstr, _parse_mbcmd, obj);
                     }
                 }
                 else 
                 if (obj && (found=lineL.find("ai")) != std::string::npos){
-//                  cout << " tags \n";
-//                    line.erase(found);
-//                    line.erase(0, strlen("modbusport")+1);
-//                    if(atoi(line.c_str()) == ((cmbxchg *)obj)->m_id) {
                     if(getnumfromstr(lineL, "modbusport", "ai")== ((cmbxchg *)obj)->m_id) {
                         parseBuff(fstr, _parse_ai, obj);
                     }
                 }
                 else {
-//                  cout << " ports \n";
                     mb = new cmbxchg();
-//                    cout << "new conn " << mb << endl;
                     conn.push_back(mb);
-//                    line.erase(0, strlen("modbusport")+1);
-//                    line.erase(line.length()-1);
-//                    mb->m_id = atoi(line.c_str());
                     mb->m_id = getnumfromstr(lineL, "modbusport", "]");
                     parseBuff(fstr, _parse_mbport, (void *)mb);
                 }
@@ -223,61 +199,54 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                 parseBuff(fstr, _parse_upcon, (void *)up);
             }
         }
-        else
-        if(type==_parse_upcon && obj) {
-            std::istringstream iss( line );
-            std::string sTag;
-            std::string sVal;
-            if( std::getline( iss, sTag, '=') ) {
-                std::getline( iss, sVal );
-                up->setproperty<string>( sTag, sVal );
-//                propp.setproperty<string>( sTag, sVal );
-            }
-        }
-        else
-        if(type==_parse_mbport && obj) {
-            std::istringstream iss( line );
-            std::string sTag;
-            std::string sVal;
-            if( std::getline( iss, sTag, '=') ) {
-                std::getline( iss, sVal );
-                mb->setproperty( sTag.c_str(), sVal );
-            }
-        }
-        else
-        if(type==_parse_mbcmd && obj) {
-            std::istringstream iss( line+";" );
-            std::vector<int16_t> result;
-            std::string sVal;
-            while( std::getline( iss, sVal, ';') ) {
-                result.push_back(atoi(sVal.c_str()));
-            }
-            ccmd cmd(result);
-            mb->mbCommandAdd(cmd);
-        }
-        else
-        if(type==_parse_ai && obj) {
-            std::string sVal;
-            std::istringstream iss( line+";" );
-            if(lineL.find("topic") == 0) {
-                while( std::getline( iss, sVal, ';') ) {
-//                  cout << sVal << " | ";
-                    prop.push_back(std::make_pair(sVal, content("")));
-                }
-//                cout << endl;
-            }
-            else {
-                cparam  p;
-                int32_t nI=0;
-                string s;
-                while( std::getline( iss, sVal, ';') ) {
-//                    p.addproperty( prop[nI].first, sVal );
-                    p.setproperty( prop[nI].first, sVal );
-                    nI++;
-                }
-                p.p_conn = obj;
-//                cout << "prop size " << p.getpropertysize() << endl;
-                if(p.getproperty("name", s)==EXIT_SUCCESS) tags.push_back(make_pair(s, p));
+        else if( obj ) {
+            switch ( type ) {
+                case _parse_mbport: 
+                case _parse_upcon: {
+                        std::istringstream iss( line );
+                        std::string sTag;
+                        std::string sVal;
+                        if( std::getline( iss, sTag, '=') ) {
+                            std::getline( iss, sVal );
+                            if( type == _parse_upcon )
+                                up->setproperty( sTag, sVal );
+                            else
+                                mb->setproperty( sTag, sVal );
+                        }
+                    }
+                    break;                   
+                case _parse_mbcmd: {
+                        std::istringstream iss( line+";" );
+                        std::vector<int16_t> result;
+                        std::string sVal;
+                        while( std::getline( iss, sVal, ';') ) {
+                            result.push_back(atoi(sVal.c_str()));
+                        }
+                        ccmd cmd(result);
+                        mb->mbCommandAdd(cmd);
+                    }
+                    break;
+                case _parse_ai: {
+                        std::string sVal;
+                        std::istringstream iss( line+";" );
+                        if(lineL.find("topic") == 0) {
+                            while( std::getline( iss, sVal, ';') ) {
+                                prop.push_back(std::make_pair(sVal, content("")));
+                            }
+                        }
+                        else {
+                            cparam  p;
+                            int32_t nI=0;
+                            string s;
+                            while( std::getline( iss, sVal, ';') ) {
+                                p.setproperty( prop[nI].first, sVal );
+                                nI++;
+                            }
+                            p.p_conn = obj;
+                            if(p.getproperty("name", s)==EXIT_SUCCESS) tags.push_back(make_pair(s, p));
+                        }
+                    }
+                    break;
             }
         }
     }
@@ -298,6 +267,7 @@ int16_t readCfg()
 	std::fstream filestr("map.cfg");
     parseBuff(filestr, _parse_root, (void *)mb);
 
+/*  // print config  
 //    cout << "conn size = " << conn.size() << endl;
     for(i=0; i<conn.size(); i++) {
         mb = conn[i];
@@ -326,23 +296,31 @@ int16_t readCfg()
         }    
     }
     cout << endl;
+*/
     return res;
 }
 
 //
 // task for writing value on parameter name
 //
-int16_t taskparam(std::string na, std::string va)
-{
-    int16_t res=EXIT_FAILURE;
-    int16_t ival;
-    paramlist::iterator ifi = find_if(tags.begin(), tags.end(), compareP<cparam>(na));
-    if( ifi != tags.end() && isdigit(va[0]) ) {
-        std::istringstream(va) >> ival;
-        (*ifi).second.setvalue(ival);
-        res=EXIT_SUCCESS;
+int16_t taskparam(std::string& na, std::string& va) {
+    int16_t rc=EXIT_FAILURE;
+    double  rval;
+    string  val(va);
+    
+//    removeCharsFromString(val, (char *)" \t");
+//    cout<<"taskparam "<<na<<" value "<<val<<endl;
+    if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) {
+        pthread_mutex_lock( &mutex_param );
+        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
+        if( ifi != tags.end() ) {
+            std::istringstream(val) >> rval;
+            ifi->second.settask( rval );
+            rc=EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_param );
     }
-    return res;
+    return rc;
 }
 
 //
@@ -351,18 +329,18 @@ int16_t taskparam(std::string na, std::string va)
 void* paramProcessing(void *args) 
 {
     paramlist::iterator ih, iend;
-    fieldconnections::iterator icn;    
+ //   fieldconnections::iterator icn;    
     int16_t nRes, nRes1, nVal;
     uint8_t nQ;
     double  rVal;
     int32_t nCnt=0;
-//    struct tm * ptm;
+
     cout << "start parameters processing " << args << endl;
+    sleep(1);
 
     while (fParamThreadInitialized) {
-        
         pthread_mutex_lock( &mutex_param );
-        pthread_cond_wait( &data_ready, &mutex_param );// start processing after data receive     
+//        pthread_cond_wait( &data_ready, &mutex_param );// start processing after data receive     
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
@@ -376,20 +354,8 @@ void* paramProcessing(void *args)
                 if( (*ih).second.hasnewvalue() && (nu=(*ih).second.getpubcon())>=0 && nu<upc.size()) {
                     upc[nu]->publish((*ih).second);                        
                 }
-                        
-/*
-                ptm = localtime( (*ih).second.getTS() );
-                if((nCnt%int(1000000l/_param_prc_delay))==0) {
-                    std::stringstream out;
-                    string s; int16_t r=(*ih).second.getproperty("name", s);
-                    out<<setfill(' ')<<setw(8)<<s<<" = "<< \
-                    setfill(' ') << setw(7) << nVal << " | " << setfill(' ') << setw(8) << \
-                    fixed << setprecision(3) << rVal << " | 0x" << hex << int16_t(nQ);
-                    outtext(out.str());
-                }
-*/
             }
-            else if( (*ih).second.taskset() ) (*ih).second.taskprocess();
+            else if( (*ih).second.taskset() ) (*ih).second.setvalue();
 
             if( (*ih).second.m_sub==-2) {
                 if( (nu=(*ih).second.getsubcon())>=0 && nu<upc.size()) {
@@ -400,7 +366,6 @@ void* paramProcessing(void *args)
             }
             ++ih;
         }
-//        if((nCnt++%int(1000000l/_param_prc_delay))==0) cout << endl;
         
         pthread_mutex_unlock( &mutex_param );
         usleep(_param_prc_delay);

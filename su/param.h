@@ -23,12 +23,10 @@ inline int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
     string line = in;
     int32_t res=-1;
     line.erase(0, line.find(st)+st.length()+1);
-//    line.erase(line.find(fin));
     if(isdigit(line[0])) res = atoi(line.c_str());
     return res;
 }
 
-//typedef std::vector<std::pair<std::string, content> > fields; 
 
 // интерфейс класса
 // объявление класса Параметр
@@ -40,7 +38,6 @@ protected: 				// спецификатор доступа protected
     timespec		m_ts;
     timespec		m_oldts;
     double			m_rvalue;
-//    settings        m_prop;             // tag fields
     int16_t         m_task;             // task to out
     bool            m_task_go;          // flag 4 task to out
     int16_t         m_raw;              // raw value from module
@@ -79,15 +76,19 @@ public: 				// спецификатор доступа public
 	std::string	name;
     int16_t     m_sub;    
     void		*p_conn;	
-	void 		setValue();
     void 		getValue(); 				//                     
     time_t*     getTS() {
         return &(m_ts.tv_sec);
     }
     int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
     int16_t getvalue(double &rOut, uint8_t &nQual);             // get value in EU
-    int16_t setvalue(int16_t nIn);                              // set value 
-    int16_t taskprocess();                                      // write tasks to modbus writedata area
+    int16_t setvalue();                                         // write tasks to modbus writedata area 
+    int16_t settask(double rin) {
+        // !!! Сделать преобразование шкал !!!
+        m_task    = rin;
+        m_task_go = true;    
+    }
+
     bool    taskset() { return m_task_go; }
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }
@@ -98,7 +99,7 @@ public: 				// спецификатор доступа public
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
-int16_t taskparam(std::string, std::string);
+int16_t taskparam(std::string&, std::string&);
 typedef std::vector<std::pair<std::string, cparam> > paramlist;
 
 extern paramlist tags;

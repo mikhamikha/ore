@@ -60,16 +60,16 @@ class upcon: public cproperties {
         
     public:
         int32_t m_id; 
-       
         upcon();
         ~upcon();
         int16_t connect();                                   // connect to broker
         int16_t disconnect();
         int16_t publish(cparam &);
         int16_t subscribe(cparam &);
-        int16_t pubdataproc();              // publication of data from buffer
+        int16_t pubdataproc();                              // publication of data from buffer
         int16_t getstatus() { return m_status; };
         int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
+        uint32_t handle() { return uint32_t(m_client); } 
 };
 
 typedef std::vector< upcon * > upconnections;

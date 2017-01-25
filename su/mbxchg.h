@@ -52,7 +52,6 @@ class ccmd {
 };
 
 const char _parities[] = {'N','O','E'};
-//typedef std::vector<std::pair<std::string, content> > portsettings;
 typedef std::vector<ccmd> mbcommands;
 
 //

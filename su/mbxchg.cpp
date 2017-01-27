@@ -194,16 +194,20 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 modbus_set_response_timeout( m_ctx, 0, 1000*resp );
                 modbus_set_byte_timeout( m_ctx, 0, 10000);
                 pthread_mutex_lock( &mutex_param );
-                switch((*cmdi).m_func) {                // modbus commands queue processing
-                    case 0x03: 
-                        rc = modbus_read_registers( \
+                switch(cmdi->m_func) {                // modbus commands queue processing
+                    case 3: 
+                    case 103: 
+                       rc = modbus_read_registers( \
                                 m_ctx,              \
                                 (*cmdi).m_devAddr,  \
                                 (*cmdi).m_count,    \
                                 (uint16_t *)m_pReadData+(*cmdi).m_intAddress    \
                                 ); 
+                        if(cmdi->m_func==103) {
+                            modbus_write_register(m_ctx, (*cmdi).m_devAddr, 0);    
+                        }
                         break;
-                    case 0x04: 
+                    case 4: 
                         rc = modbus_read_input_registers(   \
                                 m_ctx,                      \
                                 (*cmdi).m_devAddr,          \
@@ -211,7 +215,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 (uint16_t *)m_pReadData+(*cmdi).m_intAddress    \
                                 );
                         break;
-                    case 0x05:
+                    case 5:
                         // write bit if enable==1 or (2 and new<>old)
 //                        cout<<(*cmdi).m_enable<<" "<<m_pWriteData[(*cmdi).m_intAddress]<<" " \
                             <<m_pLastWriteData[(*cmdi).m_intAddress]<<endl;
@@ -237,7 +241,6 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 (*cmdi).m_err.second  = modbus_strerror(errno);
                 m_pReadData[erroff+i] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
                 outtext((*cmdi).ToString());
-//              fprintf(stderr, "%s\n", modbus_strerror(errno));
             }
 //          pthread_cond_broadcast( &data_ready );
 //          pthread_cond_signal( &data_ready );

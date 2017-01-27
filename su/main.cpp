@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
         cout << "readCFG OK!" << endl;
-        thMBX = new pthread_t[conn.size() + upc.size() + 1]; 
+        thMBX = new pthread_t[conn.size() + upc.size() + 2]; 
         fieldconnections::iterator coni;
         fParamThreadInitialized=1;
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
@@ -40,10 +40,10 @@ int main(int argc, char* argv[])
             }            
             ++i;
         }
-        nResult = pthread_create(thMBX+i, NULL,  paramProcessing, (void *)NULL);
-
-        dsp.outview(0);
-
+        nResult = pthread_create(thMBX+i++, NULL,  paramProcessing, (void *)NULL);
+        nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
+        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",'А', 'Я', 'Ё', 'а', 'п', 'р', 'я', 'ё');
+        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",wchar_t(L'А'), wchar_t(L'Я'), wchar_t(L'Ё'), wchar_t(L'а'), wchar_t(L'п'), wchar_t(L'р'), wchar_t(L'я'), wchar_t(L'ё'));
 //        cout << "param thread " << i <<endl;
        
 // ----------- terminate block -------------
@@ -85,8 +85,9 @@ int main(int argc, char* argv[])
         
         cout << "end param thread " << i <<endl;
         fParamThreadInitialized=0;
+        pthread_join(thMBX[i--], NULL);
         pthread_join(thMBX[i], NULL);
-
+        
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
             (*coni)->terminate();
             pthread_join(thMBX[i], NULL);

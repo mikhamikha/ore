@@ -2,7 +2,7 @@ SS = arm-9tdmi-linux-gnueabi-gcc
 GG = arm-9tdmi-linux-gnueabi-g++
 TARGET = bu
 PREFIX ?= /usr/local
-S_FLAGS = -I ../libmodbus/src/ -I ../libmodbus/ -I ../mqtt/paho -I ../noritake/src -pthread -D_REENTRANT
+S_FLAGS = -I ../libmodbus/src/ -I ../libmodbus/ -I ../mqtt/paho -I ../noritake/src -pthread -D_REENTRANT 
 S_SRCS=../libmodbus/src/modbus.c ../libmodbus/src/modbus-tcp.c ../libmodbus/src/modbus-rtu.c ../libmodbus/src/modbus-data.c \
 	   ../mqtt/paho/Clients.c ../mqtt/paho/Heap.c ../mqtt/paho/LinkedList.c ../mqtt/paho/Log.c ../mqtt/paho/Messages.c ../mqtt/paho/MQTTAsync.c ../mqtt/paho/MQTTPacket.c \
 	   ../mqtt/paho/MQTTPacketOut.c ../mqtt/paho/MQTTPersistence.c ../mqtt/paho/MQTTPersistenceDefault.c ../mqtt/paho/MQTTProtocolClient.c ../mqtt/paho/MQTTProtocolOut.c \

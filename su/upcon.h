@@ -10,9 +10,10 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include "main.h"
+#include "param.h"
 #include "utils.h"
-
+#include "main.h"
+#include <algorithm>
 #include <signal.h>
 #include <memory.h>
 

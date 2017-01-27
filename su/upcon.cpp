@@ -77,25 +77,20 @@ int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_m
     upconnections::iterator ib, ie;
     int32_t                 rc = EXIT_FAILURE;
     
-//    cout<<"Received: "<< top <<" value "<< val << endl;
-//    cout.flush();
-
+//    cout<<"Received: "<< top <<" value "<< val << " set ";
+    
     ib = upc.begin(); ie = upc.end(); 
+       
     while( ib != ie ) {
         if((*ib)->handle() == uint32_t(context)) {
-            std::string sf;
-            if( (*ib)->getproperty("subf", sf) == EXIT_SUCCESS &&
-                  (found=top.find_last_of("/"+sf)) != std::string::npos ) {
-                top.erase(found - sf.length());
-                top.erase( 0, top.find_last_of("/")+1 );
-                taskparam( top, val );
-                rc = EXIT_SUCCESS;
-            }
+            taskparam( top, val );
             break;
         }
         ++ib;
     }
-
+    
+//    cout<<endl;
+    
     MQTTAsync_freeMessage(&message);
 	MQTTAsync_free(topicName);
     return rc;
@@ -213,17 +208,28 @@ int16_t upcon::subscribe(cparam &tag) {
         cout << "cfg: prop not found" << endl; 
     }
     else {
-        topic = topic+"/"+name+"/"+sf;
-        ropts.onSuccess = onSubscribe;
-        ropts.onFailure = onSubscribeFailure;
-        ropts.context   = m_client;
-        if ((rc = MQTTAsync_subscribe(m_client, topic.c_str(), 2, &ropts)) != MQTTASYNC_SUCCESS)
-        {
-            printf("Failed to start subscribe, return code %d\n", rc);
+        vector<string>  subtop;
+        string          sztop;
+        strsplit(sf, ';', subtop);                      // get fields for subscribe
+        while(subtop.size()) {
+            sf = subtop.back();
+            subtop.pop_back();
+            tag.setproperty( sf, double(0) );           // add subscribing fields to tag properties
+//            if(subtop.size()==1) {                      // subscribe for all fields of tag
+//                sztop = topic+"/"+name+"/#";;
+                sztop = topic+"/"+name+"/"+sf;
+                ropts.onSuccess = onSubscribe;
+                ropts.onFailure = onSubscribeFailure;
+                ropts.context   = m_client;
+                if ((rc = MQTTAsync_subscribe(m_client, sztop.c_str(), 1, &ropts)) != MQTTASYNC_SUCCESS)
+                {
+                    printf("Failed to start subscribe, return code %d\n", rc);
+                }
+                cout<<"Subscribe "<<sztop<<" rc="<<rc<<endl;
+//            }
         }
     }
     
-    cout<<"Subscribe "<<topic<<" rc="<<rc<<endl;;
     return rc;
 }
 
@@ -251,9 +257,9 @@ int16_t upcon::publish(cparam &tag) {
     }
     else {
         ts = time2string(sec)+"."+to_string(msec);        
-        sf=replaceString(sf, "value", val);
-        sf=replaceString(sf, "quality", kval);
-        sf=replaceString(sf, "timestamp", ts);
+        replaceString(sf, "value", val);
+        replaceString(sf, "quality", kval);
+        replaceString(sf, "timestamp", ts);
 
         if(pubs.size()<_pub_buf_max) {
             pubs.push_back(make_pair(topic+"/"+name, sf));

@@ -34,8 +34,10 @@ char easytoupper(char in);
 char easytolower(char in);
 void removeCharsFromString( string &str, char* charsToRemove );
 string time2string( time_t rawtime );
-string replaceString(string subject, const string& search, const string& replace);
+int16_t replaceString(string& subject, const string& search, const string& replace);
 void setDT();
+int32_t getnumfromstr(std::string in, std::string st, std::string fin);
+int16_t strsplit(string& s, char delim, vector<string>& vec);
 
 struct cton {
     timespec    m_start;        // timer start

@@ -42,14 +42,21 @@ int16_t cparam::getraw(int16_t &nOut)
     int16_t res=EXIT_FAILURE;
     cmbxchg *mb;
     int16_t nOff;
+    string  sOff;
+    vector<string> vc;
 
-//    settings::iterator ifi = find_if(m_prop.begin(), m_prop.end(), compareP<content>("readdata"));
-    if(getproperty("readdata", nOff)==0) {
+    if(getproperty("readdata", sOff)==0) {
         mb = (cmbxchg *)p_conn;
+        strsplit(sOff, '.', vc);
+        nOff = atoi(vc[0].c_str());
         if(nOff<mb->m_maxReadData) {
             m_raw = mb->m_pReadData[nOff];
-            setproperty("raw", m_raw);
+            if( vc.size() > 1) {
+                int16_t bit = atoi(vc[1].c_str());
+                m_raw = (m_raw & ( 1 << bit )) != 0;
+            }
             nOut = m_raw;
+            setproperty("raw", m_raw);
             res=EXIT_SUCCESS;
         }
     }
@@ -62,7 +69,6 @@ int16_t cparam::getraw(int16_t &nOut)
 //
 int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
 {
-    int16_t     res=EXIT_FAILURE;
     cmbxchg     *mb = (cmbxchg *)p_conn;
     int16_t     nVal;
     double      rVal;
@@ -71,7 +77,9 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
     int64_t     nctt;
     int64_t     nD;
     int64_t     nodt;             // time on previous step
-    int16_t     rc;
+    int16_t     rc=EXIT_FAILURE;
+    double      rsim_en = 0, rsim_v;
+
 
     clock_gettime(CLOCK_MONOTONIC,&tv);
     tv.tv_sec += dT;
@@ -79,53 +87,66 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
     nodt = m_ts.tv_sec*_million + m_ts.tv_nsec/1000;
     nD = abs(nctt-nodt);
 //   cout << nodt << " | " << nctt << " | " << nD << endl; 
-    if((res = getraw(nVal))==EXIT_SUCCESS) {
+    
+    if( (rc = getproperty("simen", rsim_en) | \
+            getproperty("simva", rsim_v)) == EXIT_SUCCESS && rsim_en != 0 ) { // simulation mode switched ON 
+        rVal  = rsim_v;
+        rOut  = rsim_v;
+        nQual = OPC_QUALITY_GOOD;
+        rc = EXIT_SUCCESS;
+    }
+    else  
+        rc = getraw(nVal);
+
+    if( rc==EXIT_SUCCESS ) {
         double  lraw, hraw, leng, heng;
         int16_t isbool, nstep;
         double  dead=0;
-        res = getproperty("minraw", lraw)   \
-            | getproperty("maxraw", hraw)   \
-            | getproperty("mineng", leng)   \
-            | getproperty("maxeng", heng)   \
-            | getproperty("flttime", nTime) \
-            | getproperty("isbool", isbool) \
-            | getproperty("hihi", nstep);
-        if(res == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
-            rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
-            nTime = nTime*1000;
-            rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-            if(isbool) rVal = (rVal>nstep);                         // if it is a discret parameter
-            rOut = rVal;                                            // current value
+        if( rsim_en == 0 ) {                                      // simulation mode switched OFF
+            rc = getproperty("minraw", lraw)   \
+                | getproperty("maxraw", hraw)   \
+                | getproperty("mineng", leng)   \
+                | getproperty("maxeng", heng)   \
+                | getproperty("flttime", nTime) \
+                | getproperty("isbool", isbool) \
+                | getproperty("hihi", nstep);
+            if(rc == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
+                rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
+                nTime = nTime*1000;
+                rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
+                if(isbool) rVal = (rVal>nstep);                         // if it is a discret parameter
+                rOut = rVal;                                            // current value
 
-            int16_t nPortErrOff, nErrOff;
-            mb->getproperty("commanderror", nPortErrOff);
+                int16_t nPortErrOff, nErrOff;
+                mb->getproperty("commanderror", nPortErrOff);
 
-            if (getproperty("ErrPtr", nErrOff)==EXIT_SUCCESS) {     // read errors of read modbus operations
-                nErrOff += nPortErrOff;
-                if(nErrOff<mb->m_maxReadData) {
-                    nQual = (mb->m_pReadData[nErrOff])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
+                if (getproperty("ErrPtr", nErrOff)==EXIT_SUCCESS) {     // read errors of read modbus operations
+                    nErrOff += nPortErrOff;
+                    if(nErrOff<mb->m_maxReadData) {
+                        nQual = (mb->m_pReadData[nErrOff])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
+                    }
                 }
             }
-            
-            // save value if it (or quality) was changes
-            if((rc=getproperty("deadband", dead))==EXIT_FAILURE ||
-                   fabs(rVal-m_rvalue)>dead || m_quality!=nQual || nD>60*_million) {
-                m_rvalue = rVal;
-                m_ts.tv_sec = tv.tv_sec;
-                m_ts.tv_nsec = tv.tv_nsec;
-                m_valueupdated = true;
-                m_quality = nQual;
-                setproperty("value", rVal);
-                setproperty("quality", nQual);
-                setproperty("sec",  int32_t(tv.tv_sec));
-                setproperty("msec", int32_t(tv.tv_nsec/_million));
-//                cout << getproperty("name")->_s<<" |v "<< getproperty("value")->ToString()<<" |v "<<m_rvalue<< \
-                    " |d "<<dead<<" |ds "<<getproperty("dead")->_s<< " |dt "<< getproperty("dead")->_t<< \
-                    " |q "<<int(nQual)<<" |q "<<int(m_quality)<<" |dt "<<nD/_million<<endl;
-            } 
         }
-    }
-    return res;
+        // save value if it (or quality) was changes
+        if(getproperty("deadband", dead) == EXIT_FAILURE ||
+               fabs(rVal-m_rvalue)>dead || m_quality!=nQual || nD>60*_million) {
+            m_rvalue = rVal;
+            m_ts.tv_sec = tv.tv_sec;
+            m_ts.tv_nsec = tv.tv_nsec;
+            m_valueupdated = true;
+            m_quality = nQual;
+            setproperty("value", rVal);
+            setproperty("quality", nQual);
+            setproperty("sec",  int32_t(tv.tv_sec));
+            setproperty("msec", int32_t(tv.tv_nsec/_million));
+//                cout << getproperty("name")->_s<<" |v "<< getproperty("value")->ToString()<<" |v "<<m_rvalue<< \
+                " |d "<<dead<<" |ds "<<getproperty("dead")->_s<< " |dt "<< getproperty("dead")->_t<< \
+                " |q "<<int(nQual)<<" |q "<<int(m_quality)<<" |dt "<<nD/_million<<endl;
+        } 
+    }    
+    
+    return rc;
 }
 
 int16_t cparam::setvalue() {
@@ -157,7 +178,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
     cmbxchg                 *mb = (cmbxchg *)obj;
     upcon                   *up = (upcon *)obj;
     std::string::size_type  found;
-    static int16_t          nline;
+    int16_t                 nline;
 
 //    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl<< endl;
     while( std::getline( fstr, line ) ) {
@@ -212,11 +233,16 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
             switch ( type ) {
                 case _parse_display: {
                         int32_t ndisp  = int32_t(obj);
-                        std::istringstream iss( lineorig );
                         std::string sval;
-                        std::getline( iss, sval );
-                        dsp.definedspline( ndisp, ++nline, sval );
+                        std::istringstream iss( lineorig );
+
+                        if( std::getline( iss, sval, ';') ) {
+                            removeCharsFromString(sval, (char*)(" "));
+                            nline = atoi( sval.c_str() );
+                            std::getline( iss, sval );
+                            dsp.definedspline( ndisp, nline, sval );
 //                        cout << "parse disp 2 " << ndisp << " " << nline << " " << sval << endl;
+                        }
                     }
                     break;
                 case _parse_mbport: 
@@ -319,21 +345,76 @@ int16_t readCfg()
 }
 
 //
+// ask value parameter by it name
+//
+int16_t getparam(std::string& na, std::string& va) {
+    int16_t     rc=EXIT_FAILURE;
+    double      rval;
+    uint8_t     kval;
+    
+        pthread_mutex_lock( &mutex_param );
+        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
+        if( ifi != tags.end() ) {
+            ifi->second.getvalue( rval, kval );
+            va = to_string(rval);
+            if(kval!=OPC_QUALITY_GOOD) va += " bad";
+            rc=EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_param );
+
+    return rc;
+}
+
+//
 // task for writing value on parameter name
 //
-int16_t taskparam(std::string& na, std::string& va) {
+int16_t taskparam( std::string& na, std::string& fi, std::string& va ) {
     int16_t rc=EXIT_FAILURE;
     double  rval;
     string  val(va);
     
-//    removeCharsFromString(val, (char *)" \t");
-//    cout<<"taskparam "<<na<<" value "<<val<<endl;
+    removeCharsFromString(val, (char *)" \t\n");
+    cout<<"taskparam "<<na<<" field "<<fi<<" value "<<val<<endl;
     if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) {
         pthread_mutex_lock( &mutex_param );
         paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
         if( ifi != tags.end() ) {
             std::istringstream(val) >> rval;
-            ifi->second.settask( rval );
+            if( fi.find("task") != std::string::npos ) ifi->second.settask( rval );
+            else ifi->second.setproperty(fi, rval);
+            rc=EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_param );
+    }
+    return rc;
+}
+
+//
+// task for writing value on parameter full name 
+//
+int16_t taskparam( std::string& na, std::string& va ) {
+    int16_t rc=EXIT_FAILURE;
+    double  rval;
+    string  val(va);
+    
+    removeCharsFromString(val, (char *)" \t\n");
+    cout<<"taskparam "<<na<<" value "<<val;
+            
+    std::vector<string> vc;
+    std::string stag, sf;
+    strsplit( na, '/', vc);
+    if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1]))  
+            && vc.size() > 3 ) {
+        sf   = vc.back(); vc.pop_back();
+        stag = vc.back(); vc.pop_back();
+        cout<<" name "<<stag<<" field "<<sf<< " value "<<val<<" size "<<val.size()<<endl;
+            
+        pthread_mutex_lock( &mutex_param );
+        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(stag) );
+        if( ifi != tags.end() ) {
+            std::istringstream(val) >> rval;
+            if( sf.find("task") != std::string::npos ) ifi->second.settask( rval );
+            else ifi->second.setproperty(sf, rval);
             rc=EXIT_SUCCESS;
         }
         pthread_mutex_unlock( &mutex_param );
@@ -386,6 +467,7 @@ void* paramProcessing(void *args)
         }
         
         pthread_mutex_unlock( &mutex_param );
+//        if(nCnt++%100 == 0) dsp.outview(1);
         usleep(_param_prc_delay);
     }     
     

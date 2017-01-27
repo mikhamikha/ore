@@ -8,7 +8,7 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
-
+#include "main.h"
 #include "utils.h" 
 
 enum {
@@ -19,18 +19,6 @@ enum {
     _parse_upcon,
     _parse_display
 };
-
-inline int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
-    string line = in;
-    int32_t res=-1;
-//    cout<<"numfromstr"<<in;
-    line.erase(0, line.find(st)+st.length());
-//    cout<<" "<<line;
-    line.erase(line.find(fin));
-//    cout<<" "<<line<<endl;
-    if(isdigit(line[0])) res = atoi(line.c_str());
-    return res;
-}
 
 
 // интерфейс класса
@@ -104,7 +92,9 @@ public: 				// спецификатор доступа public
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
-int16_t taskparam(std::string&, std::string&);
+int16_t taskparam( std::string&, std::string&, std::string& );
+int16_t taskparam( std::string&, std::string& );
+int16_t getparam( std::string&, std::string& );
 typedef std::vector<std::pair<std::string, cparam> > paramlist;
 
 extern paramlist tags;

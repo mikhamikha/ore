@@ -217,20 +217,56 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                         break;
                     case 5:
                         // write bit if enable==1 or (2 and new<>old)
-//                        cout<<(*cmdi).m_enable<<" "<<m_pWriteData[(*cmdi).m_intAddress]<<" " \
-                            <<m_pLastWriteData[(*cmdi).m_intAddress]<<endl;
                         if( (*cmdi).m_first || fLast || (*cmdi).m_enable==1 ||    \
                             m_pWriteData[(*cmdi).m_intAddress]!=m_pLastWriteData[(*cmdi).m_intAddress] ) {
-//                          outtext((*cmdi).ToString());
                             rc = modbus_write_bit(      \
                                     m_ctx,              \
                                     (*cmdi).m_devAddr,  \
-                                    fLast?0:m_pWriteData[(*cmdi).m_intAddress]   \
+                                    fLast? 0: m_pWriteData[(*cmdi).m_intAddress]   \
                                     );
-//                            cout << "rc write = "<<rc<<" | last "<<m_pLastWriteData[(*cmdi).m_intAddress]<< \
-                                    " | new "<<m_pWriteData[(*cmdi).m_intAddress]<<endl;
                             if(rc==1)
                                 m_pLastWriteData[(*cmdi).m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
+                        } 
+                        else fTook=false;
+                        break;
+
+                    case 15:
+                        // write bit if enable==1 or (2 and new<>old)
+                        if( cmdi->m_first || fLast || cmdi->m_enable==1 ||    \
+                            !memcmp(m_pWriteData+(*cmdi).m_intAddress, \
+                                m_pLastWriteData+(*cmdi).m_intAddress, (*cmdi).m_count*2) ) {
+
+                            uint8_t *tab_value = new uint8_t[cmdi->m_count];
+                            for(int16_t j=0;j<cmdi->m_count;j++) 
+                                tab_value[j] = fLast? 0: m_pWriteData[cmdi->m_intAddress+j];
+                            rc = modbus_write_bits(     \
+                                    m_ctx,              \
+                                    cmdi->m_devAddr,    \
+                                    cmdi->m_count,      \
+                                    tab_value           \
+                                    );
+                            delete []tab_value;
+                            if(rc==1)
+                                memcpy(m_pLastWriteData+cmdi->m_intAddress, \
+                                        m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                                    
+                        } 
+                        else fTook=false;
+                        break;
+
+                    case 16:
+                        // write if enable==1 or (2 and new<>old)
+                        if( (*cmdi).m_first || (*cmdi).m_enable==1 ||    \
+                            !memcmp(m_pWriteData+(*cmdi).m_intAddress, \
+                                m_pLastWriteData+(*cmdi).m_intAddress, (*cmdi).m_count*2) ) {
+                            rc = modbus_write_registers(    \
+                                    m_ctx,                  \
+                                    cmdi->m_devAddr,      \
+                                    cmdi->m_count,        \
+                                    (uint16_t *)m_pWriteData+cmdi->m_intAddress   \
+                                    );
+                            if(rc==1)
+                                memcpy(m_pLastWriteData+cmdi->m_intAddress, \
+                                        m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                    
                         } 
                         else fTook=false;
                         break;
@@ -252,11 +288,9 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 int t;
                 t = ((*cmdi).m_pollInt > 0) ? (*cmdi).m_pollInt : mincmddel;
                 (*cmdi).m_time.start( (t>0) ? t : 1);   // then set normal poll interval in ms
-//                cout << "OK\n";
             }
             else {                                      // if read/write no good
                 (*cmdi).m_time.start( (errdel > 0) ? errdel : 10000 ); // then set ErrorDelayCntr in ms  
-//                cout << "no OK\n";
             }
             (*cmdi).m_first = false;
         }

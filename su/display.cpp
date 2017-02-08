@@ -1,4 +1,5 @@
-#include "display.h"
+//#include "display.h"
+#include "main.h"
 
 using namespace std;
 
@@ -66,47 +67,53 @@ void view::to_866(string& sin, string& sout) {
     sout = s;
 }
 
-void view::print( string& sin ) {
+void view::println( string& sin ) {
     string buf, son("{"), soff("}");
+    char    buff[100];
+    int16_t len;
+
     to_866( sin, buf );
-    assignValues(buf, son, soff);
+    assignValues(buf, son, soff, buff, len);
+//    assignValues(buf, son, soff);
 //    cout<<buf<<endl;
-    Noritake_VFD_GU3000::println(buf.c_str());
+//    Noritake_VFD_GU3000::println(buf.c_str());
+    
+    Noritake_VFD_GU3000::println( buff, len );
 }
 
 //
-// функция вывода сконфигурированного кадра на дисплей
+// функция замены тэгов в строках {tag} на их значения
 //
-void view::outview(int16_t ndisp) {
-    int16_t     nd = (ndisp>0)? ndisp-1: 0;
-    int16_t     nr;
-    pagestruct  &pg = pages[nd];
-    
-//    cout<<"outview( "<<ndisp<<" ) pages "<<pages.size()<<" rows "<<pg.rows.size()<<endl;
+int16_t assignValues(string& subject, const string& sop, const string& scl, char* buf, int16_t& len ) {
+    size_t      nbe = 0, nen = 0, oldp = 0;
+    int16_t     rc=EXIT_SUCCESS;
+    bool        fgo = true;
+    int16_t     pos=0;
 
-//    GU3000_clearScreen();
-//    GU3000_setCursor( 0, 0 );
-    for(nr = 0; nr < pg.rows.size(); ++nr) {
-        string sout;
-        (!nr)?GU3000_boldOn():GU3000_boldOff();
-//        cout<<pg.rows[nr].c_str()<<endl;
-        sout = pg.rows[nr];
-        sout.append( 10u, ' ' );
-        GU3000_setCursor( 0, nr*11 );
-        print(sout);
-//        GU3000_clearLineEnd();
+//    cout<<subject<<" "<<subject.length()<<endl;
+    while(fgo) {
+        nbe = subject.find(sop, nen); 
+        fgo = (nbe != std::string::npos);
+        if( fgo && (nen = subject.find(scl, nbe)) != std::string::npos ) {
+                string na(subject, nbe+1, nen-nbe-1);
+                string va;
+//                cout<<" beg="<<nbe<<" end="<<nen<<" tag="<<na<<" | ";
+                if(getparam( na, va ) == EXIT_SUCCESS) {
+                    memcpy( buf+pos, string(subject, oldp, nbe-oldp).c_str(), nbe-oldp );
+                    oldp = nen;
+                    pos += (nbe-oldp);
+                    memcpy( buf+pos, _bold_on, _cmd_len );
+                    memcpy( buf+pos+_cmd_len, va.c_str(), va.length() );
+                    memcpy( buf+pos+_cmd_len+va.length(), _bold_off, _cmd_len );
+                    pos += (_cmd_len*2+va.length());
+                }
+        }
+        else fgo =false;
+//        cout<<fgo<<" "<<subject<<" "<<subject.length()<<endl;
     }
+    len = pos;
 //    cout<<endl;
-
-/*    int16_t i,j,k;
-    
-   k=0;
-    for(i=0; i<8; i++)
-    for(j=0; j<32; j++) {
-        GU3000_setCursor(j*8, i*17);
-        print(k++);
-    } 
-*/
+    return rc;
 }
 
 //
@@ -138,14 +145,101 @@ int16_t assignValues(string& subject, const string& sop, const string& scl) {
 }
 
 //
-// поток выдачи изображения на дисплей 
+// функция вывода сконфигурированного кадра на дисплей
 //
-void* viewProcessing(void *args) 
-{
+void view::outview(int16_t ndisp=0) {
+    int16_t     nd = (ndisp>0)? ndisp-1: m_curpage;
+    int16_t     nr;
+    pagestruct  &pg = pages[nd];
+    int16_t     nfont;
+    
+    string sfont("font");
+    getproperty( nd, sfont, nfont );
+    for(nr = 0; nr < pg.rows.size(); ++nr) {
+        string sout;
+        if(!nr) {
+            GU3000_setFontSize(_6x8Format,1,1);
+            GU3000_boldOn();
+        }
+        else {
+            GU3000_setFontSize( (nfont==2)? _6x8Format: _8x16Format, 1, 1 );
+            GU3000_boldOff();
+        }
+        sout = pg.rows[nr];
+        sout.append( 10u, ' ' );
+        GU3000_setCursor( 0, nr*11 );
+        if( nr == pg.rowget() ) Noritake_VFD_GU3000::print( _invert_on );
+        println( sout );
+        if( nr == pg.rowget() ) Noritake_VFD_GU3000::print( _invert_off );
+    }
+}
+
+//
+// поток обработки консоли 
+//
+void* viewProcessing(void *args) {
+    
+    dsp.setMaxPage( dsp.pages.size() );
+
     while (fParamThreadInitialized) {
-        dsp.outview(1);
+        dsp.keymanage();
+        dsp.outview( dsp.curview() );
         usleep(100000);
     }
-    
     return EXIT_SUCCESS;
 }
+
+void view::keymanage() {
+    std::string stag; 
+    double      rval;
+    int16_t     nqu;
+    time_t      tts;
+    static bool binit = false;
+    std::string btns[]  = { "HS01", "HS02", "HS03", "HS04", "HS05", "HS06" };
+    bool        bbtn[]  = { false, false, false, false, false, false, false, false };
+    pagestruct  &pg = pages[m_cur];
+    
+    for(int j=0; j<sizeof(btns); j++) {         // read buttons states on front panel of box
+        getparam( btns[j], rval, nqu, &tts );
+        bbtn[j] = (rval != 0);
+    }
+    memcpy( (void*)&m_btn, bbtn, sizeof(m_btn) );
+    // processing buttons according to the display mode
+    switch(m_mode) {
+        case _view_mode:
+            if(m_btn.esc) {
+                m_visible = !m_visible;
+                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
+            }
+            if(m_btn.left) {            
+                pageBack();
+            }
+            if(m_btn.right) {            
+                pageNext();
+            }
+            if(m_btn.down) {            
+                pg.rownext();
+            }  
+            if(m_btn.up) {            
+                pg.rowprev();
+            }                    
+            if(m_btn.enter) {            
+                gotoDetailPage();
+            }                    
+            break;
+    }
+}
+
+void view::gotoDetailPage() {
+    int16_t     np;
+
+    pg = pages[m_curpage];
+    definedspline( m_maxpage+1, 0, pg.rows[0]  );   
+    definedspline( m_maxpage+1, 1, pg.rows[1]  );   
+    definedspline( m_maxpage+1, 2, getTagName(pg.rows[m_currow]) );   
+    definedspline( m_maxpage+1, 3, buildOutStr( "Значение ", pg.rows[m_currow] );
+    definedspline( m_maxpage+1, 4, buildInStr ( "Задание ", pg.rows[m_currow] );
+    definedspline( m_maxpage+1, 5, "[Esc]     [ < ]     [ > ]" );   
+    m_mode = _task_mode;
+}
+

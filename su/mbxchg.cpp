@@ -195,6 +195,15 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 modbus_set_byte_timeout( m_ctx, 0, 10000);
                 pthread_mutex_lock( &mutex_param );
                 switch(cmdi->m_func) {                // modbus commands queue processing
+                    case 1: 
+                        {
+                            uint8_t *tab_value = new uint8_t[cmdi->m_count];
+                            rc = modbus_read_bits( m_ctx, cmdi->m_devAddr, cmdi->m_count, tab_value );
+                            for(int16_t j=0; j<cmdi->m_count; j++) m_pWriteData[cmdi->m_intAddress+j] = tab_value[j];
+                            delete []tab_value;
+                        }
+                        break;
+
                     case 3: 
                     case 103: 
                        rc = modbus_read_registers( \
@@ -207,6 +216,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                             modbus_write_register(m_ctx, (*cmdi).m_devAddr, 0);    
                         }
                         break;
+
                     case 4: 
                         rc = modbus_read_input_registers(   \
                                 m_ctx,                      \
@@ -215,6 +225,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 (uint16_t *)m_pReadData+(*cmdi).m_intAddress    \
                                 );
                         break;
+
                     case 5:
                         // write bit if enable==1 or (2 and new<>old)
                         if( (*cmdi).m_first || fLast || (*cmdi).m_enable==1 ||    \

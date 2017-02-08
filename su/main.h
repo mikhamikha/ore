@@ -12,6 +12,7 @@
 #include "upcon.h"
 #include "mbxchg.h"
 #include "display.h"
+#include "algo.h"
 
 using namespace std;
 

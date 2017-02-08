@@ -42,6 +42,8 @@ int16_t strsplit(string& s, char delim, vector<string>& vec);
 struct cton {
     timespec    m_start;        // timer start
     int32_t     m_preset;       // timer value msec
+    bool        m_tt;
+    bool        m_dn;
 
     cton() { }
 
@@ -52,18 +54,24 @@ struct cton {
     void start (int32_t pre) {
         m_preset = pre;
         clock_gettime(CLOCK_MONOTONIC, &m_start);    
+        m_tt = true;
     }
 
     bool isDone() {
         timespec    t;
         int64_t     delta;
 
-        clock_gettime(CLOCK_MONOTONIC, &t);
-        delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
-//        cout <<"ton="<<m_start.tv_sec<<"."<<m_start.tv_nsec<<" "<<\
-             "\nten="<<t.tv_sec<<"."<<t.tv_nsec<<" "<<endl;
-//        outtext(string("ton=")+to_string(m_preset)+string(" delta=")+to_string(delta));
-        return (m_preset<=delta);
+        if( m_tt ) {
+            clock_gettime(CLOCK_MONOTONIC, &t);
+            delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
+            m_dn = (m_preset<delta);
+        }
+        else m_dn = false;
+        return m_dn;
+    }
+    
+    bool reset() {
+        m_tt = false;
     }
 };
 
@@ -136,6 +144,10 @@ class cproperties {
     settings    m_set;
 
     public:
+        cproperties() { }
+        cproperties(const cproperties& pcp) {
+            m_set = pcp.m_set;
+        }
         template <class T>
         int16_t setproperty( std::string na, T va) {       // fill settings
             int16_t res = EXIT_FAILURE;

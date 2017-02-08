@@ -23,8 +23,7 @@ pthread_cond_t  pub_ready   = PTHREAD_COND_INITIALIZER;
 paramlist tags;
 bool fParamThreadInitialized;
 
-cparam::cparam()
-{
+cparam::cparam() {
     setproperty( string("raw"),         int(0)      );
     setproperty( string("value"),       double(0)   );
     setproperty( string("quality"),     int32_t(0)  );
@@ -34,42 +33,170 @@ cparam::cparam()
     setproperty( string("msec"),        int32_t(0)  );
     m_task = 0;
     m_task_go = false;
+    m_task_delta = 10;
     m_sub = -2;
+    m_quality = OPC_QUALITY_WAITING_FOR_INITIAL_DATA;
+    m_readOff = -1; 
+    m_readbit = -1; 
+    m_connErr = -1;
+    m_writeOff= -1;
+    m_deadband= 0;
+    m_raw = 0;
+    m_raw_old = 0;
 }
 
-int16_t cparam::getraw(int16_t &nOut)
-{
-    int16_t res=EXIT_FAILURE;
-    cmbxchg *mb;
-    int16_t nOff;
-    string  sOff;
-    vector<string> vc;
+void cparam::init() {
+    string sOff; 
+    cmbxchg     *mb = (cmbxchg *)p_conn;
 
-    if(getproperty("readdata", sOff)==0) {
-        mb = (cmbxchg *)p_conn;
-        strsplit(sOff, '.', vc);
-        nOff = atoi(vc[0].c_str());
-        if(nOff<mb->m_maxReadData) {
-            m_raw = mb->m_pReadData[nOff];
-            if( vc.size() > 1) {
-                int16_t bit = atoi(vc[1].c_str());
-                m_raw = (m_raw & ( 1 << bit )) != 0;
+    if( getproperty("readdata", sOff)==0 && !sOff.empty() ) {
+        if( isdigit(sOff[0]) ) {
+            vector<string> vc;
+            int16_t nOff;
+            strsplit(sOff, '.', vc);
+            nOff = atoi(vc[0].c_str());
+            if(nOff<mb->m_maxReadData) { 
+                m_readOff = nOff;  
+                if( vc.size() > 1 && isdigit(vc[1][0]) ) m_readbit = atoi(vc[1].c_str());
             }
-            nOut = m_raw;
-            setproperty("raw", m_raw);
-            res=EXIT_SUCCESS;
+        }
+        else if(sOff[0]=='E') {
+            m_readOff = -2;
         }
     }
-    return res;
+    if( getproperty("writedata", sOff)==0 && !sOff.empty() ) {
+        if( isdigit(sOff[0]) ) m_writeOff = atoi(sOff.c_str());
+        else if(sOff[0]=='E') m_writeOff = -2;
+    }
+    getproperty( "minraw",  m_minRaw    );
+    getproperty( "maxraw",  m_maxRaw    );
+    getproperty( "mineng",  m_minEng    );
+    getproperty( "maxeng",  m_maxRaw    ); 
+    getproperty( "flttime", m_fltTime   ); 
+    int16_t bt;
+    getproperty( "isbool",  bt          ); m_isBool = (bt!=0);
+    getproperty( "hihi",    m_hihi      );
+    getproperty( "hi",      m_hi        );
+    getproperty( "lolo",    m_lolo      );
+    getproperty( "lo",      m_lo        );
+    getproperty( "deadband",m_deadband  );
+    getproperty( "name",    m_name      );
+       
+    int16_t nPortErrOff, nErrOff;
+    if( mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS && \
+                getproperty("ErrPtr", nErrOff) == EXIT_SUCCESS ) {     // read errors of read modbus operations
+         if( (nErrOff + nPortErrOff) < mb->m_maxReadData ) m_connErr = nErrOff + nPortErrOff;
+    }
+}
+
+//
+//  Расчет / задание положения клапана по показанию датчика Холла, конечным выключателям и типу команды
+//  
+int16_t cparam::rawValveValueEvaluate() {
+    double  ncnt, nop, ncl, ncmop, ncmcl;
+    int16_t qual;
+    time_t  t;
+    int16_t rc = EXIT_SUCCESS;
+    string  scnt, sop, scl, scmop, scmcl;
+    int16_t numop, numcl;
+
+    numop = atoi( string(m_name, 2, 2).c_str() );
+    numcl = numop + 1;
+   
+    scnt  = "FC"+to_string(numop);
+    sop   = "ZV"+to_string(numop);
+    scl   = "ZV"+to_string(numcl);
+    scmop = "CV"+to_string(numop);
+    scmcl = "CV"+to_string(numcl);
+    
+    getparam( scnt , ncnt,  qual, &t );  // FC
+    getparam( sop  , nop,   qual, &t );  // ZV opened
+    getparam( scl  , ncl,   qual, &t );  // ZV closed
+    getparam( scmop, ncmop, qual, &t );  // CV open cmd
+    getparam( scmcl, ncmcl, qual, &t );  // CV close cmd
+    
+    string _reset("0");
+    string _set("1");
+    string _task("task");
+    
+    m_raw = m_raw_old + (ncmop-ncmcl)*(ncnt-m_raw_old);
+
+    if( (ncmcl && ncmop) || m_tasktimer.isDone() ) {
+        taskparam( scmop, _task, _reset );
+        taskparam( scmcl, _task, _reset );
+        m_tasktimer.reset();
+    }
+
+    if( m_task_go && ncmop==0 && ncmcl==0 ) {
+        bool    fGO = false;
+
+        if( m_minRaw==-1 ) {
+            taskparam( scmcl, _task, _set ); 
+            fGO = true;
+        } else if( m_minRaw>=0 ) {
+            if( m_task - m_raw > m_task_delta ) { taskparam( scmop, _task, _set ); fGO = true; }
+            if( m_raw - m_task > m_task_delta ) { taskparam( scmcl, _task, _set ); fGO = true; }
+        }
+        m_task_go = false;
+        if(fGO) m_tasktimer.start(180000);
+    }
+
+    if( (nop+ncl) != 0 ) {
+        if( nop != 0 ) {
+           if( ncmop != 0 ) {
+                taskparam( scmop, _task, _reset );
+                m_tasktimer.reset();
+                if( m_minRaw==-2 && ncnt > 5000 ) { m_minRaw = 0; m_maxRaw = ncnt; }
+            }
+            m_raw = m_maxRaw;
+        }
+        if( ncl != 0 ) {
+            m_raw = 0;
+            if( ncmcl != 0 ) {
+                taskparam( scmcl, _task, _reset );
+                m_tasktimer.reset();
+                if( m_minRaw==-1 ) { m_minRaw = -2; taskparam( scmop, _task, _set ); }
+            }
+        }
+        taskparam( scnt, _task, _reset );                
+    }
+    if( abs(m_raw-m_task) < m_task_delta ) {
+        if( ncmop != 0 ) { taskparam( scmop, _task, _reset ); m_tasktimer.reset(); }
+        if( ncmcl != 0 ) { taskparam( scmcl, _task, _reset ); m_tasktimer.reset(); }
+    }
+
+    return rc;
+}
+
+int16_t cparam::getraw(int16_t &nOut) {
+    int16_t     rc  = EXIT_FAILURE;
+    cmbxchg     *mb = (cmbxchg *)p_conn;
+
+    m_raw_old = m_raw;
+    setproperty( "raw_old", m_raw_old );
+
+    if( m_readOff >= 0 ) {
+        m_raw = mb->m_pReadData[m_readOff];
+        if( m_readbit >= 0 ) {
+            m_raw = ( m_raw & ( 1 << m_readbit ) ) != 0;
+        }
+        nOut = m_raw;
+        setproperty("raw", m_raw);
+        rc=EXIT_SUCCESS;
+    }
+    else if( m_readOff == -2 && m_name.find("FV") == 0 ) {
+        rc = rawValveValueEvaluate();
+        nOut = m_raw;        
+        setproperty("raw", m_raw);    
+    }
+    return rc;
 }
 //
 //  обработка параметров аналогового типа
 //  приведение к инж. единицам, фильтрация, аналог==дискрет
 //  анализ изменения значения сравнением с зоной нечувствительности
 //
-int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
-{
-    cmbxchg     *mb = (cmbxchg *)p_conn;
+int16_t cparam::getvalue(double &rOut, uint8_t &nQual) {
     int16_t     nVal;
     double      rVal;
     timespec    tv;
@@ -79,7 +206,7 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
     int64_t     nodt;             // time on previous step
     int16_t     rc=EXIT_FAILURE;
     double      rsim_en = 0, rsim_v;
-
+    cmbxchg     *mb = (cmbxchg *)p_conn;
 
     clock_gettime(CLOCK_MONOTONIC,&tv);
     tv.tv_sec += dT;
@@ -99,38 +226,25 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
         rc = getraw(nVal);
 
     if( rc==EXIT_SUCCESS ) {
-        double  lraw, hraw, leng, heng;
-        int16_t isbool, nstep;
-        double  dead=0;
+//        double  lraw, hraw, leng, heng;
+//        int16_t isbool, nstep;
+//        double  dead=0;
         if( rsim_en == 0 ) {                                      // simulation mode switched OFF
-            rc = getproperty("minraw", lraw)   \
-                | getproperty("maxraw", hraw)   \
-                | getproperty("mineng", leng)   \
-                | getproperty("maxeng", heng)   \
-                | getproperty("flttime", nTime) \
-                | getproperty("isbool", isbool) \
-                | getproperty("hihi", nstep);
-            if(rc == EXIT_SUCCESS && hraw!=lraw && heng!=leng) {
-                rVal = (heng-leng)/(hraw-lraw)*(nVal-lraw)+leng;
-                nTime = nTime*1000;
+            if( m_maxRaw!=m_minRaw && m_maxEng!=m_minEng ) {
+                rVal = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(nVal-m_minRaw)+m_minEng;
+                nTime = m_fltTime*1000;
                 rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-                if(isbool) rVal = (rVal>nstep);                         // if it is a discret parameter
+                if(m_isBool) rVal = (rVal > m_hihi);                      // if it is a discret parameter
                 rOut = rVal;                                            // current value
 
-                int16_t nPortErrOff, nErrOff;
-                mb->getproperty("commanderror", nPortErrOff);
-
-                if (getproperty("ErrPtr", nErrOff)==EXIT_SUCCESS) {     // read errors of read modbus operations
-                    nErrOff += nPortErrOff;
-                    if(nErrOff<mb->m_maxReadData) {
-                        nQual = (mb->m_pReadData[nErrOff])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
-                    }
+                if ( m_connErr >= 0 ) {
+                    nQual = (mb->m_pReadData[m_connErr])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
                 }
             }
         }
         // save value if it (or quality) was changes
-        if(getproperty("deadband", dead) == EXIT_FAILURE ||
-               fabs(rVal-m_rvalue)>dead || m_quality!=nQual || nD>60*_million) {
+        if( m_deadband == 0 ||
+               fabs(rVal-m_rvalue)>m_deadband || m_quality!=nQual || nD>60*_million) {
             m_rvalue = rVal;
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
@@ -152,24 +266,21 @@ int16_t cparam::getvalue(double &rOut, uint8_t &nQual)
 int16_t cparam::setvalue() {
     int16_t rc = EXIT_FAILURE;
     cmbxchg *mb;
+    string  sOff;
     int16_t nOff;
 
-    if(getproperty("writedata", nOff)==EXIT_SUCCESS) {
-/*      std::string s;
-        getproperty("name", s);
-        cout << "setvalue name="<<s<<" val="<<m_task<<endl; */
-        mb = (cmbxchg *)p_conn;
-        if(nOff<mb->m_maxWriteData) {
-            mb->m_pWriteData[nOff] = m_task;
-            m_task_go = false; 
-            rc = EXIT_SUCCESS;
-        }
+    if( m_writeOff >= 0 ) {
+        mb->m_pWriteData[m_writeOff] = m_task;
+        m_task_go = false; 
+        rc = EXIT_SUCCESS;
     }
+    else if( m_writeOff == -2 ) {
+    }
+    
     return rc;
 }
 
-int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
-{    
+int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL) {    
     std::string             line;
     std::string             lineL;                  // line in low register
     std::string             lineorig;
@@ -233,7 +344,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
             switch ( type ) {
                 case _parse_display: {
                         int32_t ndisp  = int32_t(obj);
-                        std::string sval;
+                        std::string sval, stag;
                         std::istringstream iss( lineorig );
 
                         if( std::getline( iss, sval, ';') ) {
@@ -242,6 +353,13 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
                             std::getline( iss, sval );
                             dsp.definedspline( ndisp, nline, sval );
 //                        cout << "parse disp 2 " << ndisp << " " << nline << " " << sval << endl;
+                        }
+                        else
+                        if( std::getline( iss, stag, '=') ) {
+                            removeCharsFromString(stag, (char*)(" "));
+                            std::getline( iss, sval );
+                            removeCharsFromString(sval, (char*)(" "));
+                            dsp.setproperty( ndisp, stag, sval );
                         }
                     }
                     break;
@@ -300,8 +418,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL)
 //	Чтение и парсинг конфигурационного файла
 //	name;mqtt;type;address;
 //
-int16_t readCfg()
-{
+int16_t readCfg() {
 	int16_t     res=0;
     int16_t     nI=0, i, j;
     cmbxchg     *mb=NULL;  
@@ -342,6 +459,28 @@ int16_t readCfg()
     cout << endl;
 */
     return res;
+}
+
+//
+// ask value parameter by it name
+//
+int16_t getparam( std::string& na, double& va, int16_t& qual, time_t* ts ) {
+    int16_t     rc=EXIT_FAILURE;
+    double      rval;
+    uint8_t     kval;
+    
+        pthread_mutex_lock( &mutex_param );
+        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
+        if( ifi != tags.end() ) {
+            ifi->second.getvalue( rval, kval );
+            qual = kval;
+            va = rval;
+            ts = ifi->second.getTS();
+            rc=EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_param );
+
+    return rc;
 }
 
 //
@@ -425,10 +564,8 @@ int16_t taskparam( std::string& na, std::string& va ) {
 //
 // поток обработки параметров 
 //
-void* paramProcessing(void *args) 
-{
+void* paramProcessing(void *args) {
     paramlist::iterator ih, iend;
- //   fieldconnections::iterator icn;    
     int16_t nRes, nRes1, nVal;
     uint8_t nQ;
     double  rVal;
@@ -436,38 +573,44 @@ void* paramProcessing(void *args)
 
     cout << "start parameters processing " << args << endl;
     sleep(1);
-
-    while (fParamThreadInitialized) {
+    ih   = tags.begin(); iend = tags.end();
+    while ( ih != iend ) {
+        ih->second.init();
+        ++ih;   
+    }
+    while ( fParamThreadInitialized ) {
         pthread_mutex_lock( &mutex_param );
 //        pthread_cond_wait( &data_ready, &mutex_param );// start processing after data receive     
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
-            string sOff;
+            string  sOff;
             int16_t nu;
-            int rc = ih->second.getproperty("readdata", sOff);
-            if(!rc && !sOff.empty()) {
-                nRes = (*ih).second.getraw( nVal );
-                nRes1= (*ih).second.getvalue( rVal, nQ );
+            cparam  &pp = ih->second;
+//            int rc = pp.getproperty("readdata", sOff);
+//            if( !rc && !sOff.empty() ) {
+                nRes = pp.getraw( nVal );
+                nRes1= pp.getvalue( rVal, nQ );
                 
-                if( (*ih).second.hasnewvalue() && (nu=(*ih).second.getpubcon())>=0 && nu<upc.size()) {
-                    upc[nu]->publish((*ih).second);                        
+                if( pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<upc.size() ) {
+                    upc[nu]->publish(pp);                        
                 }
-            }
-            else if( (*ih).second.taskset() ) (*ih).second.setvalue();
-
-            if( (*ih).second.m_sub==-2) {
-                if( (nu=(*ih).second.getsubcon())>=0 && nu<upc.size()) {
-                    upc[nu]->subscribe((*ih).second);
-                    (*ih).second.m_sub = nu;
+//            }
+//            else {
+//                rc = pp.getproperty("writedata", sOff);
+                if( pp.taskset() ) pp.setvalue();
+//            }
+            if( pp.m_sub==-2 ) {
+                if( (nu=pp.getsubcon())>=0 && nu<upc.size() ) {
+                    upc[nu]->subscribe(pp);
+                    pp.m_sub = nu;
                 }
-                else (*ih).second.m_sub = -1;
+                else pp.m_sub = -1;
             }
             ++ih;
         }
         
         pthread_mutex_unlock( &mutex_param );
-//        if(nCnt++%100 == 0) dsp.outview(1);
         usleep(_param_prc_delay);
     }     
     

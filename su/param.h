@@ -11,6 +11,7 @@
 #include "main.h"
 #include "utils.h" 
 
+
 enum {
     _parse_root,
     _parse_mbport,
@@ -32,53 +33,49 @@ protected: 				// спецификатор доступа protected
     timespec		m_oldts;
     double			m_rvalue;
     int16_t         m_task;             // task to out
+    int16_t         m_task_delta;       // task out allowable deviation 
     bool            m_task_go;          // flag 4 task to out
     int16_t         m_raw;              // raw value from module
-	uint8_t         m_quality;          // quality of value
+    int16_t         m_raw_old;          // raw value from module prev step
+    uint8_t         m_quality;          // quality of value
     bool            m_valueupdated;     // new value arrived
-
-    
-    int8_t          m_type;
-    float           m_minEng;
-    float           m_maxEng;
-    float           m_minRaw;
-    float           m_maxRaw;
-    float           m_hihi;
-    float           m_hi;
-    float           m_lo;
-    float           m_lolo;
-    float           m_hihi_en;
-    float           m_hi_en;
-    float           m_lo_en;
-    float           m_lolo_en;
-    double          m_simvalue;
-	bool			m_bvalue;
-    bool            m_sim;
-    bool            m_overrange;
-    bool            m_underrange;
-    bool            m_hihi_tr;
-    bool            m_hi_tr;
-    bool            m_lo_tr;
-    bool            m_lolo_tr;
+    int16_t         m_readOff;
+    int16_t         m_readbit;    
+    int16_t         m_writeOff;
+    double          m_minEng;
+    double          m_maxEng;
+    double          m_minRaw;
+    double          m_maxRaw;
+    int32_t         m_fltTime;
     bool            m_isBool;
+    double          m_hihi;
+    double          m_hi;
+    double          m_lo;
+    double          m_lolo;
+    int16_t         m_connErr;
+    double          m_deadband;
+    std::string     m_name;
     std::string     topic;
 
 public: 				// спецификатор доступа public
     cparam();			// конструктор класса
-    ~cparam(){};   
-	std::string	name;
-    int16_t     m_sub;    
+    cparam(const cparam&) {}		// конструктор класса
+   ~cparam(){};   
+    int16_t     m_sub;   
+    cton        m_tasktimer;
     void		*p_conn;	
     void 		getValue(); 				//                     
     time_t*     getTS() {
         return &(m_ts.tv_sec);
     }
+    void    init();
     int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
     int16_t getvalue(double &rOut, uint8_t &nQual);             // get value in EU
     int16_t setvalue();                                         // write tasks to modbus writedata area 
     int16_t settask(double rin) {
-        // !!! Сделать преобразование шкал !!!
-        m_task    = rin;
+        if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
+            m_task    = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rin-m_minEng)+m_minRaw;
+        else m_task = rin;
         m_task_go = true;    
     }
 
@@ -86,15 +83,21 @@ public: 				// спецификатор доступа public
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }
     int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
-    int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }    
+    int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }   
+
+    int16_t rawValveValueEvaluate();
 }; // конец объявления класса cparam
 
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
+
 int16_t taskparam( std::string&, std::string&, std::string& );
 int16_t taskparam( std::string&, std::string& );
+
+int16_t getparam( std::string&, double&, int16_t& qual, time_t* );
 int16_t getparam( std::string&, std::string& );
+
 typedef std::vector<std::pair<std::string, cparam> > paramlist;
 
 extern paramlist tags;

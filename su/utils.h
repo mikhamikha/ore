@@ -45,7 +45,7 @@ struct cton {
     bool        m_tt;
     bool        m_dn;
 
-    cton() { }
+    cton() { m_tt = false; m_dn = false; }
 
     cton(int32_t pre):m_preset(pre) {
         clock_gettime(CLOCK_MONOTONIC, &m_start);    
@@ -69,13 +69,19 @@ struct cton {
         else m_dn = false;
         return m_dn;
     }
-    
+
+    bool isTiming() {
+        return m_tt;
+    }
+   
     bool reset() {
         m_tt = false;
     }
 };
 
 struct content {
+    content() { }
+    content(const content& ct) : _n(ct._n), _t(ct._t), _r(ct._r), _s(ct._s) {}
     content(int32_t n) : _n(n) { _t=0; _r=n; _s=to_string(n); }
     content(double n) : _r(n) { _t=1; _n=int(n); _s=to_string(n); }
     content(std::string s) : _s(s) { 
@@ -115,7 +121,7 @@ struct content {
     int32_t getvalue(int16_t &res) { res = _n; return 0; }
     int32_t getvalue(int32_t &res) { res = _n; return 0; }
     int32_t getvalue(double &res) { res = _r; return 0; }
-    int32_t getvalue(string &res) { res = _s; return 0;}
+    int32_t getvalue(string &res) { res.assign(_s); return 0;}
     double      _r; 
     int32_t     _n;
     std::string _s;
@@ -133,7 +139,9 @@ struct compareP
     bool operator () (std::pair<std::string, T> const& p) {
         std::string tmp = p.first;
         std::transform(tmp.begin(), tmp.end(), tmp.begin(), easytolower);
-        return (tmp.find(_s)==0);
+        bool rc = ( tmp.size() && _s.size() && tmp.compare(0, _s.size(), _s)==0 );
+//        if(rc) cout<<_s<<" "<<tmp<<" "<<double(_s.size())/tmp.size()<<"\t";
+        return ( rc && double(_s.size())/tmp.size()>0.5);
     }
 };
 
@@ -146,7 +154,7 @@ class cproperties {
     public:
         cproperties() { }
         cproperties(const cproperties& pcp) {
-            m_set = pcp.m_set;
+            m_set.assign(pcp.m_set.begin(), pcp.m_set.end());
         }
         template <class T>
         int16_t setproperty( std::string na, T va) {       // fill settings
@@ -168,14 +176,24 @@ class cproperties {
         int16_t getproperty( std::string na, T& va) {
             int16_t res = EXIT_FAILURE;
             settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
-    
             if (i != m_set.end()) {
                 i->second.getvalue(va);
                 res = EXIT_SUCCESS;
-            }
+            } 
             return res;
         }
 
+        template <class T>
+        int16_t getproperty( int16_t i, string& na, T& va) {
+            int16_t res = EXIT_FAILURE;
+
+            if (i >= 0 && i < m_set.size()) {
+                m_set[i].second.getvalue(va);
+                na = m_set[i].first;
+                res = EXIT_SUCCESS;
+            } 
+            return res;
+        }
         int32_t getpropertysize() { return m_set.size(); }
         
         int16_t property2text(int32_t n, std::string& va) {

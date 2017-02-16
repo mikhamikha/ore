@@ -39,6 +39,7 @@ ccmd::ccmd(std::vector<int16_t> &v)
     m_swap       = v[7];
     m_err        = std::make_pair(0, "No Errors");
     m_first      = true;
+    m_errCnt     = 0;
     cout << ToString() << endl;
 }
 
@@ -48,7 +49,7 @@ std::string ccmd::ToString()
     std::stringstream out;
     out << "en="<<m_enable<<" int="<<m_intAddress<<" poll="<<m_pollInt<< \
             " node="<<m_node<<" func="<<m_func<<" addr="<<m_devAddr<<" count="<<m_count<< \
-            " swap="<<m_swap<<" err="<<m_err.first<<" errDesc="<<m_err.second<<" fi="<<m_first;
+            " swap="<<m_swap<<" errCnt="<<m_errCnt<<" err="<<m_err.first<<" errDesc="<<m_err.second<<" fi="<<m_first;
     s = out.str();
     return s;
 }
@@ -76,7 +77,7 @@ cmbxchg::cmbxchg()
 int16_t cmbxchg::init()
 {   
     int16_t proto;
-    int16_t rc = getproperty("proto", proto);
+    int16_t rc = getproperty("protocol", proto);
     std::string path;
     int16_t     baud, parity, data, stop;
     
@@ -91,10 +92,10 @@ int16_t cmbxchg::init()
             }   
             else {
                 rc =    getproperty("path", path)       | \
-                        getproperty("baud", baud)       | \
+                        getproperty("baudrate", baud)       | \
                         getproperty("parity", parity)   | \
                         getproperty("databits", data)   | \
-                        getproperty("stop", stop);
+                        getproperty("stopbits", stop);
                 if(rc == 0) {
                     m_ctx = modbus_new_rtu( path.c_str(), baud, _parities[parity], data, stop );
                 }
@@ -140,9 +141,9 @@ void* fieldXChange(void *args)
         mbx->m_pReadData = new int16_t[mbx->m_maxReadData+1];
         mbx->m_pWriteData = new int16_t[mbx->m_maxWriteData+1];
         mbx->m_pLastWriteData = new int16_t[mbx->m_maxWriteData+1];
-        memset(mbx->m_pReadData, 0, mbx->m_maxReadData+1);
-        memset(mbx->m_pWriteData, 0, mbx->m_maxWriteData+1);
-        memset(mbx->m_pLastWriteData, 0, mbx->m_maxWriteData+1);
+        memset(mbx->m_pReadData, 0, (mbx->m_maxReadData+1)*sizeof(int16_t) );
+        memset(mbx->m_pWriteData, 0, (mbx->m_maxWriteData+1)*sizeof(int16_t) );
+        memset(mbx->m_pLastWriteData, 0, (mbx->m_maxWriteData+1)*sizeof(int16_t) );
         cout << "start xchg " << mbx << " | " << mbx->m_pReadData <<endl;
 //        cout << "minimum command delay = " << mbx->getproperty("minimumcommand")._n << endl;
         while (mbx->getStatus()!=TERMINATE) {
@@ -172,17 +173,20 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     int16_t                 resp, proto, erroff, mincmddel, errdel;
 
     cmdi = cmds.begin(); i=0;
-    rc =    getproperty( "proto", proto )               | \
-            getproperty( "response", resp )             | \
+    rc =    getproperty( "protocol", proto )               | \
+            getproperty( "responsetim", resp )             | \
             getproperty( "minimumcommand", mincmddel )  | \
             getproperty( "errordelay", errdel )         | \
             getproperty( "commanderror", erroff );
-    
+//cout<<"rc="<<rc<<" proto="<<proto<<" response="<<resp<<" minimumcommand="<<mincmddel \
+    <<" errordelay="<<errdel<<" commanderror="<<erroff<<endl;
     if(rc==0)
     while(cmdi!=cmds.end()) {
-//      cout<<"cmd="<<i<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<"\n";
-//      outtext((*cmdi).ToString());
-        if( (*cmdi).m_enable && ( (*cmdi).m_first || (*cmdi).m_time.isDone() ) ) {
+        if(i==900) {
+            cout<<"cmd="<<i<<" n="<<(*cmdi).m_node<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<endl;
+            outtext(cmdi->ToString());
+        }
+        if( cmdi->m_enable && ( cmdi->m_first || cmdi->m_time.isDone() ) ) {
             fTook=true;
             if (proto == RTU) {
                 rc = modbus_set_slave(m_ctx, (*cmdi).m_node);
@@ -199,7 +203,12 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                         {
                             uint8_t *tab_value = new uint8_t[cmdi->m_count];
                             rc = modbus_read_bits( m_ctx, cmdi->m_devAddr, cmdi->m_count, tab_value );
-                            for(int16_t j=0; j<cmdi->m_count; j++) m_pWriteData[cmdi->m_intAddress+j] = tab_value[j];
+                            for(int16_t j=0; j<cmdi->m_count; j++) m_pReadData[cmdi->m_intAddress+j] = tab_value[j];
+                            if(0 && i==1) {
+                                cout<<"func 1 :";
+                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pReadData[cmdi->m_intAddress+j]<<" ";
+                                cout<<endl;                            
+                            }
                             delete []tab_value;
                         }
                         break;
@@ -208,48 +217,54 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                     case 103: 
                        rc = modbus_read_registers( \
                                 m_ctx,              \
-                                (*cmdi).m_devAddr,  \
-                                (*cmdi).m_count,    \
-                                (uint16_t *)m_pReadData+(*cmdi).m_intAddress    \
+                                cmdi->m_devAddr,  \
+                                cmdi->m_count,    \
+                                (uint16_t *)m_pReadData+cmdi->m_intAddress    \
                                 ); 
+//                        if(i==7) for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
                         if(cmdi->m_func==103) {
-                            modbus_write_register(m_ctx, (*cmdi).m_devAddr, 0);    
+                            modbus_write_register(m_ctx, cmdi->m_devAddr, 0);    
                         }
                         break;
 
                     case 4: 
                         rc = modbus_read_input_registers(   \
                                 m_ctx,                      \
-                                (*cmdi).m_devAddr,          \
-                                (*cmdi).m_count,            \
-                                (uint16_t *)m_pReadData+(*cmdi).m_intAddress    \
+                                cmdi->m_devAddr,          \
+                                cmdi->m_count,            \
+                                (uint16_t *)m_pReadData+cmdi->m_intAddress    \
                                 );
                         break;
 
                     case 5:
                         // write bit if enable==1 or (2 and new<>old)
-                        if( (*cmdi).m_first || fLast || (*cmdi).m_enable==1 ||    \
-                            m_pWriteData[(*cmdi).m_intAddress]!=m_pLastWriteData[(*cmdi).m_intAddress] ) {
+                        if( (*cmdi).m_first || fLast || cmdi->m_enable==1 ||    \
+                            m_pWriteData[cmdi->m_intAddress]!=m_pLastWriteData[cmdi->m_intAddress] ) {
                             rc = modbus_write_bit(      \
                                     m_ctx,              \
-                                    (*cmdi).m_devAddr,  \
-                                    fLast? 0: m_pWriteData[(*cmdi).m_intAddress]   \
+                                    cmdi->m_devAddr,  \
+                                    (fLast)? 0: m_pWriteData[cmdi->m_intAddress]   \
                                     );
-                            if(rc==1)
-                                m_pLastWriteData[(*cmdi).m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
+                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr<< \
+                                " val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
+                            if(rc!=-1)
+                                m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 
                         else fTook=false;
                         break;
 
                     case 15:
                         // write bit if enable==1 or (2 and new<>old)
+//                        cout<<"func 15 ";
                         if( cmdi->m_first || fLast || cmdi->m_enable==1 ||    \
-                            !memcmp(m_pWriteData+(*cmdi).m_intAddress, \
-                                m_pLastWriteData+(*cmdi).m_intAddress, (*cmdi).m_count*2) ) {
-
+                            memcmp(m_pWriteData+cmdi->m_intAddress, \
+                                m_pLastWriteData+cmdi->m_intAddress, cmdi->m_count*2) ) {
+//                            cout<<" est` task ";
                             uint8_t *tab_value = new uint8_t[cmdi->m_count];
-                            for(int16_t j=0;j<cmdi->m_count;j++) 
+                            for(int16_t j=0;j<cmdi->m_count;j++) {
                                 tab_value[j] = fLast? 0: m_pWriteData[cmdi->m_intAddress+j];
+                                cout<<tab_value[j]<<" ";
+                            }
                             rc = modbus_write_bits(     \
                                     m_ctx,              \
                                     cmdi->m_devAddr,    \
@@ -257,25 +272,32 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                     tab_value           \
                                     );
                             delete []tab_value;
-                            if(rc==1)
+                            if(rc!=-1)
                                 memcpy(m_pLastWriteData+cmdi->m_intAddress, \
                                         m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                                    
                         } 
                         else fTook=false;
+//                        cout<<endl;
                         break;
 
                     case 16:
                         // write if enable==1 or (2 and new<>old)
-                        if( (*cmdi).m_first || (*cmdi).m_enable==1 ||    \
-                            !memcmp(m_pWriteData+(*cmdi).m_intAddress, \
-                                m_pLastWriteData+(*cmdi).m_intAddress, (*cmdi).m_count*2) ) {
-                            rc = modbus_write_registers(    \
-                                    m_ctx,                  \
+                        if( /*cmdi->m_first ||*/ cmdi->m_enable==1 ||    \
+                            memcmp(m_pWriteData+cmdi->m_intAddress, \
+                                m_pLastWriteData+cmdi->m_intAddress, cmdi->m_count*2) ) {
+                            rc = modbus_write_registers(  \
+                                    m_ctx,                \
                                     cmdi->m_devAddr,      \
                                     cmdi->m_count,        \
-                                    (uint16_t *)m_pWriteData+cmdi->m_intAddress   \
+                                    (uint16_t *)m_pWriteData+cmdi->m_intAddress \
                                     );
-                            if(rc==1)
+                            if(i==11) {
+                                cout<<"cmd clear counter FC "<<cmdi->m_devAddr<<endl;
+                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pLastWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+                                cout<<"rc="<<rc<<endl;
+                            }
+                            if(rc!=-1)
                                 memcpy(m_pLastWriteData+cmdi->m_intAddress, \
                                         m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                    
                         } 
@@ -284,10 +306,22 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 }
             }
             if (rc == -1) {
-                (*cmdi).m_err.first   = errno;
-                (*cmdi).m_err.second  = modbus_strerror(errno);
-                m_pReadData[erroff+i] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
-                outtext((*cmdi).ToString());
+                if( cmdi->m_errCnt++ >= _max_conn_err ) {
+                    cmdi->m_errCnt = _max_conn_err;
+                    cmdi->m_err.first   = errno;
+                    cmdi->m_err.second  = modbus_strerror(errno);
+                    m_pReadData[erroff+i] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
+               }
+//               outtext(cmdi->ToString());
+            }
+            else {
+//                if(i==9) cout<<"command OK\n";
+                if( cmdi->m_errCnt-- <= 0 ) {
+                    cmdi->m_errCnt = 0;
+                    cmdi->m_err.first   = 0;
+                    cmdi->m_err.second  = "no error";
+                    m_pReadData[erroff+i] = 0;
+                }
             }
 //          pthread_cond_broadcast( &data_ready );
 //          pthread_cond_signal( &data_ready );
@@ -295,15 +329,15 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             modbus_set_byte_timeout( m_ctx, to_sec, to_usec );
             modbus_set_response_timeout( m_ctx, old_resp_to_sec, old_resp_to_usec );
             modbus_close(m_ctx);            
-            if(rc != -1) {                              // if read/write is good
+//            if(rc != -1) {                              // if read/write is good
                 int t;
-                t = ((*cmdi).m_pollInt > 0) ? (*cmdi).m_pollInt : mincmddel;
-                (*cmdi).m_time.start( (t>0) ? t : 1);   // then set normal poll interval in ms
-            }
+                t = (cmdi->m_pollInt > 0) ? cmdi->m_pollInt : mincmddel;
+                cmdi->m_time.start( (t>0) ? t : 1);   // then set normal poll interval in ms
+/*            }
             else {                                      // if read/write no good
-                (*cmdi).m_time.start( (errdel > 0) ? errdel : 10000 ); // then set ErrorDelayCntr in ms  
-            }
-            (*cmdi).m_first = false;
+                cmdi->m_time.start( (errdel > 0) ? errdel : 10000 ); // then set ErrorDelayCntr in ms  
+            } */
+            cmdi->m_first = false;
         }
         if(fTook) usleep(mincmddel*1000l);
         ++cmdi; ++i;

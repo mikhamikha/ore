@@ -96,8 +96,8 @@ string time2string(time_t rawtime) {
 //  заменяет в строке сабджект все вхождения search на replace
 //
 int16_t replaceString(string& subject, const string& search, const string& replace) {
-    size_t pos = 0;
-    int16_t     rc=EXIT_SUCCESS;
+    size_t  pos = 0;
+    int16_t rc=EXIT_SUCCESS;
 
     while((pos = subject.find(search, pos)) != std::string::npos) {
         subject.replace(pos, search.length(), replace);
@@ -110,6 +110,7 @@ int16_t replaceString(string& subject, const string& search, const string& repla
 int16_t strsplit(string& s, char delim, vector<string>& vec) {
     int16_t count = 0;
 
+    vec.erase( vec.begin(), vec.end() );
     std::istringstream iss( s+delim );
     std::string sval;
     while( std::getline( iss, sval, delim) ) {

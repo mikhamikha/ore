@@ -17,6 +17,15 @@ int main(int argc, char* argv[])
     
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
+        int ret=0;
+        ret = pthread_mutexattr_settype(&mutex_param_attr, PTHREAD_MUTEX_ERRORCHECK_NP); // PTHREAD_MUTEX_ERRORCHECK_NP avoids double locking on same thread.
+        if(ret != 0) {
+            printf("Mutex attribute not initialized!!\n");
+        }
+        ret = pthread_mutex_init(&mutex_param, &mutex_param_attr);
+        if(ret != 0) {
+            printf("Mutex not initialized!!\n");
+        }
         cout << "readCFG OK!" << endl;
         thMBX = new pthread_t[conn.size() + upc.size() + 2]; 
         fieldconnections::iterator coni;
@@ -55,7 +64,7 @@ int main(int argc, char* argv[])
         tcsetattr( STDIN_FILENO, TCSANOW, &newt );
         while (ch!='q' && ch!='Q') {
             ch = getchar();
-            cout << "Pressed " << ch<<endl;;
+            cout << "Pressed " << ch<<" conn="<<int(conn[0])<<endl;
             if(isdigit(ch) && ch<522) {
                 conn[0]->m_pWriteData[ch-48]=(conn[0]->m_pWriteData[ch-48]==0);
                 cout << " == " << ch-48 << " | " << conn[0]->m_pWriteData[ch-48];
@@ -71,12 +80,26 @@ int main(int argc, char* argv[])
                     cout<<conn[0]->m_pWriteData[j]<<" ";
                 }            
                 cout << endl;
-                cout << "read  400-409: ";
-                for(int j=400; j<410; j++) {
+                cout << "read  400-419: ";
+                for(int j=400; j<420; j++) {
                     cout<<conn[0]->m_pReadData[j]<<" ";
                 }            
                 cout << endl;
-            }
+                cout << "read counters  051-054: ";
+                for(int j=51; j<55; j++) {
+                    cout<<conn[0]->m_pReadData[j]<<" ";
+                }            
+                cout << endl;
+                cout << "read  000-019: \n";
+                for(int j=0; j<20; j++) {
+                    cout<< setfill(' ')<<setw(6)<<j;
+                }            
+                cout << endl;
+                for(int j=0; j<20; j++) {
+                    cout<< setfill(' ')<<setw(6)<<conn[0]->m_pReadData[j];
+                }            
+                cout << endl;
+           }
 
             cout << endl;
         }
@@ -101,6 +124,8 @@ int main(int argc, char* argv[])
             ++i;
         }
         delete []thMBX;
+        pthread_mutexattr_destroy(&mutex_param_attr);   // clean up the mutex attribute
+        pthread_mutex_destroy(&mutex_param);            // clean up the mutex itself
     }
 }
 

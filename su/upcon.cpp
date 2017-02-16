@@ -3,7 +3,7 @@
 using namespace std;
  
 int arrivedcount = 0;
-
+pubdata                  pubs;
 
 MQTTAsync_connectOptions _conn_opts = MQTTAsync_connectOptions_initializer;
 
@@ -272,6 +272,49 @@ int16_t upcon::publish(cparam &tag) {
     return res;
 }
 
+int16_t publish(cparam &tag) {    
+    int16_t         res = EXIT_FAILURE;
+    string          topic;
+/*   string          name;
+    string          val;
+    string          kval;*/
+    string          ts;
+    string          sf;
+    int16_t         rc;
+//    int32_t         sec, msec;
+   
+    rc = upc[0]->getproperty("pubf", sf) == EXIT_SUCCESS/* && \
+         tag.getproperty("name", name)    == EXIT_SUCCESS;
+         tag.getproperty("topic", topic)  == EXIT_SUCCESS && \
+         tag.getproperty("value", val)    == EXIT_SUCCESS && \
+         tag.getproperty("quality", kval) == EXIT_SUCCESS && \
+         tag.getproperty("sec", sec) == EXIT_SUCCESS && \
+         tag.getproperty("msec", msec) == EXIT_SUCCESS*/;
+         
+    if(rc==0) {
+        cout << "cfg: prop not found" << endl; 
+    }
+    else {
+        timespec* tts;
+        tts = tag.getTS();
+        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
+        replaceString(sf, "value", to_string(tag.getvalue()) );
+        replaceString(sf, "quality", to_string(int(tag.getquality())) );
+        replaceString(sf, "timestamp", ts);
+
+        pthread_mutex_lock( &mutex_pub );
+        if(pubs.size()<_pub_buf_max) {
+            tag.getfullname(topic);
+            pubs.push_back(make_pair(topic, sf));
+            res = EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_pub );
+//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
+        tag.acceptnewvalue();
+    }
+    return res;
+}
+
 //
 // queue of message for pub processing
 //
@@ -303,8 +346,10 @@ void* upProcessing(void *args) {
     upcon *up = (upcon *)(args);
     if(up->getstatus() == INITIALIZED) {
         while(up->getstatus()!=TERMINATE) {
-            up->pubdataproc();
-            usleep(1000);
+           pthread_mutex_lock( &mutex_pub );
+           up->pubdataproc();
+           pthread_mutex_unlock( &mutex_pub );
+           usleep(1000);
         }
     }
 

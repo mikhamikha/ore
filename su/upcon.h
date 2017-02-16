@@ -53,7 +53,7 @@ typedef struct
 typedef std::vector<std::pair<std::string, std::string> > pubdata;
 
 class upcon: public cproperties {
-    pubdata                     pubs;
+//    pubdata                     pubs;
     int                         m_status;
     MQTTAsync                   m_client;
     mqtt_create_options         m_opts;
@@ -73,13 +73,15 @@ class upcon: public cproperties {
         uint32_t handle() { return uint32_t(m_client); } 
 };
 
-typedef std::vector< upcon * > upconnections;
+typedef std::vector< upcon * >  upconnections;
 extern upconnections upc;
 extern MQTTAsync_connectOptions _conn_opts;
-   
+extern pubdata                  pubs;
+  
 int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message);
 void connectionLost(void *context, char *cause);
 void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
 
+int16_t publish(cparam &);
 
 #endif

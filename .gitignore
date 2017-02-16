@@ -2,5 +2,6 @@ bu
 *.o
 hello.cpp
 paho.mqtt.c/*
-
+mqtt/MQTTClient/*
+mqtt/MQTTPacket/*
 

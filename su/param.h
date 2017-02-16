@@ -11,6 +11,16 @@
 #include "main.h"
 #include "utils.h" 
 
+#define m_fc    param1
+#define m_lso   param2
+#define m_lsc   param3
+#define m_cmdo  param4
+#define m_cmdc  param5
+
+#define m_density   param1
+#define m_kv        param2
+#define m_fv        param3
+
 
 enum {
     _parse_root,
@@ -18,6 +28,7 @@ enum {
     _parse_mbcmd,
     _parse_ai,
     _parse_upcon,
+    _parse_display_def,
     _parse_display
 };
 
@@ -32,12 +43,14 @@ protected: 				// спецификатор доступа protected
     timespec		m_ts;
     timespec		m_oldts;
     double			m_rvalue;
+    double			m_rvalue_old;
     int16_t         m_task;             // task to out
     int16_t         m_task_delta;       // task out allowable deviation 
     bool            m_task_go;          // flag 4 task to out
     int16_t         m_raw;              // raw value from module
     int16_t         m_raw_old;          // raw value from module prev step
     uint8_t         m_quality;          // quality of value
+    uint8_t         m_quality_old;      // quality of value prev step
     bool            m_valueupdated;     // new value arrived
     int16_t         m_readOff;
     int16_t         m_readbit;    
@@ -47,7 +60,7 @@ protected: 				// спецификатор доступа protected
     double          m_minRaw;
     double          m_maxRaw;
     int32_t         m_fltTime;
-    bool            m_isBool;
+    int16_t         m_isBool;
     double          m_hihi;
     double          m_hi;
     double          m_lo;
@@ -55,27 +68,40 @@ protected: 				// спецификатор доступа protected
     int16_t         m_connErr;
     double          m_deadband;
     std::string     m_name;
-    std::string     topic;
+    std::string     m_topic;
+    bool            m_init;
+
+    // referenses to counter, limit switches (opened & closed), commands (open & close)
+    cparam*         param1;//m_fc;
+    cparam*         param2;//m_lso;
+    cparam*         param3;//m_lsc;
+    cparam*         param4;//m_cmdo;
+    cparam*         param5;//m_cmdc;
+
+    int32_t         m_cnt_old;
 
 public: 				// спецификатор доступа public
     cparam();			// конструктор класса
-    cparam(const cparam&) {}		// конструктор класса
+//    cparam(const cparam&) {}		// конструктор класса
    ~cparam(){};   
     int16_t     m_sub;   
     cton        m_tasktimer;
     void		*p_conn;	
-    void 		getValue(); 				//                     
-    time_t*     getTS() {
-        return &(m_ts.tv_sec);
-    }
+               
+    timespec* getTS()     { return &m_ts; }
+    double  getvalue()  { return m_rvalue; }
+    uint8_t getquality(){ return m_quality; }
+    void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
     void    init();
     int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
-    int16_t getvalue(double &rOut, uint8_t &nQual);             // get value in EU
+    int16_t getvalue(double &rOut);                             // get value in EU
     int16_t setvalue();                                         // write tasks to modbus writedata area 
     int16_t settask(double rin) {
         if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
             m_task    = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rin-m_minEng)+m_minRaw;
         else m_task = rin;
+//        if( m_name.substr(0,3)=="FC1")
+            cout<<endl<<"settask "<<m_name<<" task=="<<m_task<<endl; 
         m_task_go = true;    
     }
 
@@ -92,19 +118,21 @@ int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 void* paramProcessing(void *args); // поток обработки параметров 
 
-int16_t taskparam( std::string&, std::string&, std::string& );
+//int16_t taskparam( std::string&, std::string&, std::string& );
 int16_t taskparam( std::string&, std::string& );
 
-int16_t getparam( std::string&, double&, int16_t& qual, time_t* );
-int16_t getparam( std::string&, std::string& );
+int16_t getparam( const char*, double&, int16_t& qual, timespec* );
+int16_t getparam( const char*, std::string& );
+cparam* getparam( const char* );
 
 typedef std::vector<std::pair<std::string, cparam> > paramlist;
 
-extern paramlist tags;
-extern bool fParamThreadInitialized;
-extern pthread_mutex_t mutex_param;
-extern pthread_cond_t  data_ready;
-extern pthread_mutex_t mutex_pub;
-extern pthread_cond_t  pub_ready;
+extern paramlist                tags;
+extern bool                     fParamThreadInitialized;
+extern pthread_mutex_t          mutex_param;
+extern pthread_mutexattr_t      mutex_param_attr;
+//extern pthread_cond_t  data_ready;
+extern pthread_mutex_t          mutex_pub;
+//extern pthread_cond_t  pub_ready;
 
 #endif // _PARAM_H

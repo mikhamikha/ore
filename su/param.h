@@ -11,16 +11,19 @@
 #include "main.h"
 #include "utils.h" 
 
-#define m_fc    param1
-#define m_lso   param2
-#define m_lsc   param3
-#define m_cmdo  param4
-#define m_cmdc  param5
+#define m_pos       param1
 
-#define m_density   param1
+#define m_fc        param1
+#define m_lso       param2
+#define m_lsc       param3
+#define m_cmdo      param4
+#define m_cmdc      param5
+
+#define m_dt        param1
 #define m_kv        param2
 #define m_fv        param3
-
+#define m_pt1       param4
+#define m_pt2       param5
 
 enum {
     _parse_root,
@@ -47,8 +50,8 @@ protected: 				// спецификатор доступа protected
     int16_t         m_task;             // task to out
     int16_t         m_task_delta;       // task out allowable deviation 
     bool            m_task_go;          // flag 4 task to out
-    int16_t         m_raw;              // raw value from module
-    int16_t         m_raw_old;          // raw value from module prev step
+    double         m_raw;              // raw value from module
+    double         m_raw_old;          // raw value from module prev step
     uint8_t         m_quality;          // quality of value
     uint8_t         m_quality_old;      // quality of value prev step
     bool            m_valueupdated;     // new value arrived
@@ -93,7 +96,7 @@ public: 				// спецификатор доступа public
     uint8_t getquality(){ return m_quality; }
     void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
     void    init();
-    int16_t getraw(int16_t &nOut);                              // get raw data from readdata buffer
+    int16_t getraw();                              // get raw data from readdata buffer
     int16_t getvalue(double &rOut);                             // get value in EU
     int16_t setvalue();                                         // write tasks to modbus writedata area 
     int16_t settask(double rin) {
@@ -112,6 +115,7 @@ public: 				// спецификатор доступа public
     int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }   
 
     int16_t rawValveValueEvaluate();
+    int16_t flowEvaluate(); 
 }; // конец объявления класса cparam
 
 int16_t readCfg();

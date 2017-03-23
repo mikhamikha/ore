@@ -12,19 +12,21 @@ view dsp;
 //
 // функция заполнения данных класса дисплея конфигурационными данными
 //
-void view::definedspline( int16_t nd, int16_t nr, std::string sr) {
-    if( nd > 0 && nr > 0 ) {
-        if( pages.size() < nd ) {
+void view::definedspline( int16_t nd, int16_t nr, std::string& sr, const std::string& attr="" ) {
+    if( nd >= 0 && nr >= 0 ) {
+        if( pages.size() <= nd ) {
             pagestruct  page;
-            while( pages.size() < nd ) pages.push_back(page);
+            while( pages.size() <= nd ) pages.push_back(page);
         }
-        if( pages.at(nd-1).rows.size() < nr ) {
+        if( pages.at(nd).rows.size() <= nr ) {
             string s("");
-            while( pages.at(nd-1).rows.size() < nr ) pages.at(nd-1).rows.push_back(s);
+            while( pages.at(nd).rows.size() <= nr ) { pages.at(nd).rows.push_back(s); pages.at(nd).attr.push_back(s); } 
         }
-        pages.at(nd-1).rows.at(nr-1) = sr;
+        string strim(" \t");
+        pages.at(nd).rows.at(nr) = trim( sr, strim );
+        pages.at(nd).attr.at(nr) = trim( attr, strim );
         cout<<"define dsp "<<nd<<" row "<<nr<<" content "<<sr \
-            <<" dspsize "<<pages.size()<<" rows "<<pages.at(nd-1).rows.size()<<endl;
+            <<" dspsize "<<pages.size()<<" rows "<<pages.at(nd).rows.size()<<endl;
     }
 }
 
@@ -84,8 +86,8 @@ void sympad( string& sin, char cpad, int16_t sizef ) {
 //    cout<<"new length "<<sin.length()<<" "<<sin<<" |"<<endl;
 }
 
-void view::println( string& sin ) {
-    string  buf, son("{"), soff("}");
+void view::println( string& sin, bool setValue=true ) {
+    string  buf, son("{<"), soff("}>");
 //    char    buff[100];
 //    int16_t len;
     int16_t nfont;
@@ -94,7 +96,7 @@ void view::println( string& sin ) {
     getproperty( m_curpage, sfont, nfont );
  //   cout<<"println "<<m_curpage<<" "<<sfont<<" "<<nfont<<endl;
     to_866( sin, buf );
-    assignValues(buf, son, soff);
+    if( setValue ) assignValues(buf, son, soff);
     sympad( buf, ' ', nfont );
    
     Noritake_VFD_GU3000::println(buf.c_str());
@@ -142,43 +144,43 @@ int16_t assignValues(string& subject, const string& sop, const string& scl, char
 // функция замены тэгов в строках {tag} на их значения
 //
 int16_t assignValues(string& subject, const string& sop, const string& scl) {
-    size_t      nbe = 0, nen = 0;
+    size_t      nbe = 0, nen = 0, found;
     int16_t     rc=EXIT_SUCCESS;
     bool        fgo = true;
 
-//    cout<<subject<<" "<<subject.length()<<endl;
     while(fgo) {
-        nbe = subject.find(sop, nen); 
+        nbe = subject.find_first_of(sop, nen); 
         fgo = (nbe != std::string::npos);
-        if( fgo && (nen = subject.find(scl, nbe)) != std::string::npos ) {
-                string na(subject, nbe+1, nen-nbe-1);
-                string va;
+        found = sop.find(subject[nbe]);
+        if( fgo && found<scl.size() && (nen = subject.find(scl[found], nbe)) != std::string::npos ) {
+            string na(subject, nbe+1, nen-nbe-1);
+            string va = "нет значения";
+            
+            if( subject[nbe]=='{' ) {       // подставляем значение переменной   
                 vector<string> vc;
                 strsplit(na, ':', vc);
                 na = vc.at(0);
-                
-//                cout<<" vc="<<vc.size();
-//                for(int j=0;j<vc.size();j++) cout<<" "<<vc.at(j)<<" ";cout<<" \n ";
                 if(getparam( na.c_str(), va ) == EXIT_SUCCESS) {
                     if(vc.size() > 1) {
                         vector<string> fld;
                         if(strsplit(vc.at(1), '.', fld) > 1 ) {
-//                            cout<<" fld="<<fld.size();
-//                            for(int j=0;j<vc.size();j++) cout<<" "<<fld.at(j)<<" "; cout<<va;
                             stringstream ss;
                             ss<<fixed<<setprecision(fld.at(1).size())<<atof(va.c_str());
                             va = ss.str();
-//                            cout<<" "<<fld.at(1).size()<<" "<<ss.str()<<" "<<va<<endl;
                         }
                     }
-                    subject.replace( nbe, nen-nbe+1, va );
-                    nen = nbe+va.length();
                 }
+                else va="-1";
+            }
+            else if( subject[nbe]=='<' ) {  // подставляем значение задания
+                pagestruct* pg = dsp.curpage();
+                if(pg) va = to_string(pg->gettask());
+            }
+            subject.replace( nbe, nen-nbe+1, va );
+            nen = nbe+va.length();
         }
         else fgo =false;
-//        cout<<fgo<<" "<<subject<<" "<<subject.length()<<endl;
     }
-//    cout<<endl;
     return rc;
 }
 
@@ -205,32 +207,34 @@ void view::outview(int16_t ndisp=-1) {
             sprop = "caption";
             getproperty( sprop, sout ); 
 //            cout<<" sprop = "<<sprop<<" sout = "<<sout<<" font="<<nfont<<endl;
-            println( sout );
+            println( sout, false );
             sout = "";
             sympad( sout, '-', 1 ); println( sout );
+            GU3000_boldOff();
        }
        else {
             GU3000_setFontSize( (nfont==2)? _8x16Format: _6x8Format, 1, 1 );
-            GU3000_boldOff();
             int16_t nrow = nr-1;
-            sout = pg.rows.at(nrow);
+            sout = pg.rows.at( nrow );
             
 //            sympad( sout, ' ', nfont );
-            if( nrow == pg.rowget() ) GU3000_invertOn();
-            
+            if( nrow == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); }            
             println( sout );
-            if( nrow == pg.rowget() ) GU3000_invertOff();
+            if( nrow == pg.rowget() ) { GU3000_invertOff(); GU3000_boldOff(); } 
         }
     }
     sout = "";
     println( sout );
 
     GU3000_setFontSize( _6x8Format, 1, 1 );
+    GU3000_setCursor( 0, 112 );
+    sout = ""; sympad( sout, '-', 1 ); println( sout );    
     GU3000_setCursor( 0, 120 );
     sprop = "bottom";
     getproperty( sprop, sout ); 
 //    cout<<"sprop = "<<sprop<<" sout = "<<sout<<endl;
-    println( sout );
+    GU3000_boldOn();
+    println( sout, false );
 }
 
 //
@@ -251,8 +255,8 @@ void* viewProcessing(void *args) {
 }
 
 void view::keymanage() {
-    std::string     stag; 
-    double          rval;
+//    std::string     stag; 
+    int16_t         nval[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     int16_t         nqu;
     timespec*       tts;
     static bool     binit = false;
@@ -262,16 +266,21 @@ void view::keymanage() {
     pagestruct      &pg = pages.at(m_curpage);
 
 //    cout << " key size = "<<sizeof(btns)/sizeof(char*)<<" button str size = "<<sizeof(m_btn)<<endl;
+//    cout << " keys ";
     for(int j=0; j<sizeof(btns)/4; j++) {         // read buttons states on front panel of box
-        getparam( btns[j], rval, nqu, tts );
-        bbtn |= ( (rval != 0 && !olds[j]) << j );
-        olds[j] = (rval != 0);
+//      getparam( btns[j], rval, nqu, tts, 1 );
+        getparamcount( btns[j], nval[j] );
+//        cout<<nval[j]<<" ";
+        bbtn |= ( (nval[j] != 0 && !olds[j]) << j );
+        olds[j] = (nval[j] != 0);
     }
+//    cout<<endl;
+    
     memcpy( (void*)&m_btn, &bbtn, sizeof(cbtn) );
     // processing buttons according to the display mode
     switch(m_mode) {
         case _view_mode:
-            if(m_btn.esc) {
+            if(m_btn.esc) {                                 // 0
                 cout << "btn Esc\n";
 //                m_visible = !m_visible;
 //                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
@@ -279,29 +288,29 @@ void view::keymanage() {
                 pagePrev();
                 if( n > m_maxpage ) pages.pop_back();
             }
-            if(m_btn.left) {            
+            if(m_btn.left) {                                // 1
                 cout << "btn Left\n";
                 pageBack();
             }
-            if(m_btn.right) {            
+            if(m_btn.right) {                               // 2
                 cout << "btn Right\n";
                 pageNext();
             }
-            if(m_btn.down) {            
+            if(m_btn.down) {                                // 4
                 cout << "btn Down\n";
-                pg.rownext();
+                pg.rownext(nval[4]);
             }  
-            if(m_btn.up) {            
+            if(m_btn.up) {                                  // 5
                 cout << "btn Up\n";
-                pg.rowprev();
+                pg.rowprev(nval[5]);
             }                    
-            if(m_btn.enter) {            
+            if(m_btn.enter) {                               // 3
                 cout << "btn Enter\n";
                 gotoDetailPage();
             }                    
             break;
         case _task_mode:
-            if(m_btn.esc) {
+            if(m_btn.esc) {                                 // 0
 //                m_visible = !m_visible;
 //                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
                 int n = m_curpage; 
@@ -309,6 +318,29 @@ void view::keymanage() {
                 if( n > m_maxpage ) pages.pop_back();
                 m_mode = _view_mode;
             }
+            if(m_btn.down) {                                // 4
+                cout << "btn Down\n";
+                double n = pg.gettask();
+                n = n-nval[4]*5;
+                pg.settask( n );
+            }  
+            if(m_btn.up) {                                  // 5
+                cout << "btn Up\n";
+                double n = pg.gettask();
+                n = n+nval[5]*5;
+                pg.settask( n );
+            }                    
+            if(m_btn.enter) {                               // 3
+                cout << "btn Enter\n";
+                string sn, sval;
+//                cout<<pg.rows[pg.rowget()]<<" "<<getTagName(pg.rows[pg.rowget()].c_str())<<endl;
+//                cout<<"yahoo\n";
+//                string sn = getTagName(pg.rows[pg.rowget()].c_str());
+//                sn = sn.substr( 0, sn.find(':') );
+                sn = "/top/"+pg.m_tag+"/task";
+                sval = to_string( pg.gettask() );
+                taskparam( sn, sval );
+            }                    
             break;
     }
 }
@@ -316,8 +348,8 @@ void view::keymanage() {
 string getTagName( const char* sin ) {
     string  s(sin);
 
-    std::size_t found1 = s.find_last_of( "{" );
-    std::size_t found2 = s.find_last_of( "}" );
+    std::size_t found1 = s.find_last_of( "{<" );
+    std::size_t found2 = s.find_last_of( "}>" );
     
     if( found1 != std::string::npos && found2 != std::string::npos && found1 < found2 ) {
         s = s.substr( found1+1, found2-found1-1 );
@@ -336,20 +368,33 @@ string buildLine( const char* smess, const string& sin ) {
 
     return na;
 }
-
+// 
+// создание временного окна для ввода задания для параметра
+// 
 void view::gotoDetailPage() {
     pagestruct& pg = pages.at(m_curpage);
-    string s = getTagName(pg.rows.at(pg.rowget()).c_str());
-    
-    definedspline( m_maxpage+2, 1, s );         
-    definedspline( m_maxpage+2, 2, "Значение  {"+s+"}"  );   
-    definedspline( m_maxpage+2, 3, "Задание   <input>"  );
-    pages.at(m_maxpage+1).setprev( m_curpage );
-    s="2";
-    string sfont("fonts");
-    setproperty( m_maxpage+1, sfont, s );
-    GU3000_clearScreen();
-    m_curpage = m_maxpage+1;
-    m_mode = _task_mode;
+    int16_t row = pg.rowget();
+    string ss = pg.attr.at(row); 
+    if( ss.size() && ss[0]=='i' ) {
+        string s = getTagName(pg.rows.at(row).c_str());
+        ss = "Значение  {"+s+"}";
+        definedspline( m_maxpage+1, 1, ss ); 
+        ss = "Задание   <"+s+">";
+        definedspline( m_maxpage+1, 3, ss );
+        s = s.substr(0, s.find(':'));
+        definedspline( m_maxpage+1, 0, s );         
+        pages.at(m_maxpage+1).setprev( m_curpage );
+        pages.at(m_maxpage+1).rowset(3);
+        pages.at(m_maxpage+1).m_tag = s;
+        getparam( s.c_str(), ss );
+        cout<<"gotodetail init "<<s<<" val = "<<ss;
+        pages.at(m_maxpage+1).settask( atof(ss.c_str()) );
+        s="2";
+        string sfont("fonts");
+        setproperty( m_maxpage+1, sfont, s );
+        GU3000_clearScreen();
+        m_curpage = m_maxpage+1;
+        m_mode = _task_mode;
+    }
 }
 

@@ -53,8 +53,9 @@ cparam::cparam() {
     m_raw_old = 0;
     m_rvalue = 0;
     m_rvalue_old = 0;
-    m_init = false;
+    m_firstscan = true;
     m_name.assign("");
+    m_motion    = 0;
 }
 
 void cparam::init() {
@@ -110,7 +111,7 @@ void cparam::init() {
     }
 
     if( m_readOff == -2 ) {
-        if( m_name.find("FV") == 0 ) {   // if parameter must be evaluate from other
+        if( m_name.find("FV") == 0 ) {   // if parameter (flow valve %)  must be evaluate from other
             string  scnt, sop, scl, scmop, scmcl;
             int16_t numop, numcl;
             
@@ -130,26 +131,32 @@ void cparam::init() {
             m_cmdc  = getparam( scmcl.c_str() );  // CV close cmd
         }
         else
-        if( m_name.find("FT") == 0 ) {   // if parameter must be evaluate from other
-            string  s1, s2, s3, s4, s5;
-            int16_t num;
-            
-            num = atoi( m_name.substr(2, 2).c_str() );
-           
-            s1 = "DT"+to_string(num);
-            s2 = "KV"+to_string(num);
-            s3 = "LT"+to_string(num);
-            s4 = "PT"+to_string(num);
-            s5 = "PT31"/*+to_string(num)*/;
-           
-            m_dt      = getparam( s1.c_str() );  // density 
-            m_kv      = getparam( s2.c_str() );  // Kv factor
-            m_fv      = getparam( s3.c_str() );  // valve % opened
-            m_pt1     = getparam( s4.c_str() );  // давление в пласте
-            m_pt2     = getparam( s5.c_str() );  // давление у насоса
+        if( m_name.find("FT") == 0 ) {            // if parameter (flow) must be evaluate from other
+            if(m_name.size()>2 && m_name[2]=='3') {
+                m_ft1 = getparam( "FT11" );
+                m_ft2 = getparam( "FT21" );
+            }
+            else {
+                string  s1, s2, s3, s4, s5;
+                int16_t num;
+                
+                num = atoi( m_name.substr(2, 2).c_str() );
+               
+                s1 = "DT"+to_string(num);
+                s2 = "KV"+to_string(num);
+                s3 = "LV"+to_string(num);
+                s4 = "PT"+to_string(num);
+                s5 = "PT31"/*+to_string(num)*/;
+               
+                m_dt      = getparam( s1.c_str() );  // density 
+                m_kv      = getparam( s2.c_str() );  // Kv factor
+                m_fv      = getparam( s3.c_str() );  // valve % opened
+                m_pt1     = getparam( s4.c_str() );  // давление в пласте
+                m_pt2     = getparam( s5.c_str() );  // давление у насоса
+            }
         }
         else
-        if( m_name.find("LT") == 0 ) {   // if parameter must be evaluate from other
+        if( m_name.find("LV") == 0 ) {   // if parameter (valve position mm) must be evaluate from other
             string  s1;
             int16_t num;
             
@@ -160,26 +167,23 @@ void cparam::init() {
             m_pos = getparam( s1.c_str() );  // valve position in percent 
         }
    }
-
-    m_init=true;
 }
 
 //
 //  Расчет / задание положения клапана по показанию датчика Холла, конечным выключателям и типу команды
 //  
 int16_t cparam::rawValveValueEvaluate() {
-    int16_t lso, lso_old, lsc, lsc_old, cmdo, cmdc, cnt;
+    int16_t lso, lso_old, lsc, lsc_old, cmdo, cmdc, cnt, cnt_old;
 //    int16_t qual;
     time_t  t;
     int16_t rc, rc1, rc2;
-    rc = m_fc->m_quality != OPC_QUALITY_GOOD;
+    rc = (m_fc->m_quality != OPC_QUALITY_GOOD);
     rc1 = ( ( m_lso->m_quality | m_lsc->m_quality ) != OPC_QUALITY_GOOD );
     rc2 = ( ( m_cmdo->m_quality | m_cmdc->m_quality ) != OPC_QUALITY_GOOD );
   
     m_quality = (rc||rc1||rc2) ? OPC_QUALITY_BAD : OPC_QUALITY_GOOD;
         
     if( rc || rc1 || rc2 ) {
-        cout<<"ICP qual="<<rc<<" DI qual="<<rc1<<" DO qual="<<rc2<<endl; 
         return EXIT_FAILURE; 
     }
     else rc = EXIT_SUCCESS; 
@@ -188,16 +192,49 @@ int16_t cparam::rawValveValueEvaluate() {
     lsc     = m_lsc->m_rvalue;
     lso_old = m_lso->m_rvalue_old;
     lsc_old = m_lsc->m_rvalue_old;
+    m_lso->m_rvalue_old = lso;
+    m_lsc->m_rvalue_old = lsc;
     cmdo    = m_cmdo->m_rvalue;    
     cmdc    = m_cmdc->m_rvalue;
-    cnt     = int(m_fc->m_rvalue)%_ten_thou;
+    cnt     = int(m_fc->m_rvalue);//%_ten_thou;
+    cnt_old = int(m_fc->m_rvalue_old);//%_ten_thou;
+
+    if( m_name.substr(0,3)=="FV1")    
+        cout<<m_name<<" CNT qual="<<rc<<" DI qual="<<rc1<<" DO qual="<<rc2<<" lso="<<lso_old<<" | "<<lso \
+        <<" lsc="<<lsc_old<<" | "<<lsc<<" cmdo="<<cmdo<<" cmdc="<<cmdc<<" motion="<<m_motion<<\
+        " task_go="<<m_task_go<<" cnt="<<cnt_old<<" | "<<cnt; 
 
 //    m_raw = m_raw_old + (cmdo - cmdc)*(cnt%_ten_thou - m_raw_old);
 
     if( (cmdo ^ cmdc) != 0 ) {
-        m_raw = m_raw_old + (cmdo-cmdc)*(cnt - m_cnt_old);
+        m_raw = m_raw_old + (cmdo-cmdc)*(cnt - cnt_old);
+        m_task_go = false;
     }
-    else m_raw = m_raw_old;
+    else {
+        if(cnt>20000) {
+            m_fc->settask( 0 );
+            cnt = 0;
+        }
+        if( m_motion && !m_task_go ) {
+            if( m_minRaw==-2 && (lso || lsc) && cnt>1000 ) { 
+                m_minRaw = 0; m_maxRaw = cnt; 
+                m_task_delta = m_maxRaw/10; 
+                m_raw = lso?cnt:0;
+                m_raw_old = m_raw;
+                m_fc->settask( 0 );
+            } 
+            else if(m_minRaw >= 0) {
+                if( m_motion==1 ) m_task_delta -= (m_task - m_raw);
+                if( m_motion==2 ) m_task_delta += (m_task - m_raw);
+            }
+            m_motion = 0;
+        }
+        else
+        if( m_motion==0 ) { 
+            m_raw = m_raw_old;
+        }
+        
+    }
     
 /*    
     if( m_name.substr(0,3)=="FV1") {
@@ -212,30 +249,53 @@ int16_t cparam::rawValveValueEvaluate() {
         m_tasktimer.reset();
     }
 
-    if( m_task_go && cmdo==0 && cmdc==0 ) {
+    if( m_name.substr(0,3)=="FV1") {
+        cout<<dec<<" motion="<<m_motion<<" delta="<<m_task_delta<<" task="<<m_task<<" raw="<<m_raw<<\
+            " minr="<<m_minRaw<<" maxr="<<m_maxRaw<<endl;
+    }   
+
+    if( m_task_go && !cmdo && !cmdc ) {
         bool fGO = false;
 
         if( m_minRaw==-1 ) {
             cout<<" valve "<< m_cmdc->m_name <<" cmd go "<<m_task<<" %"<<endl;
-            m_cmdc->settask( 1 ); 
-            fGO = true;
-        } else if( m_minRaw>=0 ) {
-            if( m_task - m_raw > m_task_delta ) { m_cmdo->settask( 1 ); fGO = true; }
-            if( m_raw - m_task > m_task_delta ) { m_cmdc->settask( 1 ); fGO = true; }
-        }
-        m_task_go = false;
 
-        if(fGO) m_tasktimer.start(180000);
+            if( lsc || lso ) {
+                m_fc->settask( 0 );
+                if(!cnt) { 
+                    m_minRaw=-2;
+                    if(lsc) {
+                        m_cmdo->settask( 1 ); 
+                        m_motion = 1;                    
+                    }
+                    else {
+                        m_cmdc->settask( 1 ); 
+                        m_motion = 2;                    
+                    }
+                    fGO = true;
+                }
+            }
+            else {
+                m_cmdc->settask( 1 ); 
+                m_motion = 2;  
+                fGO = true;
+            }
+        } else if( m_minRaw>=0 ) {
+            if( m_task - m_raw > m_task_delta ) { m_cmdo->settask( 1 ); fGO = true; m_motion = 1; }
+            if( m_raw - m_task > m_task_delta ) { m_cmdc->settask( 1 ); fGO = true; m_motion = 2; }
+        }
+
+        if(fGO) m_tasktimer.start(180000); 
     }
 
     if( lso && !lso_old ) {
-       if( cmdo ) {
+        if( cmdo ) {
             m_cmdo->settask( 0 );
             m_tasktimer.reset();
-            if( m_minRaw==-2 ) { m_minRaw = 0; m_maxRaw = cnt; m_task_delta = m_maxRaw/10; }
+//            if( m_minRaw==-2 ) { m_minRaw = 0; m_maxRaw = cnt; m_task_delta = m_maxRaw/10; }
         }
         m_raw = m_maxRaw; m_raw_old = m_maxRaw; 
-        m_fc->settask( /*( int(m_fc->m_rvalue) < _ten_thou ) ? _ten_thou :*/ 0 );
+        if( m_minRaw>=0 ) m_fc->settask( 0 );
     }
 
     if( lsc ) {
@@ -245,9 +305,16 @@ int16_t cparam::rawValveValueEvaluate() {
                 m_tasktimer.reset();
             }
             m_raw = 0; m_raw_old = 0; 
-            m_fc->settask( /*( int(m_fc->m_rvalue) < _ten_thou ) ? _ten_thou :*/ 0 );
+            m_fc->settask( 0 );
         }
-        if( m_minRaw==-1 && !cnt ) { m_minRaw=-2; m_cmdo->settask( 1 ); }
+        if(!cnt) {
+            if(m_minRaw==-1) {
+                m_minRaw=-2; 
+                m_cmdo->settask( 1 ); 
+                m_motion = 1;
+                m_task_go = 1;
+            }
+        }
     }
 
     if( cmdo && m_raw > (m_task-m_task_delta) && m_minRaw>=0 )  {
@@ -256,7 +323,7 @@ int16_t cparam::rawValveValueEvaluate() {
     if( cmdc && m_raw < (m_task+m_task_delta) && m_minRaw>=0 ) {
         m_cmdc->settask( 0 ); m_tasktimer.reset();
     }
-    m_cnt_old = cnt;
+    m_fc->m_rvalue_old = cnt;
     
     return rc;
 }
@@ -265,53 +332,62 @@ int16_t cparam::rawValveValueEvaluate() {
 //  Расчет мгновенного расхода по положению клапана и перепаду давления
 //  
 int16_t cparam::flowEvaluate() {
+    int16_t rc=EXIT_SUCCESS, rc1;
 
-    int16_t rc, rc1;
-
-    rc = (m_pt1->m_quality != OPC_QUALITY_GOOD);
-    rc1 = (m_fv->m_quality != OPC_QUALITY_GOOD);
-  
-    m_quality = (rc||rc1) ? OPC_QUALITY_BAD : OPC_QUALITY_GOOD;
-        
-    if( rc || rc1 ) {
-        if(m_name.substr(0,3)=="FT1") { 
-            double rsim_en, rsim_v;
-            getproperty("simen", rsim_en);
-            getproperty("simva", rsim_v);            
-            cout<<"flow ev "<<m_name<<"  PT qual="<<rc<<" LT qual="<<rc1;
-            cout<<" pt name "<<m_pt1->m_name<<" pt val "<<m_pt1->m_rvalue<<" pt val "<<m_pt1->m_rvalue \
-                <<" pt simen "<<rsim_en<<" pt simval "<<rsim_v<<endl; 
-        }
-        return EXIT_FAILURE; 
-    }
-    else rc = EXIT_SUCCESS; 
-
-    double sq, r1=1, r11=4, ht1 = m_fv->m_rvalue-1, _tan = 0.0448210728500398; 
-    cout<<"fv\tpt1\tpt2\tkv\tdt\tsq\tflow\n";
-    cout<<m_fv->m_name<<"\t"<<m_pt1->m_name<<"\t"<<m_pt2->m_name<<"\t"<<m_kv->m_name<<"\t"<<m_dt->m_name<<endl;
-    cout<<m_fv->m_rvalue<<"\t"<<m_pt1->m_rvalue<<"\t"<<m_pt2->m_rvalue<<"\t"<<m_kv->m_rvalue<<"\t"<<m_dt->m_rvalue;
-    
-
-    if( ht1 < 1 ) {
-        sq = (ht1<0)?0:3.14;
-    }
+//    cout<<m_name;
+    if( m_name[2]=='3' ) {
+        m_raw = m_ft1->m_rvalue + m_ft2->m_rvalue;
+        m_quality = m_ft1->m_quality | m_ft2->m_quality;
+//        cout<<" | "<<m_ft1->m_raw<<" + "<<m_ft2->m_raw<<" = "<<m_raw<<" | "<<m_quality;
+    } 
     else {
-        double _add;
-        switch(int(ht1)) {
-            case 68: _add = 6.652; break;
-            case 69: _add = 19.654; break;
-            case 70: _add = 34.434; break;
-            case 71: _add = 50.266; break;
-            default: _add = 0;         
+        rc = (m_pt1->m_quality != OPC_QUALITY_GOOD);
+        rc1 = (m_fv->m_quality != OPC_QUALITY_GOOD);
+      
+        m_quality = (rc||rc1) ? OPC_QUALITY_BAD : OPC_QUALITY_GOOD;
+            
+        if( rc || rc1 ) {
+            if(m_name.substr(0,3)=="FT1") { 
+                double rsim_en, rsim_v;
+                getproperty("simen", rsim_en);
+                getproperty("simva", rsim_v);            
+//                cout<<"flow ev "<<m_name<<"  PT qual="<<rc<<" LT qual="<<rc1; \
+                cout<<" pt name "<<m_pt1->m_name<<" pt val "<<m_pt1->m_rvalue<<" pt val "<<m_pt1->m_rvalue \
+                    <<" pt simen "<<rsim_en<<" pt simval "<<rsim_v<<endl; 
+            }
+            m_raw = 0;
+            return EXIT_FAILURE; 
         }
-        if( ht1 > 67 ) ht1 = 67;
-        sq = 3.14 + ht1 * ( r1 + 1 + ht1 * _tan )*2 + _add;     // расчет площади диафрагмы
+        else rc = EXIT_SUCCESS; 
+
+        double sq, r1=1, r11=4, ht1 = m_fv->m_rvalue-1, _tan = 0.0448210728500398; 
+//        cout<<"fv\tpt1\tpt2\tkv\tdt\tsq\tflow\n";
+//        cout<<m_fv->m_name<<"\t"<<m_pt1->m_name<<"\t"<<m_pt2->m_name<<"\t"<<m_kv->m_name<<"\t"<<m_dt->m_name<<endl;
+//        cout<<m_fv->m_rvalue<<"\t"<<m_pt1->m_rvalue<<"\t"<<m_pt2->m_rvalue<<"\t"<<m_kv->m_rvalue<<"\t"<<m_dt->m_rvalue;
+        
+
+        if( ht1 < 1 ) {
+            sq = (ht1<0)?0:3.14;
+        }
+        else {
+            double _add;
+            switch(int(ht1)) {
+                case 68: _add = 6.652; break;
+                case 69: _add = 19.654; break;
+                case 70: _add = 34.434; break;
+                case 71: _add = 50.266; break;
+                default: _add = 0;         
+            }
+            if( ht1 > 67 ) ht1 = 67;
+            sq = 3.14 + ht1 * ( r1 + 1 + ht1 * _tan )*2 + _add;     // расчет площади диафрагмы
+        }
+        
+        m_raw = m_kv->m_rvalue*sq*1e-6*sqrt((m_pt1->m_rvalue-m_pt2->m_rvalue)*2*1e6/ \
+               ((m_dt->m_rvalue > 100 ) ? m_dt->m_rvalue : 1000) )*86400;
+        
+//        cout<<"\t"<<sq<<"\t"<<m_raw<<endl;
     }
-    
-    m_raw = m_kv->m_rvalue*sq*1e-6*sqrt((m_pt1->m_rvalue-m_pt2->m_rvalue)*2*1e6/ \
-           ((m_dt->m_rvalue > 100 ) ? m_dt->m_rvalue : 1000) )*86400;
-    
-    cout<<"\t"<<sq<<"\t"<<m_raw<<endl;
+//    cout<<endl;
     return rc;
 }
 
@@ -330,37 +406,41 @@ int16_t cparam::getraw() {
 //        cout<<m_raw<<" ";
         if( m_readbit >= 0 ) {
             m_raw = (( int(m_raw) & ( 1 << m_readbit ) ) != 0);
+            m_trigger = (( mb->m_pReadTrigger[m_readOff] & ( 1 << m_readbit ) ) != 0);
         }
 //if(m_name.substr(0,3)=="FC1") cout<<m_raw<<" "<<dec<<endl;
         setproperty("raw", m_raw);
-        rc=EXIT_SUCCESS;
-
         if ( m_connErr >= 0 ) {
             m_quality = (mb->m_pReadData[m_connErr])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
         }
+        rc=EXIT_SUCCESS;
     }
     else if( m_readOff == -2 ) {
         if(m_name.find("FV") == 0 ) {
             rc =rawValveValueEvaluate();
             setproperty("raw", m_raw);    
+//            rc=EXIT_SUCCESS;
         }
         else
-        if(m_name.find("LT") == 0 ) {
-            rc=EXIT_SUCCESS;
+        if(m_name.find("LV") == 0 ) {
             m_raw = m_pos->m_rvalue;
+            m_minRaw = m_pos->m_minRaw;
+            m_maxRaw = m_pos->m_maxRaw;
             m_quality = m_pos->m_quality;
-            setproperty("raw", m_raw);    
+            setproperty("raw", m_raw); 
+            rc=EXIT_SUCCESS;
         }
         else
         if(m_name.find("FT") == 0 ) {
             rc =flowEvaluate();
             setproperty("raw", m_raw);    
+//            rc=EXIT_SUCCESS;
         }
     }
 //    cout<<dec<<endl;
-    
     return rc;
 }
+
 //
 //  обработка параметров аналогового типа
 //  приведение к инж. единицам, фильтрация, аналог==дискрет
@@ -378,7 +458,7 @@ int16_t cparam::getvalue(double &rOut) {
     double      rsim_en = 0, rsim_v;
     cmbxchg     *mb = (cmbxchg *)p_conn;
 
-    if(!m_init) {
+    if(m_firstscan) {
         init();
     }
     clock_gettime(CLOCK_MONOTONIC,&tv);
@@ -389,6 +469,7 @@ int16_t cparam::getvalue(double &rOut) {
    
     if( (rc = getproperty("simen", rsim_en) | \
             getproperty("simva", rsim_v)) == EXIT_SUCCESS && rsim_en != 0 ) { // simulation mode switched ON 
+        m_quality_old = m_quality;
         rVal  = rsim_v;
         rOut  = rsim_v;
         m_quality = OPC_QUALITY_GOOD;
@@ -411,15 +492,14 @@ int16_t cparam::getvalue(double &rOut) {
                 rOut = rVal;                                            // current value
             }
         }
-        if( m_name.substr(0,4)=="FT11") \
+//      if( m_name.substr(0,4)=="FT11") \
             cout <<"getvalue name="<<m_name<<" oldT "<< nodt << " | curT " << nctt << " | dT " << nD \
                 <<" |v "<<dec<<rVal<<" |vOld "<<m_rvalue<<" |vOldOld "<<m_rvalue_old \
                 <<" |raw "<<m_raw<<" |d "<<m_deadband<<" maxE "<<m_maxEng<<" minE "<<m_minEng \
                 <<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<<" hihi "<<m_hihi<<" | mConnErrOff "<<m_connErr \
                 <<" |qOld "<<int(m_quality_old)<<" |q "<<int(m_quality)<<endl;
 
-        m_rvalue_old = m_rvalue;            
-        // save value if it (or quality) was changes
+//      save value if it (or quality) was changes
         if( fabs(rVal-m_rvalue)>=m_deadband || m_quality_old != m_quality || nD>60*_million) {
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
@@ -428,11 +508,12 @@ int16_t cparam::getvalue(double &rOut) {
             setproperty("quality", m_quality);
             setproperty("sec",  int32_t(tv.tv_sec));
             setproperty("msec", int32_t(tv.tv_nsec/_million));
-//            if( m_name.substr(0,3)=="FV1") cout<<endl;
+//          if( m_name.substr(0,3)=="FV1") cout<<endl;
 //                cout <<" |v "<< rVal<<" |vold "<<m_rvalue<< \
                 " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
             m_rvalue = rVal;
-       } 
+        } 
+        if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
     }    
     
     return rc;
@@ -445,7 +526,7 @@ int16_t cparam::setvalue() {
     int16_t nOff;
 
     if( m_writeOff >= 0 ) {
-//        if( m_name.substr(0,3)=="FC1")
+//      if( m_name.substr(0,3)=="FC1")
 //            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;      
         mb->m_pWriteData[m_writeOff] = m_task;
         mb->m_pLastWriteData[m_writeOff] = m_task-1;
@@ -473,7 +554,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL) {
     while( std::getline( fstr, line ) ) {
 //        cout << line.c_str() << endl;
         lineorig = line;
-        removeCharsFromString(line, (char *)" \t\r");
+        reduce(line, (char *)" \t\r");
         lineL = line;
         std::transform(lineL.begin(), lineL.end(), lineL.begin(), easytolower);
         if(lineL.length()==0 || lineL[0]=='#') continue;
@@ -532,7 +613,7 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL) {
                         std::istringstream iss( lineorig );
 
                         if( std::getline( iss, stag, '=') ) {
-                            removeCharsFromString(stag, (char*)(" "));
+                            reduce(stag, (char*)(" "));
                             std::getline( iss, sval );
                             cout<<"cfg "<<stag<<" = "<<sval<<endl;
                             dsp.setproperty( stag, sval );
@@ -542,24 +623,21 @@ int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL) {
                case _parse_display: {
                         int32_t         ndisp  = int32_t(obj);
                         vector<string>  vc;
-                        std::string     sval, stag;
                        
 //                        cout<<"|| "<<lineorig<<" ||"<<endl;
                         strsplit( lineorig, ';', vc );
-                        if( vc.size() > 1 ) {
-                            sval = vc[0]; nline = atoi( sval.c_str() );
-//                            cout << "1parse disp " << ndisp << " " << sval << " | " <<vc[1]<<endl;
-                            dsp.definedspline( ndisp, nline, vc[1] );
+                        if( vc.size() > 2 ) {
+                            nline = atoi( vc[0].c_str() );
+                            cout << "1parse disp " << ndisp << " " << vc[1] << " | " <<vc[2]<<endl;
+                            if(ndisp>0 && nline>0) dsp.definedspline( ndisp-1, nline-1, vc[1], vc[2] );
                         }
                         else {
                             strsplit( lineorig, '=', vc );
                             if( vc.size() > 1 ) {
-                                stag = vc[0];
-                                sval = vc[1];
-                                removeCharsFromString(stag, (char*)(" "));
-                                removeCharsFromString(sval, (char*)(" "));
+                                reduce( vc[0], (char*)(" ") );
+                                reduce( vc[1], (char*)(" ") );
 //                                cout << "2parse disp " << ndisp << " " << stag << " | " <<sval<<" s="<<vc.size()<<endl;
-                                if(ndisp) dsp.setproperty( ndisp-1, stag, sval );
+                                if(ndisp) dsp.setproperty( ndisp-1, vc[0], vc[1] );
                             }
                         }
                     }
@@ -682,14 +760,14 @@ int16_t readCfg() {
 //
 // ask value parameter by it name
 //
-int16_t getparam( const char* na, double& va, int16_t& qual, timespec* ts ) {
+int16_t getparam( const char* na, double& va, int16_t& qual, timespec* ts, int16_t trigger=0 ) {
     int16_t     rc=EXIT_FAILURE;
 
     pthread_mutex_lock( &mutex_param );
     cparam* pp = getparam( na );
     if( pp!=NULL ) {
         qual= pp->getquality();
-        va  = pp->getvalue();
+        va = (!trigger) ? pp->getvalue() : pp->gettrigger();
         ts  = pp->getTS();
         rc=EXIT_SUCCESS;
     }
@@ -721,16 +799,56 @@ int16_t getparam(const char* na, std::string& va) {
 //
 cparam* getparam( const char*  na ) {
     cparam*     rc=NULL;
-    
+
     pthread_mutex_lock( &mutex_param );
     paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
     if( ifi != tags.end() ) {
         rc = &(ifi->second);
     }
     pthread_mutex_unlock( &mutex_param );
+    if(!rc) {
+        cout<<"getparam() не нашел параметр "<<na<<". Завершаю работу..."<<endl;
+        exit(0);
+    }
+    return rc;
+}
+
+//
+// возврат разницы между новым значением параметра и предыдущим считанным 
+//
+int16_t getparamcount( const char* na, int16_t& val ) {
+    int16_t     rc=EXIT_FAILURE;
+    double      rvc, rvo;
+
+    pthread_mutex_lock( &mutex_param );
+    cparam* pp = getparam( na );
+    if( pp!=NULL && pp->getquality()==OPC_QUALITY_GOOD ) {
+        rvc =  pp->getvalue();
+        rvo =  pp->getoldvalue();
+        pp->setoldvalue(rvc);
+        val = rvc-rvo;
+        rc=EXIT_SUCCESS;
+    }
+    pthread_mutex_unlock( &mutex_param );
 
     return rc;
 }
+
+int16_t getparamlimits( const char* na, double& emin, double& emax) {
+    int16_t     rc=EXIT_FAILURE;
+    double      rvc, rvo;
+
+    pthread_mutex_lock( &mutex_param );
+    cparam* pp = getparam( na );
+    if( pp!=NULL && pp->getquality()==OPC_QUALITY_GOOD ) {
+        pp->getlimits( emin, emax );
+        rc=EXIT_SUCCESS;
+    }
+    pthread_mutex_unlock( &mutex_param );
+
+    return rc;
+}
+
 /*
 //
 // task for writing value on parameter name
@@ -740,7 +858,7 @@ int16_t taskparam( std::string& na, std::string& fi, std::string& va ) {
     double  rval;
     string  val(va);
     
-    removeCharsFromString(val, (char *)" \t\n");
+    reduce(val, (char *)" \t\n");
     cout<<"taskparam "<<na<<" field "<<fi<<" value "<<val<<endl;
     if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) {
         pthread_mutex_lock( &mutex_param );
@@ -764,7 +882,7 @@ int16_t taskparam( std::string& na, std::string& va ) {
     double  rval;
     string  val(va);
     
-    removeCharsFromString(val, (char *)" \t\n");
+    reduce(val, (char *)" \t\n");
     cout<<"taskparam "<<na<<" value "<<val;
             
     std::vector<string> vc;

@@ -24,26 +24,31 @@ enum {
     _task_mode
 };
 
-
 class pagestruct: public cproperties {
    int16_t     m_currow;
    int16_t     m_prevpage;
-   
+   double      m_task;
+
    public:
         pagestruct() {
             m_currow = 0;
+            m_prevpage = 0;
         }
+        
     rowsarray   rows; 
+    rowsarray   attr; 
+    string      m_tag;
+
     void setprev(int16_t n) { m_prevpage = n; }
     int16_t getprev() { return m_prevpage; }
-    void rownext() { 
+    void rownext(int16_t n=1) { 
 //        cout<<" old row "<<m_currow;
-        m_currow = (m_currow<rows.size()-1)? m_currow+1: 0; 
+        m_currow = abs(m_currow+n)%rows.size(); 
 //        cout<<" new row "<<m_currow<<endl;
     }    
-    void rowprev() { 
+    void rowprev(int16_t n=1) { 
 //        cout<<" old row "<<m_currow;
-        m_currow = (m_currow>0)? m_currow-1: rows.size()-1; 
+        m_currow = abs(m_currow-n)%rows.size(); 
 //        cout<<" new row "<<m_currow<<endl;
     }
     int16_t rowget() { return m_currow; }
@@ -52,7 +57,23 @@ class pagestruct: public cproperties {
         if(_r>=0 && _r<=rows.size()-1) { m_currow = _r; rc=EXIT_SUCCESS; }
         return rc;
     }
+    void settask( double rval ) {
+        double emin, emax;
+        getparamlimits( m_tag.c_str(), emin, emax );
+        cout<<" settask emin ="<<emin<<" emax="<<emax<<" rval="<<rval;
+
+        if(rval<emin) m_task = emin;
+        else
+            if(rval>emax) m_task = emax;
+            else m_task = rval;
+        
+        cout<<" m_task="<<m_task<<endl;
+    }
+    double gettask() {
+        return m_task;
+    }
 };
+
 typedef std::vector <pagestruct> pagearray;
 
 struct cbtn {
@@ -79,7 +100,7 @@ class view : public Noritake_VFD_GU3000, public cproperties {
             GU3000_init();
             GU3000_setCharset(CP866);
             GU3000_setFontSize(_6x8Format,1,1);
-//            GU3000_setFontSize(_8x16Format,1,1);
+//          GU3000_setFontSize(_8x16Format,1,1);
             GU3000_setScreenBrightness(20);
             m_curpage = 0;
             m_mode= _view_mode;
@@ -88,10 +109,13 @@ class view : public Noritake_VFD_GU3000, public cproperties {
         ~view() {}
         void to_866( string&, string& );
         void outview( int16_t );
-        int16_t curview() { return m_curpage; }
+//      int16_t curview() { return m_curpage; }
+        pagestruct* curpage() { 
+            return ((m_curpage>=0 && m_curpage<pages.size())?&pages[m_curpage]:NULL); 
+        }
         void setcurview(int16_t n) { m_curpage = n; }
-        void println( string& sin );
-        void definedspline( int16_t, int16_t, std::string );
+        void println( string& sin, bool );
+        void definedspline( int16_t, int16_t, std::string&, const std::string& );
         
         template <class T>
         void setproperty( std::string& spr, T& svl ) {
@@ -128,6 +152,7 @@ class view : public Noritake_VFD_GU3000, public cproperties {
         void pagePrev() {
             GU3000_clearScreen();
             m_curpage = pages.at(m_curpage).getprev();
+            if(m_curpage<0 || m_curpage>=pages.size()) m_curpage = 0;
         }
         void setMaxPage(int16_t n) { m_maxpage = n; }
         void keymanage();
@@ -137,6 +162,7 @@ class view : public Noritake_VFD_GU3000, public cproperties {
 
 extern view dsp;
 void* viewProcessing(void *args);
+string getTagName( const char* );
 
 
 #endif

@@ -8,10 +8,14 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
+#include "mbxchg.h"
 #include "main.h"
 #include "utils.h" 
 
 #define m_pos       param1
+
+#define m_ft1       param1
+#define m_ft2       param2
 
 #define m_fc        param1
 #define m_lso       param2
@@ -50,8 +54,10 @@ protected: 				// спецификатор доступа protected
     int16_t         m_task;             // task to out
     int16_t         m_task_delta;       // task out allowable deviation 
     bool            m_task_go;          // flag 4 task to out
-    double         m_raw;              // raw value from module
-    double         m_raw_old;          // raw value from module prev step
+    double          m_raw;              // raw value from module
+    double          m_raw_old;          // raw value from module prev step
+    bool            m_trigger;          // trigger value from module
+   
     uint8_t         m_quality;          // quality of value
     uint8_t         m_quality_old;      // quality of value prev step
     bool            m_valueupdated;     // new value arrived
@@ -72,7 +78,7 @@ protected: 				// спецификатор доступа protected
     double          m_deadband;
     std::string     m_name;
     std::string     m_topic;
-    bool            m_init;
+    bool            m_firstscan;
 
     // referenses to counter, limit switches (opened & closed), commands (open & close)
     cparam*         param1;//m_fc;
@@ -81,7 +87,13 @@ protected: 				// спецификатор доступа protected
     cparam*         param4;//m_cmdo;
     cparam*         param5;//m_cmdc;
 
-    int32_t         m_cnt_old;
+//    int32_t         m_cnt_old;
+    int16_t         m_motion;  
+    int16_t         m_status;   // 0 - not calibrated
+                                // 1 - lsc, not calibrated
+                                // 2 - lso, not calibrated
+                                // 3 - go to open
+                                // 4 - go to close
 
 public: 				// спецификатор доступа public
     cparam();			// конструктор класса
@@ -91,8 +103,21 @@ public: 				// спецификатор доступа public
     cton        m_tasktimer;
     void		*p_conn;	
                
-    timespec* getTS()     { return &m_ts; }
+    timespec* getTS()   { return &m_ts; }
+    double  gettrigger()  {
+        cmbxchg     *mb = (cmbxchg *)p_conn;
+
+        if( m_trigger && m_readOff >= 0 ) {
+            if( m_readbit >= 0 ) {
+                mb->m_pReadTrigger[m_readOff] &= (0xFFFF ^ ( 1 << m_readbit ));
+            }   
+        }
+        return m_trigger; 
+    }
+    void    getlimits(double& emin, double& emax)  { emin=m_minEng; emax=m_maxEng; }
     double  getvalue()  { return m_rvalue; }
+    double  getoldvalue() { return m_rvalue_old; }
+    void    setoldvalue(double val) { m_rvalue_old = val; }
     uint8_t getquality(){ return m_quality; }
     void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
     void    init();
@@ -125,9 +150,11 @@ void* paramProcessing(void *args); // поток обработки параме
 //int16_t taskparam( std::string&, std::string&, std::string& );
 int16_t taskparam( std::string&, std::string& );
 
-int16_t getparam( const char*, double&, int16_t& qual, timespec* );
+int16_t getparam( const char*, double&, int16_t& qual, timespec*, int16_t );
 int16_t getparam( const char*, std::string& );
 cparam* getparam( const char* );
+int16_t getparamcount( const char*, int16_t& );
+int16_t getparamlimits( const char*, double&, double& );
 
 typedef std::vector<std::pair<std::string, cparam> > paramlist;
 

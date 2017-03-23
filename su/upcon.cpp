@@ -297,7 +297,8 @@ int16_t publish(cparam &tag) {
     else {
         timespec* tts;
         tts = tag.getTS();
-        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
+//        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
+        ts = to_string( int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million)) );
         replaceString(sf, "value", to_string(tag.getvalue()) );
         replaceString(sf, "quality", to_string(int(tag.getquality())) );
         replaceString(sf, "timestamp", ts);

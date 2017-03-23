@@ -82,6 +82,7 @@ class cmbxchg: public cproperties {
         static  int16_t    *m_pWriteData;       // write data area
         static  int16_t    *m_pLastWriteData;   // write data area
         static  int16_t    *m_pReadData;        // read data area
+        static  int16_t    *m_pReadTrigger;     // read data area
         int16_t init();
         int16_t runCmdCycle(bool);
         int16_t getStatus();

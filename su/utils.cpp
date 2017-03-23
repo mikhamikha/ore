@@ -52,14 +52,30 @@ char easytoupper(char in){
     return in;
 } 
 
+//
+//  Removing leading and trailing spaces from a string
+//
+std::string trim(const std::string& str,
+                         const std::string& whitespace = " \t") {
+
+    const int strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos) return ""; // no content
+
+    const int strEnd = str.find_last_not_of(whitespace);
+    const int strRange = strEnd - strBegin + 1;
+
+    return str.substr(strBegin, strRange);
+}
+
+// Удаление ненужных символов из строки
 // example of usage:
-// removeCharsFromString( str, "()-" );
-void removeCharsFromString( string &str, char* charsToRemove ) {
+// reduce( str, "()-" );
+//
+void reduce( string &str, char* charsToRemove ) {
     for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
         str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
     }
-    std::istringstream iss( str );
-    std::getline( iss, str , '#');    // remove comment
+    str = str.substr( 0, str.find('#') );
 }
 
 void outtext(std::string tx) {
@@ -82,10 +98,15 @@ string time2string(time_t rawtime) {
     int32_t     dt = int32_t(rawtime);//+dT;
 
     ptm = localtime((time_t *)&dt);
-  
+ 
     s <<    setfill('0')<<setw(4)<<ptm->tm_year+1900<<"/"<<  \
             setfill('0')<<setw(2)<<ptm->tm_mon+1<<"/"<<   \
             setfill('0')<<setw(2)<<ptm->tm_mday<<" "<< \
+/*
+    s <<    setfill('0')<<setw(2)<<ptm->tm_mday<<"."<< \
+            setfill('0')<<setw(2)<<ptm->tm_mon+1<<"."<<   \
+            setfill('0')<<setw(4)<<ptm->tm_year+1900<<" "<<  \
+*/
             setfill('0')<<setw(2)<<ptm->tm_hour<<":"<<  \
             setfill('0')<<setw(2)<<ptm->tm_min<<":"<<   \
             setfill('0')<<setw(2)<<ptm->tm_sec;

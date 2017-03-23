@@ -32,13 +32,16 @@ std::string to_string(int32_t i);
 std::string to_string(double i);
 char easytoupper(char in);
 char easytolower(char in);
-void removeCharsFromString( string &str, char* charsToRemove );
+std::string trim( const std::string&, const std::string& );
+void reduce( string &str, char* charsToRemove );
 string time2string( time_t rawtime );
 int16_t replaceString(string& subject, const string& search, const string& replace);
 void setDT();
 int32_t getnumfromstr(std::string in, std::string st, std::string fin);
 int16_t strsplit(string& s, char delim, vector<string>& vec);
-
+//
+//  структура объекта таймера
+//
 struct cton {
     timespec    m_start;        // timer start
     int32_t     m_preset;       // timer value msec

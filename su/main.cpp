@@ -99,6 +99,15 @@ int main(int argc, char* argv[])
                     cout<< setfill(' ')<<setw(6)<<conn[0]->m_pReadData[j];
                 }            
                 cout << endl;
+                cout << "read  060-075: \n";
+                for(int j=60; j<76; j++) {
+                    cout<< setfill(' ')<<setw(6)<<j;
+                }            
+                cout << endl;
+                for(int j=60; j<76; j++) {
+                    cout<< setfill(' ')<<setw(6)<<conn[0]->m_pReadData[j];
+                }            
+                cout << endl;
            }
 
             cout << endl;

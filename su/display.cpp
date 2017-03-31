@@ -244,7 +244,7 @@ void* viewProcessing(void *args) {
     cton t;    
     const int16_t _refresh = 200;
     dsp.setMaxPage( dsp.pagessize()-1 );
-    sleep(2);
+    sleep(5);
 
     while (fParamThreadInitialized) {
         dsp.keymanage();
@@ -256,6 +256,7 @@ void* viewProcessing(void *args) {
 
 void view::keymanage() {
 //    std::string     stag; 
+    static bool     first  = true; 
     int16_t         nval[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     int16_t         nqu;
     timespec*       tts;
@@ -272,10 +273,10 @@ void view::keymanage() {
         getparamcount( btns[j], nval[j] );
 //        cout<<nval[j]<<" ";
         bbtn |= ( (nval[j] != 0 && !olds[j]) << j );
-        olds[j] = (nval[j] != 0);
+        olds[j] = ( (nval[j] != 0) && !first );
     }
 //    cout<<endl;
-    
+    if(first) { first = false; return; }
     memcpy( (void*)&m_btn, &bbtn, sizeof(cbtn) );
     // processing buttons according to the display mode
     switch(m_mode) {
@@ -310,6 +311,9 @@ void view::keymanage() {
             }                    
             break;
         case _task_mode:
+            double n = pg.gettask();
+            double rem = n-floor(n);
+            n = floor(n) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5); 
             if(m_btn.esc) {                                 // 0
 //                m_visible = !m_visible;
 //                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
@@ -320,16 +324,24 @@ void view::keymanage() {
             }
             if(m_btn.down) {                                // 4
                 cout << "btn Down\n";
-                double n = pg.gettask();
                 n = n-nval[4]*5;
                 pg.settask( n );
             }  
             if(m_btn.up) {                                  // 5
                 cout << "btn Up\n";
-                double n = pg.gettask();
                 n = n+nval[5]*5;
                 pg.settask( n );
             }                    
+            if(m_btn.left) {                                // 1
+                cout << "btn Left\n";
+                n = n-nval[1]*0.5;
+                pg.settask( n );
+            }
+            if(m_btn.right) {                               // 2
+                cout << "btn Right\n";
+                n = n+nval[2]*0.5;
+                pg.settask( n );
+            }
             if(m_btn.enter) {                               // 3
                 cout << "btn Enter\n";
                 string sn, sval;

@@ -168,7 +168,7 @@ void cparam::init() {
         }
    }
 }
-
+/*
 //
 //  Расчет / задание положения клапана по показанию датчика Холла, конечным выключателям и типу команды
 //  
@@ -196,15 +196,14 @@ int16_t cparam::rawValveValueEvaluate() {
     m_lsc->m_rvalue_old = lsc;
     cmdo    = m_cmdo->m_rvalue;    
     cmdc    = m_cmdc->m_rvalue;
-    cnt     = int(m_fc->m_rvalue);//%_ten_thou;
-    cnt_old = int(m_fc->m_rvalue_old);//%_ten_thou;
+    cnt     = int(m_fc->m_rvalue);;
+    cnt_old = int(m_fc->m_rvalue_old);;
 
-    if( m_name.substr(0,3)=="FV1")    
+    if( 0 && m_name.substr(0,3)=="FV1") {   
         cout<<m_name<<" CNT qual="<<rc<<" DI qual="<<rc1<<" DO qual="<<rc2<<" lso="<<lso_old<<" | "<<lso \
         <<" lsc="<<lsc_old<<" | "<<lsc<<" cmdo="<<cmdo<<" cmdc="<<cmdc<<" motion="<<m_motion<<\
         " task_go="<<m_task_go<<" cnt="<<cnt_old<<" | "<<cnt; 
-
-//    m_raw = m_raw_old + (cmdo - cmdc)*(cnt%_ten_thou - m_raw_old);
+    }
 
     if( (cmdo ^ cmdc) != 0 ) {
         m_raw = m_raw_old + (cmdo-cmdc)*(cnt - cnt_old);
@@ -216,7 +215,7 @@ int16_t cparam::rawValveValueEvaluate() {
             cnt = 0;
         }
         if( m_motion && !m_task_go ) {
-            if( m_minRaw==-2 && (lso || lsc) && cnt>1000 ) { 
+            if( m_minRaw==-3 && (lso || lsc) && cnt>1000 ) { 
                 m_minRaw = 0; m_maxRaw = cnt; 
                 m_task_delta = m_maxRaw/10; 
                 m_raw = lso?cnt:0;
@@ -233,23 +232,15 @@ int16_t cparam::rawValveValueEvaluate() {
         if( m_motion==0 ) { 
             m_raw = m_raw_old;
         }
-        
     }
     
-/*    
-    if( m_name.substr(0,3)=="FV1") {
-        cout<<dec<<" LSOold= "<<lso_old<<" LSO= "<<lso<<" LSCold= "<<lsc_old<<" LSC= "<<lsc \
-            <<" cmdOpen= "<<cmdo<<" cmdClose= "<<cmdc \
-            <<" cnt="<<m_cnt_old<<"|"<<cnt<<" raw_old="<<m_raw_old<<" raw_new="<<m_raw<<" task="<<m_task<<endl;    
-    }
-*/
     if( (cmdo && cmdc) || m_tasktimer.isDone() ) {
         m_cmdo->settask( 0 );
         m_cmdc->settask( 0 );
         m_tasktimer.reset();
     }
 
-    if( m_name.substr(0,3)=="FV1") {
+    if( 0 && m_name.substr(0,3)=="FV1") {
         cout<<dec<<" motion="<<m_motion<<" delta="<<m_task_delta<<" task="<<m_task<<" raw="<<m_raw<<\
             " minr="<<m_minRaw<<" maxr="<<m_maxRaw<<endl;
     }   
@@ -263,7 +254,7 @@ int16_t cparam::rawValveValueEvaluate() {
             if( lsc || lso ) {
                 m_fc->settask( 0 );
                 if(!cnt) { 
-                    m_minRaw=-2;
+                    m_minRaw=-3;
                     if(lsc) {
                         m_cmdo->settask( 1 ); 
                         m_motion = 1;                    
@@ -277,7 +268,8 @@ int16_t cparam::rawValveValueEvaluate() {
             }
             else {
                 m_cmdc->settask( 1 ); 
-                m_motion = 2;  
+                m_motion = 2;
+                m_minRaw = -2;
                 fGO = true;
             }
         } else if( m_minRaw>=0 ) {
@@ -285,14 +277,13 @@ int16_t cparam::rawValveValueEvaluate() {
             if( m_raw - m_task > m_task_delta ) { m_cmdc->settask( 1 ); fGO = true; m_motion = 2; }
         }
 
-        if(fGO) m_tasktimer.start(180000); 
+        if(fGO) m_tasktimer.start( 180000 ); 
     }
 
     if( lso && !lso_old ) {
         if( cmdo ) {
             m_cmdo->settask( 0 );
             m_tasktimer.reset();
-//            if( m_minRaw==-2 ) { m_minRaw = 0; m_maxRaw = cnt; m_task_delta = m_maxRaw/10; }
         }
         m_raw = m_maxRaw; m_raw_old = m_maxRaw; 
         if( m_minRaw>=0 ) m_fc->settask( 0 );
@@ -308,8 +299,8 @@ int16_t cparam::rawValveValueEvaluate() {
             m_fc->settask( 0 );
         }
         if(!cnt) {
-            if(m_minRaw==-1) {
-                m_minRaw=-2; 
+            if(m_minRaw==-2) {
+                m_minRaw=-3; 
                 m_cmdo->settask( 1 ); 
                 m_motion = 1;
                 m_task_go = 1;
@@ -325,6 +316,148 @@ int16_t cparam::rawValveValueEvaluate() {
     }
     m_fc->m_rvalue_old = cnt;
     
+    return rc;
+}
+*/
+//
+//  Расчет / задание положения клапана по показанию датчика Холла, конечным выключателям и типу команды
+//  управление импульсом
+//  
+int16_t cparam::rawValveValueEvaluate() {
+    int16_t lso, lso_old, lsc, lsc_old, cmdo, cmdc, cnt, cnt_old, cmdo_old;
+//    int16_t qual;
+    time_t  t;
+    int16_t rc, rc1, rc2;
+    rc = (m_fc->m_quality != OPC_QUALITY_GOOD);
+    rc1 = ( ( m_lso->m_quality | m_lsc->m_quality ) != OPC_QUALITY_GOOD );
+    rc2 = ( ( m_cmdo->m_quality | m_cmdc->m_quality ) != OPC_QUALITY_GOOD );
+  
+    m_quality = (rc||rc1||rc2) ? OPC_QUALITY_BAD : OPC_QUALITY_GOOD;
+        
+    if( rc || rc1 || rc2 ) {
+        return EXIT_FAILURE; 
+    }
+    else rc = EXIT_SUCCESS; 
+
+    lso     = m_lso->m_rvalue;
+    lsc     = m_lsc->m_rvalue;
+    lso_old = m_lso->m_rvalue_old;
+    lsc_old = m_lsc->m_rvalue_old;
+    m_lso->m_rvalue_old = lso;
+    m_lsc->m_rvalue_old = lsc;
+    cmdo    = m_cmdo->m_rvalue;    
+    cmdo_old= m_cmdo->m_rvalue_old;    
+    cmdc    = m_cmdc->m_rvalue;
+    cnt     = int(m_fc->m_rvalue);
+    cnt_old = int(m_fc->m_rvalue_old);
+//    bool cmdTimeDone = m_cmdo->m_tasktimer.isDone();
+
+    if( 1 && m_name.substr(0,3)=="FV1") {   
+        cout<<m_name<<" CNT qual="<<rc<<" DI qual="<<rc1<<" DO qual="<<rc2<<" lso="<<lso_old<<"|"<<lso \
+        <<" lsc="<<lsc_old<<"|"<<lsc<<" cmdo="<<cmdo_old<<"|"<<cmdo<<" cmdc="<<cmdc\
+        <<" motion="<<m_motion_old<<"|"<<m_motion<<" task_D="<<m_task_delta<<" task_go="<<m_task_go\
+        <<" cnt="<<cnt_old<<"|"<<cnt<<" scale="<<m_minRaw<<"|"<<m_maxRaw<<" task="<<m_task<<" raw="<<m_raw_old<<"|"; 
+    }
+    
+    if(!m_motion) {                                                     // if valve standby
+        if(!m_motion_old) {                                             // && old state same
+            if( cnt>20000 && cnt_old ) {
+                m_fc->settask( 0 );
+                cnt = 0;
+            }
+            if( m_task_go && (m_minRaw==-1 || m_minRaw==-2) && !cmdo ) {// if valve scale not calibrated
+                if( lsc || lso ) {                                      // if limit one switch is ON
+                    m_fc->settask( 0 );
+                    if(!cnt) { 
+                        m_minRaw=-3;
+                        m_motion = lsc ? 1 : 2;
+                    }
+                }
+                else if( m_minRaw==-1 ) {                               // if valve in middle position
+                    m_minRaw = -2;
+                    m_motion = 2;
+                }
+            } 
+            if( m_task_go && m_minRaw>=0 && !cmdo ) {                   // if valve scale calibrated
+                if( m_task-m_raw > m_task_delta ) {                     // cmd to open
+                    if(!lsc || !cnt) m_motion = 1;                      // if closed wait for reset counter
+                }
+                else
+                if( m_raw-m_task > m_task_delta ) {                     // cmd to close
+                    m_motion = 2; 
+                }
+                else m_task_go = false;
+            }
+            if(m_motion) {
+                m_tasktimer.start( 180000 );                            // start timer to check moving process
+                if( m_motion==2 ) m_cmdc->settask( 1 );
+                m_cmdo->settask( 1 );   
+            }
+        }
+        else if( cmdo && !cmdo_old ) {                                  // state is idle && old state is moving 
+            if( m_minRaw==-2 && lsc ) { m_task_go = true; }
+            if( m_minRaw==-3 && (lso || lsc) && cnt>1000 ) { 
+                m_minRaw = 0; m_maxRaw = cnt; 
+                m_task_delta = m_maxRaw/100; 
+                m_raw = lso?cnt:0;
+                m_fc->settask( 0 );
+            }
+            else
+            if( m_minRaw >= 0 && !m_tasktimer.isDone() ) {
+                if( m_motion_old==1 ) m_task_delta -= (m_task - m_raw);
+                if( m_motion_old==2 ) m_task_delta += (m_task - m_raw);
+            }
+            m_tasktimer.reset();
+            m_motion_old = m_motion;
+        }          
+    }
+    else {                                                              // if valve moving motion != 0
+        m_raw = m_raw_old + ((m_motion==1)-(m_motion==2))*(cnt - cnt_old);
+        m_task_go = false;
+        cout<<m_raw;
+        
+        if( m_tasktimer.isDone() ) {
+            m_motion_old = m_motion;
+            m_motion = 0;
+        }
+        
+        bool stopOp = ( m_motion==1 && ( (lso && !lso_old) || (m_minRaw >= 0 && m_raw > (m_task-m_task_delta)) ) ); 
+        bool stopCl = ( m_motion==2 && ( (lsc && !lsc_old) || (m_minRaw >= 0 && m_raw < (m_task+m_task_delta)) ) );
+
+        if( (stopOp || stopCl) && !cmdo ) {            // limit switch (open or close ) position reached
+            m_motion_old = m_motion;                   // or task completed                     
+            m_tasktimer.reset();
+            m_motion = 0;
+            if(lso) {
+                m_raw = m_maxRaw; 
+                if( m_minRaw>=0 ) m_fc->settask( 0 );
+            }
+            if(lsc) {
+                m_raw = 0;  
+                m_fc->settask( 0 );
+            }
+        }
+        if( !m_motion ) {
+            m_cmdo->settask( 1 );
+            if(stopCl) m_cmdc->settask( 0 );
+        }
+    }
+    
+    /*
+    if(cmdTimeDone && cmdo==0) {
+//        m_motion_old = m_motion;
+        m_cmdo->m_tasktimer.reset();
+        cout<<"!!! reset out !!!";
+    }
+    */
+    if(cmdo && !cmdo_old) {
+        m_cmdo->settask( 0 );
+    }
+    m_cmdo->m_rvalue_old= cmdo;
+    m_fc->m_rvalue_old  = cnt;
+    if( 1 && m_name.substr(0,3)=="FV1") {   
+        cout<<" motion="<<m_motion<<endl;
+    }
     return rc;
 }
 
@@ -423,7 +556,7 @@ int16_t cparam::getraw() {
         }
         else
         if(m_name.find("LV") == 0 ) {
-            m_raw = m_pos->m_rvalue;
+            m_raw = m_pos->m_raw;
             m_minRaw = m_pos->m_minRaw;
             m_maxRaw = m_pos->m_maxRaw;
             m_quality = m_pos->m_quality;
@@ -918,7 +1051,7 @@ void* paramProcessing(void *args) {
     int32_t nCnt=0;
 
     cout << "start parameters processing " << args << endl;
-    sleep(2);
+    sleep(1);
     while ( fParamThreadInitialized ) {
         pthread_mutex_lock( &mutex_param );
         
@@ -943,6 +1076,10 @@ void* paramProcessing(void *args) {
 //                rc = pp.getproperty("writedata", sOff);
 
                 if( pp.taskset() ) pp.setvalue();
+                if( pp.m_tasktimer.isDone() ) {
+                    pp.settask(0);
+                    pp.m_tasktimer.reset();
+                }
 //            }
 
             if( pp.m_sub==-2 ) {

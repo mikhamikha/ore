@@ -89,7 +89,9 @@ protected: 				// спецификатор доступа protected
 
 //    int32_t         m_cnt_old;
     int16_t         m_motion;  
-    int16_t         m_status;   // 0 - not calibrated
+    int16_t         m_motion_old;  
+   
+//    int16_t         m_status;   // 0 - not calibrated
                                 // 1 - lsc, not calibrated
                                 // 2 - lso, not calibrated
                                 // 3 - go to open
@@ -122,8 +124,8 @@ public: 				// спецификатор доступа public
     void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
     void    init();
     int16_t getraw();                              // get raw data from readdata buffer
-    int16_t getvalue(double &rOut);                             // get value in EU
-    int16_t setvalue();                                         // write tasks to modbus writedata area 
+    int16_t getvalue(double &rOut);                // get value in EU
+    int16_t setvalue();                            // write tasks to modbus writedata area 
     int16_t settask(double rin) {
         if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
             m_task    = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rin-m_minEng)+m_minRaw;
@@ -132,7 +134,11 @@ public: 				// спецификатор доступа public
             cout<<endl<<"settask "<<m_name<<" task=="<<m_task<<endl; 
         m_task_go = true;    
     }
-
+    int16_t settaskpulse(double rin, int32_t pre=2000) {
+        settask( rin ); 
+        m_task_go = true;    
+        m_tasktimer.start(pre);
+    }
     bool    taskset() { return m_task_go; }
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }

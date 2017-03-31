@@ -67,7 +67,7 @@ struct cton {
         if( m_tt ) {
             clock_gettime(CLOCK_MONOTONIC, &t);
             delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
-            m_dn = (m_preset<delta);
+            m_dn = (m_preset<llabs(delta));
         }
         else m_dn = false;
         return m_dn;

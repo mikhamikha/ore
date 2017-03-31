@@ -322,8 +322,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                     );
                             if(i==11) {
 //                                cout<<"cmd clear counter FC "<<cmdi->m_devAddr<<endl;
-                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pLastWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
-                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+//                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pLastWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+//                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pWriteData[cmdi->m_intAddress+j]<<" "; cout<<endl;
 //                                cout<<"rc="<<rc<<endl;
                             }
                             if(rc!=-1)

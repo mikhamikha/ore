@@ -27,7 +27,9 @@ ccmd::ccmd(const ccmd &s)
     m_err.first  =  s.m_err.first;
     m_err.second =  s.m_err.second;
     m_first      =  s.m_first;
+    m_errCnt     = 0;
 }
+
 ccmd::ccmd(std::vector<int16_t> &v)
 {
     m_enable     = v[0];
@@ -111,7 +113,7 @@ int16_t cmbxchg::init()
     else {
         m_status = INITIALIZED;
         cout << "init serial | "<<path<<" | "<<baud<<" | "<< parity<<" | "<<data<<" | "<< stop<< endl;
-//      modbus_set_debug(m_ctx, TRUE);
+//        modbus_set_debug(m_ctx, TRUE);
 //      modbus_set_error_recovery(m_ctx, MODBUS_ERROR_RECOVERY_LINK | MODBUS_ERROR_RECOVERY_PROTOCOL);
     }
     return m_status;
@@ -167,7 +169,7 @@ void* fieldXChange(void *args)
 int16_t cmbxchg::runCmdCycle(bool fLast=false) 
 {
     int32_t                 res=0;
-    int16_t                 rc, i;
+    int16_t                 rc=EXIT_FAILURE, i;
     mbcommands::iterator    cmdi;
     uint32_t                old_resp_to_sec;
     uint32_t                old_resp_to_usec;
@@ -184,6 +186,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
 
     clock_gettime(CLOCK_MONOTONIC,&tvs);
     nsta = tvs.tv_sec*_million + tvs.tv_nsec/1000;
+
 //---------------------------------------------------------------    
     cmdi = cmds.begin(); i=0;
     rc = getproperty( "protocol", proto )               | \
@@ -213,6 +216,12 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             outtext(cmdi->ToString());
         }
         if( cmdi->m_enable && ( cmdi->m_first || cmdi->m_time.isDone() ) ) {
+/*----------- cycle time measure --------------------------------
+            clock_gettime(CLOCK_MONOTONIC,&tve);
+            nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
+            nD = abs(nfin-nsta);
+            cout<<"cmd="<<i<<" "<<nD/1000.0<<" ms   ";
+---------------------------------------------------------------*/            
             fTook = true; rc = 0;
             if(proto == RTU) {
                 rc = modbus_set_slave(m_ctx, cmdi->m_node);
@@ -242,8 +251,9 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 cmdi->m_count,     \
                                 (uint16_t *)m_pReadData+cmdi->m_intAddress    \
                                 ); 
-//                      for( int j=0; i==7 && j<cmdi->m_count; j++ ) cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
-                        if(cmdi->m_func==103) {     // сохраним защелки и сбросим их в модуле ВВ
+//                      for( int j=0; i==7 && j<cmdi->m_count; j++ ) \
+                                cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+                        if( cmdi->m_func==103 && rc!=-1 ) {     // сохраним защелки и сбросим их в модуле ВВ
                             for(int j=0; j<cmdi->m_count; j++ ) 
                                 m_pReadTrigger[j+cmdi->m_intAddress] |= m_pReadData[j+cmdi->m_intAddress];
                             modbus_write_register(m_ctx, cmdi->m_devAddr, 0);    
@@ -337,20 +347,15 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 pthread_mutex_unlock( &mutex_param );
             }
             if (rc == -1) {
-                if( cmdi->m_errCnt++ >= _max_conn_err ) {
-                    cmdi->m_errCnt = _max_conn_err;
-                    cmdi->m_err.first   = errno;
-                    cmdi->m_err.second  = modbus_strerror(errno);
+                if( cmdi->incErr() >= _max_conn_err ) {
                     m_pReadData[erroff+i] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
                 }
                 outtext(cmdi->ToString());
+//                modbus_flush( m_ctx );
             }
             else {
 //              if(i==9) cout<<"command OK\n";
-                if( cmdi->m_errCnt-- <= 0 ) {
-                    cmdi->m_errCnt = 0;
-                    cmdi->m_err.first   = 0;
-                    cmdi->m_err.second  = "no error";
+                if( cmdi->decErr() <= 0 ) {
                     m_pReadData[erroff+i] = 0;
                 }
             }
@@ -373,7 +378,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     clock_gettime(CLOCK_MONOTONIC,&tve);
     nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
     nD = abs(nfin-nsta);
-//    cout<<"xchange cycle time "<<nD/1000.0<<" ms"<<endl;
+//    cout<<"\nxchange cycle time "<<nD/1000.0<<" ms"<<endl;
 //---------------------------------------------------------------    
    
     return res;

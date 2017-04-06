@@ -76,7 +76,19 @@ struct cton {
     bool isTiming() {
         return m_tt;
     }
-   
+    
+    int32_t getTT() {
+        timespec    t;
+        int64_t     delta=0;
+
+        if( m_tt ) {
+            clock_gettime(CLOCK_MONOTONIC, &t);
+            delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
+            delta = (m_preset<llabs(delta)) ? m_preset : delta;
+        }
+        return int32_t(delta);
+    }
+  
     bool reset() {
         m_tt = false;
     }

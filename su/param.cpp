@@ -327,17 +327,12 @@ int16_t cparam::rawValveValueEvaluate() {
     int16_t lso, lso_old, lsc, lsc_old, cmdo, cmdc, cnt, cnt_old, cmdo_old;
 //    int16_t qual;
     time_t  t;
-    int16_t rc, rc1, rc2;
-    rc = (m_fc->m_quality != OPC_QUALITY_GOOD);
+    int16_t rc, rc0, rc1, rc2;
+    rc0 = (m_fc->m_quality != OPC_QUALITY_GOOD);
     rc1 = ( ( m_lso->m_quality | m_lsc->m_quality ) != OPC_QUALITY_GOOD );
     rc2 = ( ( m_cmdo->m_quality | m_cmdc->m_quality ) != OPC_QUALITY_GOOD );
   
     m_quality = (rc||rc1||rc2) ? OPC_QUALITY_BAD : OPC_QUALITY_GOOD;
-        
-    if( rc || rc1 || rc2 ) {
-        return EXIT_FAILURE; 
-    }
-    else rc = EXIT_SUCCESS; 
 
     lso     = m_lso->m_rvalue;
     lsc     = m_lsc->m_rvalue;
@@ -353,25 +348,32 @@ int16_t cparam::rawValveValueEvaluate() {
 //    bool cmdTimeDone = m_cmdo->m_tasktimer.isDone();
 
     if( 1 && m_name.substr(0,3)=="FV1") {   
-        cout<<m_name<<" CNT qual="<<rc<<" DI qual="<<rc1<<" DO qual="<<rc2<<" lso="<<lso_old<<"|"<<lso \
+        cout<<m_name<<" CNT qual="<<rc0<<" DI qual="<<rc1<<" DO qual="<<rc2<<" lso="<<lso_old<<"|"<<lso \
         <<" lsc="<<lsc_old<<"|"<<lsc<<" cmdo="<<cmdo_old<<"|"<<cmdo<<" cmdc="<<cmdc\
         <<" motion="<<m_motion_old<<"|"<<m_motion<<" task_D="<<m_task_delta<<" task_go="<<m_task_go\
-        <<" cnt="<<cnt_old<<"|"<<cnt<<" scale="<<m_minRaw<<"|"<<m_maxRaw<<" task="<<m_task<<" raw="<<m_raw_old<<"|"; 
+        <<" cnt="<<cnt_old<<"|"<<cnt<<" scale="<<m_minRaw<<"|"<<m_maxRaw<<" task="<<m_task\
+        <<" timer="<<m_tasktimer.getTT()<<" raw="<<m_raw_old<<"|"; 
     }
-    
+
+    rc = ( rc0 || rc1 || rc2 ); 
+    if( rc ) {                                        // if errors stopping the valve moving
+        rc = EXIT_FAILURE; 
+    }
+    else rc = EXIT_SUCCESS; 
+   
     if(!m_motion) {                                                     // if valve standby
-        if(!m_motion_old) {                                             // && old state same
+        if( !m_motion_old && !rc ) {                                    // && old state same
             if( cnt>20000 && cnt_old ) {
                 m_fc->settask( 0 );
                 cnt = 0;
             }
             if( m_task_go && (m_minRaw==-1 || m_minRaw==-2) && !cmdo ) {// if valve scale not calibrated
                 if( lsc || lso ) {                                      // if limit one switch is ON
-                    m_fc->settask( 0 );
                     if(!cnt) { 
                         m_minRaw=-3;
                         m_motion = lsc ? 1 : 2;
                     }
+                    else m_fc->settask( 0 );
                 }
                 else if( m_minRaw==-1 ) {                               // if valve in middle position
                     m_minRaw = -2;
@@ -379,83 +381,75 @@ int16_t cparam::rawValveValueEvaluate() {
                 }
             } 
             if( m_task_go && m_minRaw>=0 && !cmdo ) {                   // if valve scale calibrated
-                if( m_task-m_raw > m_task_delta ) {                     // cmd to open
+                if( m_task-m_raw > m_task_delta/10 ) {                     // cmd to open
                     if(!lsc || !cnt) m_motion = 1;                      // if closed wait for reset counter
                 }
                 else
-                if( m_raw-m_task > m_task_delta ) {                     // cmd to close
-                    m_motion = 2; 
+                if( m_raw-m_task > m_task_delta/10 ) {                     // cmd to close
+                    if(!lso || !cnt) m_motion = 2;                      // if opened wait for reset counter
                 }
                 else m_task_go = false;
             }
             if(m_motion) {
-                m_tasktimer.start( 180000 );                            // start timer to check moving process
+                m_tasktimer.start( 300000 );                            // start timer to check moving process
                 if( m_motion==2 ) m_cmdc->settask( 1 );
-                m_cmdo->settask( 1 );   
             }
+            m_fc->m_rvalue_old  = cnt;
         }
-        else if( cmdo && !cmdo_old ) {                                  // state is idle && old state is moving 
+        else if( m_cmdo->m_tasktimer.isDone() || m_motion_old<10 ) {   // state is idle && old state is moving 
+            m_cmdo->m_tasktimer.reset();
+            m_raw = m_raw_old + ((m_motion_old==11)-(m_motion_old==12))*(cnt - cnt_old);                 
+            if( lsc || lso ) m_fc->settask( 0 );                        // if limit one switch is ON
+                
+            if(lso) m_raw = m_maxRaw; 
+            if(lsc) m_raw = 0;
+
             if( m_minRaw==-2 && lsc ) { m_task_go = true; }
             if( m_minRaw==-3 && (lso || lsc) && cnt>1000 ) { 
                 m_minRaw = 0; m_maxRaw = cnt; 
                 m_task_delta = m_maxRaw/100; 
                 m_raw = lso?cnt:0;
-                m_fc->settask( 0 );
             }
             else
-            if( m_minRaw >= 0 && !m_tasktimer.isDone() ) {
-                if( m_motion_old==1 ) m_task_delta -= (m_task - m_raw);
-                if( m_motion_old==2 ) m_task_delta += (m_task - m_raw);
+            if( m_minRaw >= 0 && !m_tasktimer.isDone() && m_motion_old>10 ) {
+                if( m_motion_old==11 ) m_task_delta -= (m_task - m_raw);
+                if( m_motion_old==12 ) m_task_delta += (m_task - m_raw);
             }
             m_tasktimer.reset();
             m_motion_old = m_motion;
+            m_fc->m_rvalue_old  = cnt;
         }          
     }
-    else {                                                              // if valve moving motion != 0
-        m_raw = m_raw_old + ((m_motion==1)-(m_motion==2))*(cnt - cnt_old);
+    else if( m_motion ) {                                               // if valve moving (motion != 0)
+        m_raw = m_raw_old + ((m_motion==11)-(m_motion==12))*(cnt - cnt_old);
+        m_fc->m_rvalue_old  = cnt;
         m_task_go = false;
-        cout<<m_raw;
         
-        if( m_tasktimer.isDone() ) {
-            m_motion_old = m_motion;
-            m_motion = 0;
-        }
+        bool stopOp = ( m_motion%10==1 && ( (lso && !lso_old) || (m_minRaw >= 0 && m_raw > (m_task-m_task_delta)) ) ); 
+        bool stopCl = ( m_motion%10==2 && ( (lsc && !lsc_old) || (m_minRaw >= 0 && m_raw < (m_task+m_task_delta)) ) );
         
-        bool stopOp = ( m_motion==1 && ( (lso && !lso_old) || (m_minRaw >= 0 && m_raw > (m_task-m_task_delta)) ) ); 
-        bool stopCl = ( m_motion==2 && ( (lsc && !lsc_old) || (m_minRaw >= 0 && m_raw < (m_task+m_task_delta)) ) );
-
-        if( (stopOp || stopCl) && !cmdo ) {            // limit switch (open or close ) position reached
+        if( !rc2 && (m_tasktimer.isDone() || \
+            (stopOp || stopCl) && !cmdo || rc0 ) ) {   // limit switch (open or close ) position reached
             m_motion_old = m_motion;                   // or task completed                     
+            if(m_motion>10) m_cmdo->settaskpulse( 1 );
+            if(m_motion%10==2) m_cmdc->settask( 0 );
             m_tasktimer.reset();
             m_motion = 0;
-            if(lso) {
-                m_raw = m_maxRaw; 
-                if( m_minRaw>=0 ) m_fc->settask( 0 );
-            }
-            if(lsc) {
-                m_raw = 0;  
-                m_fc->settask( 0 );
-            }
+            if(rc0) m_motion_old = -1;
         }
-        if( !m_motion ) {
-            m_cmdo->settask( 1 );
-            if(stopCl) m_cmdc->settask( 0 );
+        if( !m_motion_old && (m_motion==1 || m_tasktimer.getTT()>1000) ) {        
+            m_cmdo->settaskpulse( 1 );
+            m_motion_old = m_motion;
+            m_motion += 10;
         }
     }
-    
-    /*
-    if(cmdTimeDone && cmdo==0) {
-//        m_motion_old = m_motion;
-        m_cmdo->m_tasktimer.reset();
-        cout<<"!!! reset out !!!";
-    }
-    */
-    if(cmdo && !cmdo_old) {
+    if( cmdo && !cmdo_old) {
         m_cmdo->settask( 0 );
     }
     m_cmdo->m_rvalue_old= cmdo;
-    m_fc->m_rvalue_old  = cnt;
-    if( 1 && m_name.substr(0,3)=="FV1") {   
+
+    if( 1 && m_name.substr(0,3)=="FV1" ) { 
+        cout<<m_raw;
         cout<<" motion="<<m_motion<<endl;
     }
     return rc;
@@ -1076,9 +1070,9 @@ void* paramProcessing(void *args) {
 //                rc = pp.getproperty("writedata", sOff);
 
                 if( pp.taskset() ) pp.setvalue();
-                if( pp.m_tasktimer.isDone() ) {
+                if( pp.gettask() > 0 && pp.m_tasktimer.isDone() ) {
                     pp.settask(0);
-                    pp.m_tasktimer.reset();
+//                    pp.m_tasktimer.reset();
                 }
 //            }
 

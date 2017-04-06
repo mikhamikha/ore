@@ -13,6 +13,7 @@
 #include "main.h"
 #include "param.h"
 #include "utils.h"
+#include <errno.h>
 
 //#define EXIT_SUCCESS    0
 //#define EXIT_FAILURE    1
@@ -52,6 +53,20 @@ class ccmd {
         ccmd(std::vector<int16_t> &v);
         std::string ToString();
         cton       m_time;
+        int16_t incErr() {
+            m_errCnt += ((m_errCnt < _max_conn_err) ? 1 : 0);
+            m_err.first  = errno;
+            m_err.second = modbus_strerror(errno);
+            return m_errCnt;
+        }
+        int16_t decErr() {
+             m_errCnt -= ((m_errCnt > 0) ? 1 : 0);
+             if(!m_errCnt) {
+                m_err.first   = 0;
+                m_err.second  = "no error";            
+             }
+             return m_errCnt;
+        }
 };
 
 const char _parities[] = {'N','O','E'};

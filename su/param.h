@@ -126,6 +126,14 @@ public: 				// спецификатор доступа public
     int16_t getraw();                              // get raw data from readdata buffer
     int16_t getvalue(double &rOut);                // get value in EU
     int16_t setvalue();                            // write tasks to modbus writedata area 
+    double  gettask() {
+        double val;
+        if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
+            val = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_task-m_minRaw)+m_minEng;
+        else val = m_task;
+
+        return val;    
+    }
     int16_t settask(double rin) {
         if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
             m_task    = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rin-m_minEng)+m_minRaw;

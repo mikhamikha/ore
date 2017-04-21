@@ -13,20 +13,23 @@ int16_t *cmbxchg::m_pReadTrigger;
 int16_t *cmbxchg::m_pReadData;
 int16_t *cmbxchg::m_pWriteData;
 int16_t *cmbxchg::m_pLastWriteData;
+int32_t cmbxchg::m_maxReadData;
+int32_t cmbxchg::m_maxWriteData;
 
 ccmd::ccmd(const ccmd &s)
 {
-    m_enable     =  s.m_enable;   
-    m_intAddress =  s.m_intAddress;
-    m_count      =  s.m_count;    
-    m_pollInt    =  s.m_pollInt;  
-    m_node       =  s.m_node;     
-    m_func       =  s.m_func;     
-    m_devAddr    =  s.m_devAddr;  
-    m_swap       =  s.m_swap;     
-    m_err.first  =  s.m_err.first;
-    m_err.second =  s.m_err.second;
-    m_first      =  s.m_first;
+    m_enable     = s.m_enable;   
+    m_intAddress = s.m_intAddress;
+    m_count      = s.m_count;    
+    m_pollInt    = s.m_pollInt;  
+    m_node       = s.m_node;     
+    m_func       = s.m_func;     
+    m_devAddr    = s.m_devAddr;  
+    m_swap       = s.m_swap;     
+    m_err.first  = s.m_err.first;
+    m_err.second = s.m_err.second;
+    m_first      = s.m_first;
+    m_num        = s.m_num;
     m_errCnt     = 0;
 }
 
@@ -40,6 +43,7 @@ ccmd::ccmd(std::vector<int16_t> &v)
     m_func       = v[5]; 
     m_devAddr    = v[6]; 
     m_swap       = v[7];
+    m_num        = v[8];
     m_err        = std::make_pair(0, "No Errors");
     m_first      = true;
     m_errCnt     = 0;
@@ -71,8 +75,6 @@ cmbxchg::cmbxchg()
     setproperty( "responsetimeout",     int16_t(1000) );
     setproperty( "retrycnt",            int16_t(0) );
     setproperty( "errordelaycntr",      int16_t(0) );
-    m_maxReadData = 500;
-    m_maxWriteData= 500;
 }
 //
 //  Modbus connection initialization
@@ -141,24 +143,26 @@ void* fieldXChange(void *args)
 {
     cmbxchg *mbx=(cmbxchg *)(args);
     if(mbx->init() == INITIALIZED) {
-        mbx->m_pReadData = new int16_t[mbx->m_maxReadData+1];
-        mbx->m_pReadTrigger = new int16_t[mbx->m_maxReadData+1];
-        mbx->m_pWriteData = new int16_t[mbx->m_maxWriteData+1];
-        mbx->m_pLastWriteData = new int16_t[mbx->m_maxWriteData+1];
-        memset(mbx->m_pReadData, 0, (mbx->m_maxReadData+1)*sizeof(int16_t) );
-        memset(mbx->m_pReadTrigger, 0, (mbx->m_maxReadData+1)*sizeof(int16_t) );
-        memset(mbx->m_pWriteData, 0, (mbx->m_maxWriteData+1)*sizeof(int16_t) );
-        memset(mbx->m_pLastWriteData, 0, (mbx->m_maxWriteData+1)*sizeof(int16_t) );
-        cout << "start xchg " << mbx << " | " << mbx->m_pReadData <<endl;
+        cmbxchg::m_maxReadData = 500;
+        cmbxchg::m_maxWriteData= 500;
+        cmbxchg::m_pReadData        = new int16_t[cmbxchg::m_maxReadData+1];
+        cmbxchg::m_pReadTrigger     = new int16_t[cmbxchg::m_maxReadData+1];
+        cmbxchg::m_pWriteData       = new int16_t[cmbxchg::m_maxWriteData+1];
+        cmbxchg::m_pLastWriteData   = new int16_t[cmbxchg::m_maxWriteData+1];
+        memset(cmbxchg::m_pReadData,      0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
+        memset(cmbxchg::m_pReadTrigger,   0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
+        memset(cmbxchg::m_pWriteData,     0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
+        memset(cmbxchg::m_pLastWriteData, 0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
+        cout << "start xchg " << mbx << " | " << cmbxchg::m_pReadData <<endl;
 //        cout << "minimum command delay = " << mbx->getproperty("minimumcommand")._n << endl;
         while (mbx->getStatus()!=TERMINATE) {
             mbx->runCmdCycle(false);
         }     
         mbx->runCmdCycle(true);
-        delete []mbx->m_pReadData;
-        delete []mbx->m_pReadTrigger;
-        delete []mbx->m_pWriteData;    
-        delete []mbx->m_pLastWriteData;    
+        delete []cmbxchg::m_pReadData;
+        delete []cmbxchg::m_pReadTrigger;
+        delete []cmbxchg::m_pWriteData;    
+        delete []cmbxchg::m_pLastWriteData;    
     }
     cout << "end xchg " << args << endl;
     return EXIT_SUCCESS;
@@ -190,10 +194,10 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
 //---------------------------------------------------------------    
     cmdi = cmds.begin(); i=0;
     rc = getproperty( "protocol", proto )               | \
-         getproperty( "responsetim", resp )             | \
-         getproperty( "minimumcommand", mincmddel )  | \
+         getproperty( "responseto", resp )             | \
+         getproperty( "minimumcmddel", mincmddel )  | \
          getproperty( "errordelay", errdel )         | \
-         getproperty( "commanderror", erroff );
+         getproperty( "cmderroffs", erroff );
     
 //    cout<<"rc="<<rc<<" proto="<<proto<<" response="<<resp<<" minimumcommand="<<mincmddel \
         <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;

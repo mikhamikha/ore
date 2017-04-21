@@ -46,6 +46,7 @@ class ccmd {
         int16_t     m_devAddr;      // address in device for read (write) 
         int16_t     m_count;        // registers number
         int16_t     m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
+        int16_t     m_num;
         bool        m_first;        // first scan
         int16_t     m_errCnt;
         std::pair<uint16_t,std::string> m_err;
@@ -83,8 +84,6 @@ class cmbxchg: public cproperties {
 
     public:
         int32_t             m_id;
-        int32_t             m_maxReadData;
-        int32_t             m_maxWriteData;
         cmbxchg();
         ~cmbxchg()
         {
@@ -98,6 +97,8 @@ class cmbxchg: public cproperties {
         static  int16_t    *m_pLastWriteData;   // write data area
         static  int16_t    *m_pReadData;        // read data area
         static  int16_t    *m_pReadTrigger;     // read data area
+        static int32_t     m_maxReadData;
+        static int32_t     m_maxWriteData;
         int16_t init();
         int16_t runCmdCycle(bool);
         int16_t getStatus();

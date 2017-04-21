@@ -60,7 +60,7 @@ cparam::cparam() {
 
 void cparam::init() {
     string sOff; 
-    cmbxchg     *mb = (cmbxchg *)p_conn;
+//    cmbxchg     *mb = (cmbxchg *)p_conn;
 
     if( getproperty("readdata", sOff)==0 && !sOff.empty() ) {
         if( isdigit(sOff[0]) ) {
@@ -68,7 +68,7 @@ void cparam::init() {
             int16_t nOff;
             strsplit(sOff, '.', vc);
             nOff = atoi(vc[0].c_str());
-            if(nOff<mb->m_maxReadData) { 
+            if(nOff<cmbxchg::m_maxReadData) { 
                 m_readOff = nOff;  
                 if( vc.size() > 1 && isdigit(vc[1][0]) ) m_readbit = atoi(vc[1].c_str());
             }
@@ -86,28 +86,30 @@ void cparam::init() {
 //    int32_t nhe;
     int16_t bt;
     int rc = \
-    getproperty( "minraw",  m_minRaw    ) | \
-    getproperty( "maxraw",  m_maxRaw    ) | \
-    getproperty( "mineng",  m_minEng    ) | \
-    getproperty( "maxeng",  m_maxEng    ) | \
-    getproperty( "flttime", m_fltTime   ) | \
-    getproperty( "isbool",  m_isBool    ) | \
-    getproperty( "hihi",    m_hihi      ) | /*getproperty( "hihi", she ) | getproperty( "hihi", nhe ) |*/ \
-    getproperty( "hi",      m_hi        ) | \
-    getproperty( "lolo",    m_lolo      ) | \
-    getproperty( "lo",      m_lo        ) | \
-    getproperty( "deadband",m_deadband  ) | \
-    getproperty( "name",    m_name      ) | \
-    getproperty( "topic",   m_topic     );
+    getproperty( "minraw",  m_minRaw   ) | \
+    getproperty( "maxraw",  m_maxRaw   ) | \
+    getproperty( "mineng",  m_minEng   ) | \
+    getproperty( "maxeng",  m_maxEng   ) | \
+    getproperty( "flttime", m_fltTime  ) | \
+    getproperty( "isbool",  m_isBool   ) | \
+    getproperty( "hihi",    m_hihi     ) | \
+    getproperty( "hi",      m_hi       ) | \
+    getproperty( "lolo",    m_lolo     ) | \
+    getproperty( "lo",      m_lo       ) | \
+    getproperty( "deadband",m_deadband ) | \
+    getproperty( "name",    m_name     ) | \
+    getproperty( "topic",   m_topic    );
 //    m_isBool = (bt!=0);
 
-    int16_t nPortErrOff, nErrOff;
-//    cout<<"param::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
+    int16_t nPortErrOff=0, nErrOff=0;
+    
+    cout<<"param::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
         " maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<< \
         " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo<<endl;
-    if( (m_readOff >= 0 || m_writeOff >= 0) && mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS && \
+    
+    if( (m_readOff >= 0 || m_writeOff >= 0) && /*mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS &&*/ \
                 getproperty("ErrPtr", nErrOff) == EXIT_SUCCESS ) {     // read errors of read modbus operations
-         if( (nErrOff + nPortErrOff) < mb->m_maxReadData ) m_connErr = nErrOff + nPortErrOff;
+         if( (nErrOff + nPortErrOff) < cmbxchg::m_maxReadData ) m_connErr = nErrOff + nPortErrOff;
     }
 
     if( m_readOff == -2 ) {
@@ -520,7 +522,7 @@ int16_t cparam::flowEvaluate() {
 
 int16_t cparam::getraw() {
     int16_t     rc  = EXIT_FAILURE;
-    cmbxchg     *mb = (cmbxchg *)p_conn;
+//    cmbxchg     *mb = (cmbxchg *)p_conn;
 
     m_raw_old = m_raw;
     setproperty( "raw_old", m_raw_old );
@@ -529,16 +531,16 @@ int16_t cparam::getraw() {
     m_quality_old = m_quality;
 
     if( m_readOff >= 0 ) {
-        m_raw = mb->m_pReadData[m_readOff];
+        m_raw = cmbxchg::m_pReadData[m_readOff];
 //        cout<<m_raw<<" ";
         if( m_readbit >= 0 ) {
             m_raw = (( int(m_raw) & ( 1 << m_readbit ) ) != 0);
-            m_trigger = (( mb->m_pReadTrigger[m_readOff] & ( 1 << m_readbit ) ) != 0);
+            m_trigger = (( cmbxchg::m_pReadTrigger[m_readOff] & ( 1 << m_readbit ) ) != 0);
         }
 //if(m_name.substr(0,3)=="FC1") cout<<m_raw<<" "<<dec<<endl;
         setproperty("raw", m_raw);
         if ( m_connErr >= 0 ) {
-            m_quality = (mb->m_pReadData[m_connErr])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
+            m_quality = (cmbxchg::m_pReadData[m_connErr])?OPC_QUALITY_NOT_CONNECTED:OPC_QUALITY_GOOD;
         }
         rc=EXIT_SUCCESS;
     }
@@ -583,7 +585,7 @@ int16_t cparam::getvalue(double &rOut) {
     int64_t     nodt;             // time on previous step
     int16_t     rc=EXIT_FAILURE;
     double      rsim_en = 0, rsim_v;
-    cmbxchg     *mb = (cmbxchg *)p_conn;
+//    cmbxchg     *mb = (cmbxchg *)p_conn;
 
     if(m_firstscan) {
         init();
@@ -595,7 +597,7 @@ int16_t cparam::getvalue(double &rOut) {
     nD = abs(nctt-nodt);
    
     if( (rc = getproperty("simen", rsim_en) | \
-            getproperty("simva", rsim_v)) == EXIT_SUCCESS && rsim_en != 0 ) { // simulation mode switched ON 
+            getproperty("simva", rsim_v)) == EXIT_SUCCESS && rsim_en != 0 ) {   // simulation mode switched ON 
         m_quality_old = m_quality;
         rVal  = rsim_v;
         rOut  = rsim_v;
@@ -607,16 +609,16 @@ int16_t cparam::getvalue(double &rOut) {
     }
 
     if( rc==EXIT_SUCCESS ) {
-        if( rsim_en == 0 ) {                                      // simulation mode switched OFF
+        if( rsim_en == 0 ) {                                                    // simulation mode switched OFF
             if( m_maxRaw!=m_minRaw && m_maxEng!=m_minEng ) {
                 rVal = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_raw-m_minRaw)+m_minEng;
                 nTime = m_fltTime*1000;
                 if(rVal>m_maxEng) rVal = m_maxEng;
                 if(rVal<m_minEng) rVal = m_minEng;               
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-                if(m_isBool==1) rVal = (rVal >= m_hihi);                // if it is a discret parameter
-                if(m_isBool==2) rVal = (rVal < m_hihi);                 // if it is a discret parameter & inverse
-                rOut = rVal;                                            // current value
+                if(m_isBool==1) rVal = (rVal >= m_hihi);                        // if it is a discret parameter
+                if(m_isBool==2) rVal = (rVal < m_hihi);                         // if it is a discret parameter & inverse
+                rOut = rVal;                                                    // current value
             }
         }
 //      if( m_name.substr(0,4)=="FT11") \
@@ -640,23 +642,24 @@ int16_t cparam::getvalue(double &rOut) {
                 " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
             m_rvalue = rVal;
         } 
-        if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
+//        if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
     }    
-    
+    if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
+   
     return rc;
 }
 
 int16_t cparam::setvalue() {
     int16_t rc = EXIT_FAILURE;
-    cmbxchg *mb;
+//    cmbxchg *mb;
     string  sOff;
     int16_t nOff;
 
     if( m_writeOff >= 0 ) {
 //      if( m_name.substr(0,3)=="FC1")
 //            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;      
-        mb->m_pWriteData[m_writeOff] = m_task;
-        mb->m_pLastWriteData[m_writeOff] = m_task-1;
+        cmbxchg::m_pWriteData[m_writeOff] = m_task;
+        cmbxchg::m_pLastWriteData[m_writeOff] = m_task-1;
         m_task_go = false; 
         rc = EXIT_SUCCESS;
     }
@@ -666,222 +669,114 @@ int16_t cparam::setvalue() {
     return rc;
 }
 
-int16_t parseBuff(std::fstream &fstr, int8_t type, void *obj=NULL) {    
-    std::string             line;
-    std::string             lineL;                  // line in low register
-    std::string             lineorig;
-    int16_t                 nTmp;
-    settings                prop;
-    cmbxchg                 *mb = (cmbxchg *)obj;
-    upcon                   *up = (upcon *)obj;
-    std::string::size_type  found;
-    int16_t                 nline;
+//  
+//	Чтение и парсинг конфигурационного файла
+//
+int16_t readCfg() {
+	int16_t     rc = EXIT_FAILURE;
+    int16_t     nI=0, i, j;
+    cmbxchg     *mb = NULL;  
+    upcon       *up = NULL;;    
+    
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file("map.xml");    
+    if(result) {                    // если формат файла корректен
+        // парсим модбас порты и команды
+        pugi::xpath_node_set tools = doc.select_nodes("//port[@name='modbusport']");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            mb = new cmbxchg();
+            conn.push_back(mb);
+            mb->m_id = atoi(it->node().attribute("num").value());
+            
+            cout<<"port num="<<mb->m_id<<endl;
 
-//    cout << "parsebuff = " << fstr << " type = " << (int)type << " obj = " << obj << endl<< endl;
-    while( std::getline( fstr, line ) ) {
-//        cout << line.c_str() << endl;
-        lineorig = line;
-        reduce(line, (char *)" \t\r");
-        lineL = line;
-        std::transform(lineL.begin(), lineL.end(), lineL.begin(), easytolower);
-        if(lineL.length()==0 || lineL[0]=='#') continue;
-        if(lineL.find("start",0,5)!=std::string::npos) {
-            continue;
-        }
-        if(lineL.find("end",0,3)!=std::string::npos) {
-            continue;//break; 
-        }
-        if(lineL[0]=='[' && lineL[lineL.length()-1]==']') {
-            found = lineL.find("modbusport");
-            if(found != std::string::npos) {
-                found = lineL.find("commands");
-                if (obj && found != std::string::npos) {
-                    if(getnumfromstr(lineL, "modbusport", "commands") == ((cmbxchg *)obj)->m_id) {
-                        parseBuff(fstr, _parse_mbcmd, obj);
-                    }
-                }
-                else 
-                if (obj && (found=lineL.find("ai")) != std::string::npos){
-                    if(getnumfromstr(lineL, "modbusport", "ai")== ((cmbxchg *)obj)->m_id) {
-                        parseBuff(fstr, _parse_ai, obj);
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                if(string(tool.name())=="commands") {
+                    for(pugi::xml_node cmd = tool.first_child(); cmd; cmd = cmd.next_sibling()) {   
+                        std::vector<int16_t> result;
+                        result.clear();
+                        for(pugi::xml_attribute attr = cmd.first_attribute(); attr; attr = attr.next_attribute()) {
+                            result.push_back(atoi(attr.value()));
+                        }
+                        ccmd cmd(result);
+//                      cout<<"parse cmds count = "<<result.size()<<endl;
+                        mb->mbCommandAdd(cmd);
                     }
                 }
                 else {
-                    mb = new cmbxchg();
-                    conn.push_back(mb);
-                    mb->m_id = getnumfromstr(lineL, "modbusport", "]");
-                    parseBuff(fstr, _parse_mbport, (void *)mb);
+                    mb->setproperty( tool.name(), tool.text().get() );
                 }
             }
-            else if(lineL.find("connection") == 1) {
-                up = new upcon();
-                upc.push_back(up);
-                up->m_id = getnumfromstr(lineL, "connection", "]");
-                parseBuff(fstr, _parse_upcon, (void *)up);
-            }
-            else if(lineL.find("display") == 1 && lineL.find("view")==std::string::npos) {
-                int32_t num = getnumfromstr(lineL, "view", "]");
-                nline = 0;
-                parseBuff(fstr, _parse_display_def, (void *)num );
-//                cout << "parse disp 1 " << num << endl;       
-            }
-           else if(lineL.find("display") == 1 && lineL.find("view")) {
-                int32_t num = getnumfromstr(lineL, "view", "]");
-                nline = 0;
-                parseBuff(fstr, _parse_display, (void *)num);
-//                cout << "parse disp 1 " << num << endl;       
-            }
         }
-        else if( obj ) {
-            switch ( type ) {
-                case _parse_display_def: {
-                        int32_t ndisp  = int32_t(obj);
-                        std::string sval, stag;
-                        std::istringstream iss( lineorig );
+        string spar, sval;
+        // парсим тэги
+        tools = doc.select_nodes("//tags/tag");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cparam  p;
+            string  s = it->node().text().get();
+            cout<<"Tag "<<s;
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                p.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;
+            p.setproperty("name", s);
+            /*if(p.getproperty("name", s)==EXIT_SUCCESS)*/ tags.push_back(make_pair(s, p));
+        }
 
-                        if( std::getline( iss, stag, '=') ) {
-                            reduce(stag, (char*)(" "));
-                            std::getline( iss, sval );
-                            cout<<"cfg "<<stag<<" = "<<sval<<endl;
-                            dsp.setproperty( stag, sval );
-                        }
-                    }
-                    break;
-               case _parse_display: {
-                        int32_t         ndisp  = int32_t(obj);
-                        vector<string>  vc;
-                       
-//                        cout<<"|| "<<lineorig<<" ||"<<endl;
-                        strsplit( lineorig, ';', vc );
-                        if( vc.size() > 2 ) {
-                            nline = atoi( vc[0].c_str() );
-                            cout << "1parse disp " << ndisp << " " << vc[1] << " | " <<vc[2]<<endl;
-                            if(ndisp>0 && nline>0) dsp.definedspline( ndisp-1, nline-1, vc[1], vc[2] );
-                        }
-                        else {
-                            strsplit( lineorig, '=', vc );
-                            if( vc.size() > 1 ) {
-                                reduce( vc[0], (char*)(" ") );
-                                reduce( vc[1], (char*)(" ") );
-//                                cout << "2parse disp " << ndisp << " " << stag << " | " <<sval<<" s="<<vc.size()<<endl;
-                                if(ndisp) dsp.setproperty( ndisp-1, vc[0], vc[1] );
-                            }
-                        }
-                    }
-                    break;
-                case _parse_mbport: 
-                case _parse_upcon: {
-                        std::istringstream iss( line );
-                        std::string sTag;
-                        std::string sVal;
-                        if( std::getline( iss, sTag, '=') ) {
-                            std::getline( iss, sVal );
-                            if( type == _parse_upcon )
-                                up->setproperty( sTag, sVal );
-                            else
-                                mb->setproperty( sTag, sVal );
-                        }
-                    }
-                    break;                   
-                case _parse_mbcmd: {
-                        std::istringstream iss( line+";" );
-                        std::vector<int16_t> result;
-                        std::string sVal;
-                        while( std::getline( iss, sVal, ';') ) {
-                            result.push_back(atoi(sVal.c_str()));
-                        }
-                        ccmd cmd(result);
-//                        cout<<"parse cmds count = "<<result.size()<<endl;
-                        mb->mbCommandAdd(cmd);
-                    }
-                    break;
-                case _parse_ai: {
-                        std::string sVal;
-                        std::istringstream iss( line+";" );
-                        if(lineL.find("topic") == 0) {
-                            while( std::getline( iss, sVal, ';') ) {
-                                prop.push_back(std::make_pair(sVal, content("")));
-                            }
-                        }
-                        else {
-                            cparam  p;
-                            int32_t nI=0;
-                            string s, n;
-                            while( std::getline( iss, sVal, ';') ) {
-                                p.setproperty( prop[nI].first, sVal );
-//                                cout<<prop[nI].first<<"="<<sVal<<"| ";
-                                nI++;
-                            }
-//                            cout<<endl;
-                            nI=0; 
-                            while(nI < p.getpropertysize()) {
-                                p.getproperty(nI, n, s);
-//                                cout<<n<<" "<<s<<"| ";
-                                nI++;
-                            }
-//                            cout<<endl;
-                           
-                            p.p_conn = obj;
-                            if(p.getproperty("name", s)==EXIT_SUCCESS) tags.push_back(make_pair(s, p));
-                        }
-                    }
-                    break;
+        // парсим соединения наверх
+        tools = doc.select_nodes("//uplinks/up");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            up = new upcon();
+            upc.push_back(up);
+            up->m_id = atoi(it->node().attribute("num").value());   
+            
+            cout<<"parse upcon num="<<up->m_id<<endl;
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                up->setproperty( tool.name(), tool.text().get() );
+                cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
+            cout<<endl;   
         }
-    }
-    return EXIT_SUCCESS;
-}
-//  
-//	Чтение и парсинг конфигурационного файла
-//	name;mqtt;type;address;
-//
-int16_t readCfg() {
-	int16_t     res=0;
-    int16_t     nI=0, i, j;
-    cmbxchg     *mb=NULL;  
-
-//    cout << "conn size = " << conn.size() << endl;
-//    cout << "readcfg" << endl;
-	std::fstream filestr("map.cfg");
-    parseBuff(filestr, _parse_root, (void *)mb);
-
-/*  // print config  
-//    cout << "conn size = " << conn.size() << endl;
-    for(i=0; i<conn.size(); i++) {
-        mb = conn[i];
-//        cout << mb << " | port settings " << mb->portPropertyCount() << endl;
-        for(j=0; j < mb->getpropertysize(); ++j) {
-//            cout << setfill(' ') << setw(2) << j << " | " <<  mb->portProperty2Text(j) << endl;
+        
+        // парсим описания дисплеев
+        tools = doc.select_nodes("//displays/display[@num]");
+        int16_t ndisp=0;
+        cout<<"parse disp="<<ndisp<<" size="<<tools.size()<<endl;
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) { 
+            for(pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                cout<<" "<<spar<<"="<<sval;
+                dsp.setproperty( ndisp, spar, sval );
+            } 
+            cout<<endl;
+            pugi::xml_node nod = it->node().child("lines");
+            for(pugi::xml_node tool = nod.first_child(); tool; tool = tool.next_sibling()) {        
+               int16_t nrow = atoi(tool.text().get())-1;
+               cout<<"row="<<nrow;
+               for(pugi::xml_attribute attr = tool.first_attribute(); attr; attr = attr.next_attribute()) {
+                    spar = attr.name();
+                    sval = attr.value();
+                    if(nrow>=0) {
+                        dsp.definedspline( ndisp, nrow, spar.c_str(), sval );
+                        cout<<" "<<spar<<"="<<sval;   
+                    }
+                }               
+                cout<<endl;
+           }   
+            ndisp++;
         }
-//        cout << "mb commands " << mb->mbCommandsCount() << endl;
-        for(j=0; j < mb->mbCommandsCount(); ++j) {
-//            cout << mb->mbCommand(j)->ToString() << endl;
-        }
+        
+        rc = EXIT_SUCCESS;
     }
-    */
-    /*
-    cout << tags.size() << endl;
-    for(i=0; i<tags.size(); i++) {
-        cout << tags[i].first<<" | ";
-        for(j=0; j<tags[i].second.getpropertysize(); j++) {
-            string va; tags[i].second.property2text(j, va);            
-            cout << " " << va;
-        }  
-        cout << endl;
+    else {
+        cout << "Cfg load error: " << result.description() << endl;
     }
-    */
-/*    
-//    cout << "upc props =" << upc[0]->getpropertysize() << endl;
-    for(i=0; i<upc.size(); i++) {
-//        cout << tags[i].getPropertySize() << endl;
-        for(j=0; j<upc[i]->getpropertysize(); j++) {
-            string s; upc[i]->property2text(j, s);
-//            cout << s << endl;
-        }    
-    }
-    cout << endl;
-*/
-    return res;
+    
+    return rc;
 }
 
 //
@@ -1056,26 +951,19 @@ void* paramProcessing(void *args) {
             string  sOff;
             int16_t nu;
             cparam  &pp = ih->second;
-//            int rc = pp.getproperty("readdata", sOff);
-//            if( !rc && !sOff.empty() ) {
-//                nRes = pp.getraw( nVal );
-                nRes1= pp.getvalue( rVal );
-               
-                if( pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<upc.size() ) {
-                    /*upc[nu]->*/publish(pp);                        
-                }
+            
+            nRes1= pp.getvalue( rVal );
+           
+            if( pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<upc.size() ) {
+                publish(pp);                        
+            }
 
-//            }
-//            else {
-//                rc = pp.getproperty("writedata", sOff);
-
-                if( pp.taskset() ) pp.setvalue();
-                if( pp.gettask() > 0 && pp.m_tasktimer.isDone() ) {
-                    pp.settask(0);
+            if( pp.taskset() ) pp.setvalue();
+            if( pp.gettask() > 0 && pp.m_tasktimer.isDone() ) {
+                pp.settask(0);
 //                    pp.m_tasktimer.reset();
-                }
-//            }
-
+            }
+                
             if( pp.m_sub==-2 ) {
                 if( (nu=pp.getsubcon())>=0 && nu<upc.size() ) {
                     upc[nu]->subscribe(pp);

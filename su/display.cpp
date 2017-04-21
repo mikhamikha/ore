@@ -12,14 +12,13 @@ view dsp;
 //
 // функция заполнения данных класса дисплея конфигурационными данными
 //
-void view::definedspline( int16_t nd, int16_t nr, std::string& sr, const std::string& attr="" ) {
+void view::definedspline( int16_t nd, int16_t nr, const char* sr, const std::string& attr="" ) {
     if( nd >= 0 && nr >= 0 ) {
-        if( pages.size() <= nd ) {
-            pagestruct  page;
-            while( pages.size() <= nd ) pages.push_back(page);
-        }
+        addpages(nd);        
+        pages.at(nd).setproperty( nr, sr, attr );
+        /*
         if( pages.at(nd).rows.size() <= nr ) {
-            string s("");
+            properties s;
             while( pages.at(nd).rows.size() <= nr ) { pages.at(nd).rows.push_back(s); pages.at(nd).attr.push_back(s); } 
         }
         string strim(" \t");
@@ -27,13 +26,14 @@ void view::definedspline( int16_t nd, int16_t nr, std::string& sr, const std::st
         pages.at(nd).attr.at(nr) = trim( attr, strim );
         cout<<"define dsp "<<nd<<" row "<<nr<<" content "<<sr \
             <<" dspsize "<<pages.size()<<" rows "<<pages.at(nd).rows.size()<<endl;
+            */
     }
 }
 
 //
 // перевод кодировки русских символов в CP866  
 //
-void view::to_866(string& sin, string& sout) {
+void to_866(string& sin, string& sout) {
     uint16_t    n, j;
 //    wchar_t     ws[2];    
     char        ss[2];
@@ -86,20 +86,22 @@ void sympad( string& sin, char cpad, int16_t sizef ) {
 //    cout<<"new length "<<sin.length()<<" "<<sin<<" |"<<endl;
 }
 
-void view::println( string& sin, bool setValue=true ) {
-    string  buf, son("{<"), soff("}>");
+void view::println( string& sin, bool setValue=true, bool last=false ) {
 //    char    buff[100];
 //    int16_t len;
     int16_t nfont;
-     
+    string buf; 
     string sfont("fonts");
     getproperty( m_curpage, sfont, nfont );
- //   cout<<"println "<<m_curpage<<" "<<sfont<<" "<<nfont<<endl;
-    to_866( sin, buf );
-    if( setValue ) assignValues(buf, son, soff);
+//   cout<<"println "<<m_curpage<<" "<<sfont<<" "<<nfont<<endl;
+    buf = sin;
+//    to_866( sin, buf );
+//    string  buf, son("{<"), soff("}>");
+//    if( setValue ) assignValues(buf, son, soff);
     sympad( buf, ' ', nfont );
    
-    Noritake_VFD_GU3000::println(buf.c_str());
+    if(last) Noritake_VFD_GU3000::print(buf.c_str());
+    else Noritake_VFD_GU3000::println(buf.c_str());
 //    assignValues(buf, son, soff, buff, len);
 //    Noritake_VFD_GU3000::println( buff, len );
 }
@@ -143,7 +145,7 @@ int16_t assignValues(string& subject, const string& sop, const string& scl, char
 //
 // функция замены тэгов в строках {tag} на их значения
 //
-int16_t assignValues(string& subject, const string& sop, const string& scl) {
+int16_t assignValues(cparam &p, string& subject, const string& sop, const string& scl) {
     size_t      nbe = 0, nen = 0, found;
     int16_t     rc=EXIT_SUCCESS;
     bool        fgo = true;
@@ -152,20 +154,35 @@ int16_t assignValues(string& subject, const string& sop, const string& scl) {
         nbe = subject.find_first_of(sop, nen); 
         fgo = (nbe != std::string::npos);
         found = sop.find(subject[nbe]);
-        if( fgo && found<scl.size() && (nen = subject.find(scl[found], nbe)) != std::string::npos ) {
+        if( fgo && found != std::string::npos && found<scl.size() && \
+                (nen = subject.find(scl[found], nbe)) != std::string::npos ) {
             string na(subject, nbe+1, nen-nbe-1);
-            string va = "нет значения";
+            string va = "нет значения", vatmp;
             
-            if( subject[nbe]=='{' ) {       // подставляем значение переменной   
+            if( subject[nbe]=='{' ) {                                                       // подставляем значение свойства   
                 vector<string> vc;
                 strsplit(na, ':', vc);
                 na = vc.at(0);
-                if(getparam( na.c_str(), va ) == EXIT_SUCCESS) {
+//                cout<<"dsp vc size="<<vc.size();
+//                for(int j=0; j<vc.size(); ++j) cout<<" "<<vc[j]; cout<<endl;
+                if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS) {
+                    to_866(vatmp, va);
                     if(vc.size() > 1) {
                         vector<string> fld;
-                        if(strsplit(vc.at(1), '.', fld) > 1 ) {
-                            stringstream ss;
-                            ss<<fixed<<setprecision(fld.at(1).size())<<atof(va.c_str());
+                        stringstream ss;
+                        int16_t ns = strsplit(vc.at(1), '.', fld);
+                        int ch=0;
+//                        cout<<"dsp fld size="<<vc.size();
+//                        for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
+                        if( fld.at(0).size() ) ch = fld.at(0)[0];
+                        if( ch && isdigit((ch)) ) {
+                            ss<<setw(atoi(fld.at(0).c_str()))<<left;
+                            ch = 0;
+                            if( ns > 1 && fld.at(1).size() ) ch = fld.at(1)[0];
+                            if( ch && isdigit(ch) ) {
+                                ss<<fixed<<setprecision(atoi(fld.at(1).c_str()))<<atof(va.c_str());
+                            }
+                            else ss<<va;
                             va = ss.str();
                         }
                     }
@@ -191,50 +208,31 @@ void view::outview(int16_t ndisp=-1) {
     int16_t     nd = (ndisp>=0)? ndisp: m_curpage;
     int16_t     nr;
     pagestruct  &pg = pages.at(nd);
-    string      sout;
+    string      sout, snam, stmp;
     string      sprop;
     int16_t     nfont;
-     
+    string      buf, bufa, son("{<"), soff("}>");
+        
     string sfont("fonts");
     int16_t rc=getproperty( nd, sfont, nfont );
 //    cout<<"page "<<nd<<" "<<sfont<<" "<<nfont;
+    
+    GU3000_setFontSize( (nfont==2)? _8x16Format: _6x8Format, 1, 1 );
+    GU3000_setCursor( 0, 0 );
 
-    for(nr = 0; nr <= pg.rows.size(); ++nr) {
-       if(!nr) {
-            GU3000_setFontSize( _6x8Format, 1, 1 );
-            GU3000_boldOn();
-            GU3000_setCursor( 0, 0 );
-            sprop = "caption";
-            getproperty( sprop, sout ); 
-//            cout<<" sprop = "<<sprop<<" sout = "<<sout<<" font="<<nfont<<endl;
-            println( sout, false );
-            sout = "";
-            sympad( sout, '-', 1 ); println( sout );
-            GU3000_boldOff();
-       }
-       else {
-            GU3000_setFontSize( (nfont==2)? _8x16Format: _6x8Format, 1, 1 );
-            int16_t nrow = nr-1;
-            sout = pg.rows.at( nrow );
-            
-//            sympad( sout, ' ', nfont );
-            if( nrow == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); }            
-            println( sout );
-            if( nrow == pg.rowget() ) { GU3000_invertOff(); GU3000_boldOff(); } 
+    for(nr = 0; nr < pg.rowssize(); ++nr) {
+        pg.getproperty( nr, "format", bufa );       
+        to_866( bufa, buf );
+        if( pg.getproperty( nr, "tag", snam )==EXIT_SUCCESS ) {
+            cparam *p = getparam( snam.c_str() );
+            if( p ) {
+                assignValues( *p, buf, son, soff );
+            }
         }
+        if( nr == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); }            
+        println( buf, true );
+        if( nr == pg.rowget() ) { GU3000_invertOff(); GU3000_boldOff(); } 
     }
-    sout = "";
-    println( sout );
-
-    GU3000_setFontSize( _6x8Format, 1, 1 );
-    GU3000_setCursor( 0, 112 );
-    sout = ""; sympad( sout, '-', 1 ); println( sout );    
-    GU3000_setCursor( 0, 120 );
-    sprop = "bottom";
-    getproperty( sprop, sout ); 
-//    cout<<"sprop = "<<sprop<<" sout = "<<sout<<endl;
-    GU3000_boldOn();
-    println( sout, false );
 }
 
 //
@@ -386,26 +384,38 @@ string buildLine( const char* smess, const string& sin ) {
 void view::gotoDetailPage() {
     pagestruct& pg = pages.at(m_curpage);
     int16_t row = pg.rowget();
-    string ss = pg.attr.at(row); 
-    if( ss.size() && ss[0]=='i' ) {
-        string s = getTagName(pg.rows.at(row).c_str());
-        ss = "Значение  {"+s+"}";
-        definedspline( m_maxpage+1, 1, ss ); 
-        ss = "Задание   <"+s+">";
-        definedspline( m_maxpage+1, 3, ss );
-        s = s.substr(0, s.find(':'));
-        definedspline( m_maxpage+1, 0, s );         
-        pages.at(m_maxpage+1).setprev( m_curpage );
-        pages.at(m_maxpage+1).rowset(3);
-        pages.at(m_maxpage+1).m_tag = s;
-        getparam( s.c_str(), ss );
-        cout<<"gotodetail init "<<s<<" val = "<<ss;
-        pages.at(m_maxpage+1).settask( atof(ss.c_str()) );
-        s="2";
+    string ss, sform;// = pg.attr.at(row); 
+//    if( ss.size() && ss[0]=='i' ) {
+    string snam;// = getTagName(pg.rows.at(row).c_str());
+    
+    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&
+            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {
+        int16_t n = m_maxpage+1;
+        pg.getproperty( row, "format", sform );
+
+        ss = "Значение  {value:5.3}";
+
+        definedspline( n, 3, "tag", snam );
+        pages.at(n).setproperty( 3, "format", ss );
+        ss = "Задание   <"+snam+":"+sform+">";
+        definedspline( n, 5, "tag", snam );
+        definedspline( n, 5, "format", ss );
+            
+//        s = s.substr(0, s.find(':'));
+        ss = "Режим управления";
+        definedspline( n, 0, "format", ss );
+        definedspline( n, 2, "format", snam );         
+        pages.at(n).setprev( m_curpage );
+        pages.at(n).rowset(5);
+        pages.at(n).m_tag = snam;
+        getparam( snam.c_str(), ss );
+        cout<<"gotodetail init "<<snam<<" curPg="<<m_curpage<<" row="<<row<<" val = "<<ss;
+        pages.at(n).settask( atof(ss.c_str()) );
+        ss="2";
         string sfont("fonts");
-        setproperty( m_maxpage+1, sfont, s );
+        setproperty( n, sfont, ss );
         GU3000_clearScreen();
-        m_curpage = m_maxpage+1;
+        m_curpage = n;
         m_mode = _task_mode;
     }
 }

@@ -11,6 +11,7 @@
 #include "mbxchg.h"
 #include "main.h"
 #include "utils.h" 
+#include <pugixml.hpp>
 
 #define m_pos       param1
 
@@ -28,16 +29,6 @@
 #define m_fv        param3
 #define m_pt1       param4
 #define m_pt2       param5
-
-enum {
-    _parse_root,
-    _parse_mbport,
-    _parse_mbcmd,
-    _parse_ai,
-    _parse_upcon,
-    _parse_display_def,
-    _parse_display
-};
 
 
 // интерфейс класса
@@ -91,12 +82,6 @@ protected: 				// спецификатор доступа protected
     int16_t         m_motion;  
     int16_t         m_motion_old;  
    
-//    int16_t         m_status;   // 0 - not calibrated
-                                // 1 - lsc, not calibrated
-                                // 2 - lso, not calibrated
-                                // 3 - go to open
-                                // 4 - go to close
-
 public: 				// спецификатор доступа public
     cparam();			// конструктор класса
 //    cparam(const cparam&) {}		// конструктор класса

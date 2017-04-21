@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
             }
             ++i;
         }            
+
         for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) {
             if( (*up)->connect()==EXIT_SUCCESS )
                 nResult = pthread_create(thMBX+i, NULL, upProcessing, (void *)(*up));
@@ -49,8 +50,10 @@ int main(int argc, char* argv[])
             }            
             ++i;
         }
+
         nResult = pthread_create(thMBX+i++, NULL,  paramProcessing, (void *)NULL);
         nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
+
         //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",'А', 'Я', 'Ё', 'а', 'п', 'р', 'я', 'ё');
         //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",wchar_t(L'А'), wchar_t(L'Я'), wchar_t(L'Ё'), wchar_t(L'а'), wchar_t(L'п'), wchar_t(L'р'), wchar_t(L'я'), wchar_t(L'ё'));
 //        cout << "param thread " << i <<endl;

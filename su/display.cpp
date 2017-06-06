@@ -159,40 +159,44 @@ int16_t assignValues(cparam &p, string& subject, const string& sop, const string
             string na(subject, nbe+1, nen-nbe-1);
             string va = "нет значения", vatmp;
             
-            if( subject[nbe]=='{' ) {                                                       // подставляем значение свойства   
+//            if( subject[nbe]=='{' ) {                                               // подставляем значение свойства   
                 vector<string> vc;
                 strsplit(na, ':', vc);
                 na = vc.at(0);
 //                cout<<"dsp vc size="<<vc.size();
 //                for(int j=0; j<vc.size(); ++j) cout<<" "<<vc[j]; cout<<endl;
-                if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS) {
+                if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) {
                     to_866(vatmp, va);
                     if(vc.size() > 1) {
                         vector<string> fld;
                         stringstream ss;
-                        int16_t ns = strsplit(vc.at(1), '.', fld);
-                        int ch=0;
-//                        cout<<"dsp fld size="<<vc.size();
-//                        for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
-                        if( fld.at(0).size() ) ch = fld.at(0)[0];
-                        if( ch && isdigit((ch)) ) {
-                            ss<<setw(atoi(fld.at(0).c_str()))<<left;
-                            ch = 0;
-                            if( ns > 1 && fld.at(1).size() ) ch = fld.at(1)[0];
-                            if( ch && isdigit(ch) ) {
-                                ss<<fixed<<setprecision(atoi(fld.at(1).c_str()))<<atof(va.c_str());
+                        double rVal = atof(va.c_str());
+                        if( na!="task" || rVal>=0 ) {
+                            int16_t ns = strsplit(vc.at(1), '.', fld);
+                            int ch=0;
+    //                        cout<<"dsp fld size="<<vc.size();
+    //                        for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
+                            if( fld.at(0).size() ) ch = fld.at(0)[0];
+                            if( ch && isdigit((ch)) ) {
+                                ss<<setw(atoi(fld.at(0).c_str()))<<left;
+                                ch = 0;
+                                if( ns > 1 && fld.at(1).size() ) ch = fld.at(1)[0];
+                                if( ch && isdigit(ch) ) {
+                                    ss<<fixed<<setprecision(atoi(fld.at(1).c_str()))<<rVal;
+                                }
+                                else ss<<va;
+                                va = ss.str();
                             }
-                            else ss<<va;
-                            va = ss.str();
                         }
                     }
                 }
                 else va="-1";
-            }
-            else if( subject[nbe]=='<' ) {  // подставляем значение задания
+/*            }
+            else if( subject[nbe]=='<' ) {                                          // подставляем значение задания
                 pagestruct* pg = dsp.curpage();
                 if(pg) va = to_string(pg->gettask());
             }
+*/
             subject.replace( nbe, nen-nbe+1, va );
             nen = nbe+va.length();
         }
@@ -241,6 +245,7 @@ void view::outview(int16_t ndisp=-1) {
 void* viewProcessing(void *args) {
     cton t;    
     const int16_t _refresh = 200;
+    cout<<"start dsp thread\n";
     dsp.setMaxPage( dsp.pagessize()-1 );
     sleep(5);
 
@@ -322,23 +327,53 @@ void view::keymanage() {
             }
             if(m_btn.down) {                                // 4
                 cout << "btn Down\n";
-                n = n-nval[4]*5;
-                pg.settask( n );
+//                n = n-nval[4]*5;
+//                pg.settask( n );
+                string sn, srch="FV", srpl="MV";
+                int16_t mot, mode;
+                sn = pg.m_tag;
+                cparam *p = getparam( sn.c_str() );   
+                if( p && p->getproperty("motion",mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                    replaceString( sn, srch, srpl );
+                    cparam *p1 = getparam( sn.c_str() );
+                    pthread_mutex_lock( &mutex_param );   
+                    if( p1 && (mode=p1->getvalue())!=_manual_pulse ) {
+                        sn = "/top/"+pg.m_tag+"/task";
+                        p->settask(0-_close);               // дадим толчок на закрытие
+                    }
+                    pthread_mutex_unlock( &mutex_param );   
+               }
             }  
             if(m_btn.up) {                                  // 5
                 cout << "btn Up\n";
-                n = n+nval[5]*5;
-                pg.settask( n );
+//                n = n+nval[5]*5;
+//                pg.settask( n );
+                string sn, srch="FV", srpl="MV";
+                int16_t mot, mode;
+                sn = pg.m_tag;
+                cparam *p = getparam( sn.c_str() );   
+                if( p && p->getproperty("motion",mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                    replaceString( sn, srch, srpl );
+                    cparam *p1 = getparam( sn.c_str() );
+                    pthread_mutex_lock( &mutex_param );   
+                    if( p1 && (mode=p1->getvalue())!=_manual_pulse ) {
+                        sn = "/top/"+pg.m_tag+"/task";
+                        p->settask(0-_open);                // дадим толчок на открытие
+                    }
+                    pthread_mutex_unlock( &mutex_param );   
+               }
             }                    
             if(m_btn.left) {                                // 1
                 cout << "btn Left\n";
-                n = n-nval[1]*0.5;
+                n = n-nval[1]*5;
                 pg.settask( n );
+                pg.p->settask( n, false );
             }
             if(m_btn.right) {                               // 2
                 cout << "btn Right\n";
-                n = n+nval[2]*0.5;
+                n = n+nval[2]*5;
                 pg.settask( n );
+                pg.p->settask( n, false );
             }
             if(m_btn.enter) {                               // 3
                 cout << "btn Enter\n";
@@ -388,16 +423,16 @@ void view::gotoDetailPage() {
 //    if( ss.size() && ss[0]=='i' ) {
     string snam;// = getTagName(pg.rows.at(row).c_str());
     
-    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&
-            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {
-        int16_t n = m_maxpage+1;
-        pg.getproperty( row, "format", sform );
+    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&                                 // если получили имя тэга
+            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {                  // и для него возможно вводить задание
+        int16_t n = m_maxpage+1;                                                            // создаем страницу
+        pg.getproperty( row, "format", sform ); 
 
-        ss = "Значение  {value:5.3}";
+        ss = "Значение  {value:5.1}";
 
         definedspline( n, 3, "tag", snam );
-        pages.at(n).setproperty( 3, "format", ss );
-        ss = "Задание   <"+snam+":"+sform+">";
+        definedspline( n, 3, "format", ss );
+        ss = "Задание   <task:5.1}>";
         definedspline( n, 5, "tag", snam );
         definedspline( n, 5, "format", ss );
             
@@ -408,6 +443,10 @@ void view::gotoDetailPage() {
         pages.at(n).setprev( m_curpage );
         pages.at(n).rowset(5);
         pages.at(n).m_tag = snam;
+        
+        pages.at(n).p = getparam( snam.c_str() );
+        if( pages.at(n).p ) pages.at(n).settask( pages.at(n).p->gettask() );  
+        
         getparam( snam.c_str(), ss );
         cout<<"gotodetail init "<<snam<<" curPg="<<m_curpage<<" row="<<row<<" val = "<<ss;
         pages.at(n).settask( atof(ss.c_str()) );

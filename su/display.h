@@ -36,10 +36,12 @@ class pagestruct: public cproperties {
         pagestruct() {
             m_currow = 0;
             m_prevpage = 0;
+            m_task = 0;
         }
         
 //    rowsarray   attr; 
     string      m_tag;
+    cparam      *p; 
 
     void setprev(int16_t n) { m_prevpage = n; }
     int16_t getprev() { return m_prevpage; }

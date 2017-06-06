@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
         thMBX = new pthread_t[conn.size() + upc.size() + 2]; 
         fieldconnections::iterator coni;
         fParamThreadInitialized=1;
+        cout << "start conn  thread " << i <<endl;       
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
             nResult = pthread_create(thMBX+i, NULL, fieldXChange, (void *)(*coni));
             if (nResult != 0) {
@@ -39,7 +40,7 @@ int main(int argc, char* argv[])
             }
             ++i;
         }            
-
+        cout << "start upcon  thread " << i <<endl; 
         for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) {
             if( (*up)->connect()==EXIT_SUCCESS )
                 nResult = pthread_create(thMBX+i, NULL, upProcessing, (void *)(*up));
@@ -51,11 +52,14 @@ int main(int argc, char* argv[])
             ++i;
         }
 
+        cout << "start param thread " << i <<endl;
         nResult = pthread_create(thMBX+i++, NULL,  paramProcessing, (void *)NULL);
+        cout << "start display thread " << i <<endl;
         nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
 
-        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",'А', 'Я', 'Ё', 'а', 'п', 'р', 'я', 'ё');
-        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",wchar_t(L'А'), wchar_t(L'Я'), wchar_t(L'Ё'), wchar_t(L'а'), wchar_t(L'п'), wchar_t(L'р'), wchar_t(L'я'), wchar_t(L'ё'));
+        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",'А', 'Я', 'Ё', 'а', 'п', 'р', 'я', 'ё'); \
+                    printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",wchar_t(L'А'), wchar_t(L'Я'), wchar_t(L'Ё'), \
+                            wchar_t(L'а'), wchar_t(L'п'), wchar_t(L'р'), wchar_t(L'я'), wchar_t(L'ё'));
 //        cout << "param thread " << i <<endl;
        
 // ----------- terminate block -------------
@@ -118,23 +122,29 @@ int main(int argc, char* argv[])
         tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 // ---------- end terminate block ------------
         
-        cout << "end param thread " << i <<endl;
         fParamThreadInitialized=0;
+        cout << "end display thread " << i <<endl;
         pthread_join(thMBX[i--], NULL);
-        pthread_join(thMBX[i], NULL);
-        
-        for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
-            (*coni)->terminate();
-            pthread_join(thMBX[i], NULL);
-            delete *coni;
-            ++i;
-        }
-        for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) { 
+        cout << "end param thread " << i <<endl;
+        pthread_join(thMBX[i--], NULL);
+        cout << "end mqtt thread ";
+        for(upconnections::reverse_iterator up=upc.rbegin(); up != upc.rend(); ++up) { 
             (*up)->terminate();
-            pthread_join(thMBX[i], NULL);
+            cout << i << " ";   
+            pthread_join(thMBX[i--], NULL);
             delete *up;
-            ++i;
         }
+      
+        cout << "\nend modbus thread ";
+        
+        fieldconnections::reverse_iterator rconi;          
+        for(rconi=conn.rbegin(); rconi != conn.rend(); ++rconi) { 
+            (*rconi)->terminate();
+            cout << i << " ";
+            pthread_join(thMBX[i--], NULL);
+            delete *rconi;
+        }
+        cout<<endl;
         delete []thMBX;
         pthread_mutexattr_destroy(&mutex_param_attr);   // clean up the mutex attribute
         pthread_mutex_destroy(&mutex_param);            // clean up the mutex itself

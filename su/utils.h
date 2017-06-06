@@ -92,6 +92,10 @@ struct cton {
     bool reset() {
         m_tt = false;
     }
+    
+    int32_t getPreset() {
+        return m_preset;
+    }
 };
 
 struct content {

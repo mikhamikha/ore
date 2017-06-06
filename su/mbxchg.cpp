@@ -9,12 +9,17 @@
 //
 using namespace std;
 fieldconnections conn;
-int16_t *cmbxchg::m_pReadTrigger;
-int16_t *cmbxchg::m_pReadData;
-int16_t *cmbxchg::m_pWriteData;
-int16_t *cmbxchg::m_pLastWriteData;
+int16_t *cmbxchg::m_pReadTrigger = NULL;
+int16_t *cmbxchg::m_pReadData = NULL;
+int16_t *cmbxchg::m_pWriteData = NULL;
+int16_t *cmbxchg::m_pLastWriteData = NULL;
 int32_t cmbxchg::m_maxReadData;
 int32_t cmbxchg::m_maxWriteData;
+
+extern "C" {
+    extern int Interface_Segment( int Interface, int pin1, int pin2, int pin3, int pin4, int res );
+    extern int gpio_init();
+}
 
 ccmd::ccmd(const ccmd &s)
 {
@@ -96,6 +101,8 @@ int16_t cmbxchg::init()
                 m_ctx = modbus_new_tcp_pi("::1", "1502");
             }   
             else {
+                gpio_init();
+                Interface_Segment(3, 1, 0, 1, 0, 1);               
                 rc = getproperty("path", path)       | \
                      getproperty("baudrate", baud)   | \
                      getproperty("parity", parity)   | \
@@ -145,24 +152,28 @@ void* fieldXChange(void *args)
     if(mbx->init() == INITIALIZED) {
         cmbxchg::m_maxReadData = 500;
         cmbxchg::m_maxWriteData= 500;
-        cmbxchg::m_pReadData        = new int16_t[cmbxchg::m_maxReadData+1];
-        cmbxchg::m_pReadTrigger     = new int16_t[cmbxchg::m_maxReadData+1];
-        cmbxchg::m_pWriteData       = new int16_t[cmbxchg::m_maxWriteData+1];
-        cmbxchg::m_pLastWriteData   = new int16_t[cmbxchg::m_maxWriteData+1];
-        memset(cmbxchg::m_pReadData,      0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
-        memset(cmbxchg::m_pReadTrigger,   0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
-        memset(cmbxchg::m_pWriteData,     0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
-        memset(cmbxchg::m_pLastWriteData, 0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
-        cout << "start xchg " << mbx << " | " << cmbxchg::m_pReadData <<endl;
+        if( !cmbxchg::m_pReadData ) {
+            cmbxchg::m_pReadData        = new int16_t[cmbxchg::m_maxReadData+1];
+            cmbxchg::m_pReadTrigger     = new int16_t[cmbxchg::m_maxReadData+1];
+            cmbxchg::m_pWriteData       = new int16_t[cmbxchg::m_maxWriteData+1];
+            cmbxchg::m_pLastWriteData   = new int16_t[cmbxchg::m_maxWriteData+1];
+            memset(cmbxchg::m_pReadData,      0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
+            memset(cmbxchg::m_pReadTrigger,   0, (cmbxchg::m_maxReadData+1)*sizeof(int16_t) );
+            memset(cmbxchg::m_pWriteData,     0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
+            memset(cmbxchg::m_pLastWriteData, 0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
+        }
+        cout << "start xchg num = " << mbx->m_id << " | " << mbx << " | " << cmbxchg::m_pReadData <<endl;
 //        cout << "minimum command delay = " << mbx->getproperty("minimumcommand")._n << endl;
-        while (mbx->getStatus()!=TERMINATE) {
+        while( mbx->getStatus()!=TERMINATE ) {
             mbx->runCmdCycle(false);
         }     
         mbx->runCmdCycle(true);
-        delete []cmbxchg::m_pReadData;
-        delete []cmbxchg::m_pReadTrigger;
-        delete []cmbxchg::m_pWriteData;    
-        delete []cmbxchg::m_pLastWriteData;    
+        if( !cmbxchg::m_pReadData ) {
+            delete []cmbxchg::m_pReadData;
+            delete []cmbxchg::m_pReadTrigger;
+            delete []cmbxchg::m_pWriteData;    
+            delete []cmbxchg::m_pLastWriteData;    
+        }
     }
     cout << "end xchg " << args << endl;
     return EXIT_SUCCESS;
@@ -208,7 +219,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             modbus_get_response_timeout( m_ctx, &old_resp_to_sec, &old_resp_to_usec );
             modbus_get_byte_timeout( m_ctx, &to_sec, &to_usec );
             rc = modbus_set_response_timeout( m_ctx, 0, 1000*resp );
-            rc = modbus_set_byte_timeout( m_ctx, 0, 100000);
+            rc = modbus_set_byte_timeout( m_ctx, 0, 1000);
             if(!rc) fConnected = true;
         }
     }
@@ -220,18 +231,13 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             outtext(cmdi->ToString());
         }
         if( cmdi->m_enable && ( cmdi->m_first || cmdi->m_time.isDone() ) ) {
-/*----------- cycle time measure --------------------------------
-            clock_gettime(CLOCK_MONOTONIC,&tve);
-            nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
-            nD = abs(nfin-nsta);
-            cout<<"cmd="<<i<<" "<<nD/1000.0<<" ms   ";
----------------------------------------------------------------*/            
+   
             fTook = true; rc = 0;
             if(proto == RTU) {
                 rc = modbus_set_slave(m_ctx, cmdi->m_node);
             }   
             if(rc==0) {
-                pthread_mutex_lock( &mutex_param );
+//                pthread_mutex_lock( &mutex_param );
                 switch(cmdi->m_func) {                // modbus read commands queue processing
                     case 1: 
                         {
@@ -275,7 +281,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 
  // modbus write commands queue processing
                     case 5:
-//                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_param );
                         // write bit if enable==1 or (2 and new<>old)
                         if( (*cmdi).m_first || fLast || cmdi->m_enable==1 ||    \
                             m_pWriteData[cmdi->m_intAddress]!=m_pLastWriteData[cmdi->m_intAddress] ) {
@@ -290,11 +296,11 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 
                         else fTook=false;
-//                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_param );
                         break;
 
                     case 15:
-//                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_param );
                         // write bit if enable==1 or (2 and new<>old)
 //                        cout<<"func 15 ";
                         if( cmdi->m_first || fLast || cmdi->m_enable==1 ||    \
@@ -319,11 +325,11 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                         } 
                         else fTook=false;
 //                        cout<<endl;
-//                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_param );
                         break;
 
                     case 16:
-//                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_param );
                         // write if enable==1 or (2 and new<>old)
                         if( /*cmdi->m_first ||*/ cmdi->m_enable==1 ||    \
                             memcmp(m_pWriteData+cmdi->m_intAddress, \
@@ -345,14 +351,14 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                         m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                    
                         } 
                         else fTook=false;
-//                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_param );
                         break;
                 }
-                pthread_mutex_unlock( &mutex_param );
+//                pthread_mutex_unlock( &mutex_param );
             }
             if (rc == -1) {
                 if( cmdi->incErr() >= _max_conn_err ) {
-                    m_pReadData[erroff+i] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
+                    m_pReadData[erroff+cmdi->m_num] = (errno>MODBUS_ENOBASE)?errno-MODBUS_ENOBASE:errno;
                 }
                 outtext(cmdi->ToString());
 //                modbus_flush( m_ctx );
@@ -360,7 +366,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             else {
 //              if(i==9) cout<<"command OK\n";
                 if( cmdi->decErr() <= 0 ) {
-                    m_pReadData[erroff+i] = 0;
+                    m_pReadData[erroff+cmdi->m_num] = 0;
                 }
             }
             int t;
@@ -382,7 +388,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     clock_gettime(CLOCK_MONOTONIC,&tve);
     nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
     nD = abs(nfin-nsta);
-//    cout<<"\nxchange cycle time "<<nD/1000.0<<" ms"<<endl;
+//    if( m_id==2 )
+//        cout<<"\nxchange "<<m_id<<" cycle time "<<nD/1000.0<<" ms"<<endl;
 //---------------------------------------------------------------    
    
     return res;

@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include "param.h"
 #include "utils.h"
+#include "algo.h"
 #include "upcon.h"
 #include "mbxchg.h"
 #include "display.h"

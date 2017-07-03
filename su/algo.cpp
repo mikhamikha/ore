@@ -178,9 +178,10 @@ int16_t calgo::solveIt() {
                     double  cur         = args[5]->getvalue();
                     int16_t sw          = args[6]->getvalue();                   
                     int16_t mode        = args[7]->getvalue();
+                    int16_t mode_old    = args[7]->getoldvalue();
                     double  pt          = args[8]->getvalue();
                     double  pttask      = args[8]->gettask();   
-                    int16_t mot, mot_old, iscfgd, old_mode, nv;
+                    int16_t mot, mot_old, iscfgd, nv;
                     double  pv          = pvl->getvalue();
                     double  delta, max_delta, outv;
                     int16_t rc0         = (args[0]->getquality()!=OPC_QUALITY_GOOD);
@@ -201,7 +202,7 @@ int16_t calgo::solveIt() {
                     if( pvl->getname()=="FV11" ) \
                         cout<<"vlv proc "<<pvl->getname()<<" selV="<<sw<<" curV="<<nv<<" mode="<<mode<<" isCfg="<<iscfgd;
                    
-                    if( mode==_auto_press ) {                                                   // PID по давлению
+                    if( mode==_auto_press ) {                                                   // PID 
                         pvl->getproperty( "pollT", pollT );
                         if( (m_twait.isDone() || !m_twait.isTiming()) ) {
                             double sp, err, err1, err2, kp, kd, ki, hi, lo;
@@ -225,8 +226,8 @@ int16_t calgo::solveIt() {
                         }
                     }
                     else {                                                                      // если ручной режим
-                        res[0]->setproperty( "sp", pt );
-                        res[0]->setproperty( "out", pvl->gettask() );
+                        pvl->setproperty( "sp", pt );
+                        pvl->setproperty( "out", pvl->gettask() );
                     }
 
                     if( sw && sw!=nv ) break;
@@ -235,31 +236,24 @@ int16_t calgo::solveIt() {
                     pvl->getproperty( "task_delta", delta );   
                     pvl->getproperty( "motion", mot );
                     pvl->getproperty( "motion_old", mot_old );
-//                    pvl->getproperty( "count", cnt_old );                   
                     getproperty( "pulsewidth", pulsewidth );
 
-//                    cout<<" mot= "<<mot_old<<"|"<<mot<<" cmd= "<<cmd<<"|"<<dir<<" cnt= "<<cnt_old<<"|"<<cnt \
-                        <<" pv="<<pv<<" task= "<<pvl->taskset()<<"|"<<pvl->gettask()<<"|"<<delta \
-                        <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur<<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<pulsewidth \
-                        <<" t="<<m_tcmd.getTT()<<"|"<<m_tcmd.getPreset()<<"|"<<m_tcmd.isDone()<<endl;                   
-                    
                     if( mot==_no_motion ) {                                                     // if valve standby
                         if( mot_old==_no_motion && nqual==OPC_QUALITY_GOOD ) {                  // && old state same
                            if( mode==_auto_press ) pvl->settask(outv);                   
-                           if( pvl->taskset() && !cmd ) {                                       // if task set
-                               int16_t task = round(pvl->gettask());
+                           if( (pvl->taskset() || mode>=_manual_pulse_open) && !cmd ) {         // if task set
+                                int16_t task = round(pvl->gettask());
                                
-                               if( task==-1 || task==-2 ) {
-                                   args[7]->setoldvalue( mode );
-                                   mode = _manual_pulse;
-                                   args[7]->setvalue( mode );
-                                }
                                 switch(mode) {                                            
-                                    case _manual_pulse:                                  
-                                        mot = abs( task );                            
-                                        cout<<"imp mot="<<mot<<endl;
+                                    case _manual_pulse_open:                                  
+                                        mot = _open;                            
+                                        cout<<" imp mot open="<<mot<<endl;
                                         break;                                           
-                                    default:                                             
+                                    case _manual_pulse_close:                                  
+                                        mot = _close;                            
+                                        cout<<" imp mot close="<<mot<<endl;
+                                        break;                                                             
+                                    default:        
                                         if( pvl->gettask() - pv  > delta ) {                    // cmd to open
                                             if(!lsc || !cnt) mot = _open;                       // if closed wait for reset counter
                                         }                                                
@@ -272,7 +266,7 @@ int16_t calgo::solveIt() {
                             }
                             if( mot ) {
                                 args[6]->setvalue( nv );                                        // захватим управление  
-                                if(mode==_manual_pulse) {
+                                if( mode>=_manual_pulse_open ) {
                                     m_tcmd.start( ( (mot==_open)?pulsewidth:pulsewidth+1000 ) );
                                 }
                                 else
@@ -281,21 +275,18 @@ int16_t calgo::solveIt() {
                             }
                         }
                         else if( !cmd || mot_old<_opening || m_tcmd.isDone()) {                 // valve state is idle && old state is moving 
-                            if( mode!=_manual_pulse && fabs(pv-pvl->gettask()) > delta) {       // if задание не достигнуто
+                            if( mode<_manual_pulse_open && fabs(pv-pvl->gettask()) > delta) {   // if задание не достигнуто
                                 pvl->settask(pvl->gettask());                                   // запустим снова
                             }
-                            if( mode!=_manual_pulse && !m_tcmd.isDone() && mot_old>=_opening ) {
+                            if( mode<_manual_pulse_open && !m_tcmd.isDone() && mot_old>=_opening ) {
                                 if( mot_old==_opening ) delta -= (pvl->gettask() - pv);
                                 if( mot_old==_closing ) delta += (pvl->gettask() - pv);
                                 delta = min( fabs(delta), max_delta );
                             }
-                            if( mode==_manual_pulse ) {
-//                                getproperty( "mode", old_mode );
-                                old_mode = args[7]->getoldvalue();
-                                args[7]->setoldvalue( mode );
-                                args[7]->setvalue( old_mode );
+                            if( mode>=_manual_pulse_open ) {
+                                args[7]->setvalue( mode_old );
+                                mode = mode_old; 
                                 pvl->settask( pv, false );                                      // set task value without process start    
-                                //pvl->cleartask();                                             //  
                             }
                             m_tcmd.reset();
                             mot_old = mot;
@@ -305,8 +296,8 @@ int16_t calgo::solveIt() {
                     else if( mot ) {                                                            // if valve moving (motion != 0)
                         res[0]->cleartask();
                         
-                        bool stopOp = ( mot%10==_open  && ( (lso && !lso_old) || (mode!=_manual_pulse)&&(pv > (pvl->gettask()-delta)) ) ); 
-                        bool stopCl = ( mot%10==_close  && ( (lsc && !lsc_old) || (mode!=_manual_pulse)&&(pv < (pvl->gettask()+delta)) ) );
+                        bool stopOp = ( mot%10==_open  && ( (lso && !lso_old) || (mode<_manual_pulse_open)&&(pv > (pvl->gettask()-delta)) ) ); 
+                        bool stopCl = ( mot%10==_close  && ( (lsc && !lsc_old) || (mode<_manual_pulse_open)&&(pv < (pvl->gettask()+delta)) ) );
 
                         if( !rc2 && (m_tcmd.isDone() || (stopOp || stopCl) || rc0 ) ) {         // limit switch (open or close ) position reached
                             mot_old = mot;                                                      // or task completed                     
@@ -322,10 +313,11 @@ int16_t calgo::solveIt() {
                             mot += 10;
                         }
                     }
-                    cout<<" mot= "<<mot_old<<"|"<<mot<<" cmd= "<<cmd<<"|"<<dir<<" cnt= "<<cnt_old<<"|"<<cnt \
-                        <<" pv="<<pv<<" task= "<<pvl->taskset()<<"|"<<pvl->gettask()<<"|"<<delta \
-                        <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur<<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<pulsewidth \
-                        <<" t="<<m_tcmd.getTT()<<"|"<<m_tcmd.getPreset()<<"|"<<m_tcmd.isDone()<<endl;                        
+                    if( pvl->getname()=="FV11" ) \
+                        cout<<" mot= "<<mot_old<<"|"<<mot<<" cmd= "<<cmd<<"|"<<dir<<" cnt= "<<cnt_old<<"|"<<cnt \
+                            <<" pv="<<pv<<" task= "<<pvl->taskset()<<"|"<<pvl->gettask()<<"|"<<delta \
+                            <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur<<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<pulsewidth \
+                            <<" t="<<m_tcmd.getTT()<<"|"<<m_tcmd.getPreset()<<"|"<<m_tcmd.isDone()<<endl;                        
                     
                     pvl->setproperty( "task_delta", delta );                    
                     pvl->setproperty( "motion", mot );
@@ -333,7 +325,11 @@ int16_t calgo::solveIt() {
 //                    pvl->setproperty( "configured", iscfgd );
 //                    pvl->setproperty( "count", cnt );                  
                     args[1]->setoldvalue( lso );   
-                    args[2]->setoldvalue( lsc );   
+                    args[2]->setoldvalue( lsc );
+
+                    if( mode<_manual_pulse_open ) {
+                        args[7]->setoldvalue( mode );
+                    }
 /*
                     if( 1 && m_name.substr(0,3)=="FV1" ) { 
                         cout<<m_raw;

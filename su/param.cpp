@@ -255,9 +255,13 @@ int16_t cparam::getvalue(double &rOut) {
                 if(m_isBool==2) rVal = (rVal < m_hihi);                             // if it is a discret parameter & inverse
                 rOut = rVal;                                                        // current value
             }
+            else {
+                rOut = m_raw;
+                rVal = m_raw;
+            }
         }
       
-//        if( m_name.substr(0,4)=="FV11") \
+//        if( m_name.substr(0,4)=="MV11") \
             cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
                 <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
                 <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
@@ -273,7 +277,7 @@ int16_t cparam::getvalue(double &rOut) {
             setproperty("quality", m_quality);
             setproperty("sec",  int32_t(tv.tv_sec));
             setproperty("msec", int32_t(tv.tv_nsec/_million));
-/*          if( m_name.substr(0,3)=="FV1") cout<<endl;
+/*          if( m_name.substr(0,3)=="MV1") cout<<endl;
                 cout <<" |v "<< rVal<<" |vold "<<m_rvalue<< \
                 " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
 */

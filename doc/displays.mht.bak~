@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE abiword PUBLIC "-//ABISOURCE//DTD AWML 1.0 Strict//EN" "http://www.abisource.com/awml.dtd">
+<abiword template="false" xmlns:ct="http://www.abisource.com/changetracking.dtd" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:math="http://www.w3.org/1998/Math/MathML" xid-max="17" xmlns:dc="http://purl.org/dc/elements/1.1/" styles="unlocked" fileformat="1.0" xmlns:svg="http://www.w3.org/2000/svg" xmlns:awml="http://www.abisource.com/awml.dtd" xmlns="http://www.abisource.com/awml.dtd" xmlns:xlink="http://www.w3.org/1999/xlink" version="0.99.2" xml:space="preserve" props="dom-dir:ltr; document-footnote-restart-section:0; document-endnote-type:numeric; document-endnote-place-enddoc:1; document-endnote-initial:1; lang:en-US; document-endnote-restart-section:0; document-footnote-restart-page:0; document-footnote-type:numeric; document-footnote-initial:1; document-endnote-place-endsection:0">
+<!-- ======================================================================== -->
+<!-- This file is an AbiWord document.                                        -->
+<!-- AbiWord is a free, Open Source word processor.                           -->
+<!-- More information about AbiWord is available at http://www.abisource.com/ -->
+<!-- You should not edit this file by hand.                                   -->
+<!-- ======================================================================== -->
+
+<metadata>
+<m key="abiword.date_last_changed">Thu Jun  8 12:04:04 2017
+</m>
+<m key="abiword.generator">AbiWord</m>
+<m key="dc.creator">admin</m>
+<m key="dc.date">Thu Jun  8 11:42:55 2017
+</m>
+<m key="dc.format">application/x-abiword</m>
+</metadata>
+<rdf>
+</rdf>
+<history version="4" edit-time="4800" last-saved="1496905444" uid="d2349f8c-4c10-11e7-8b8a-fa9b40ff697f">
+<version id="4" started="1496902530" uid="a87a0cd8-4c18-11e7-8b8a-fa9b40ff697f" auto="0" top-xid="9"/>
+</history>
+<styles>
+<s type="P" name="Normal" followedby="Current Settings" props="font-family:Times New Roman; margin-top:0pt; color:000000; margin-left:0pt; text-position:normal; widows:2; font-style:normal; text-indent:0in; font-variant:normal; font-weight:normal; margin-right:0pt; font-size:12pt; text-decoration:none; margin-bottom:0pt; line-height:1.0; bgcolor:transparent; text-align:left; font-stretch:normal"/>
+</styles>
+<pagesize pagetype="Custom" orientation="landscape" width="79.992361" height="80.000000" units="mm" page-scale="1.000000"/>
+<section xid="8" props="page-margin-right:10.0mm; page-margin-footer:12.7mm; page-margin-header:12.7mm; page-margin-left:10.0mm; page-margin-top:10.0mm; page-margin-bottom:10.0mm">
+<p style="Normal" xid="9" props="text-indent:0.0000in; margin-left:0.0000in"><c props="font-family:Ubuntu Mono; font-size:14pt">Давление 1</c><c props="font-family:Liberation Mono">         4.000 МПа</c></p>
+<p style="Normal" xid="1" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Давление 2</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">         3.950 МПа</c></p>
+<p style="Normal" xid="2" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Давление ЭЦН</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">       3.900 МПа</c></p>
+<p style="Normal" xid="3" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Перепад давления 1 </c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">50.0  кПа</c></p>
+<p style="Normal" xid="4" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; color:000000; text-decoration:none; text-position:normal; font-weight:normal; font-style:normal; lang:en-US">Перепад давления 2</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"> 100.0 кПа</c></p>
+<p style="Normal" xid="5" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Расход 1+2</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">         30.1  т/сут</c></p>
+<p style="Normal" xid="6" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none"><a xlink:href="#v1" xid="17"><c props="font-family:Ubuntu Mono; font-size:14pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Положение кл.1</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">     10.1  %</c></a></p>
+<p style="Normal" xid="7" props="font-family:Liberation Mono; margin-left:0.0000in; font-size:12pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; margin-right:0.0000in; font-style:normal; text-decoration:none"><c props="font-family:Ubuntu Mono; font-size:14pt; color:000000; text-decoration:none; text-position:normal; font-weight:normal; font-style:normal; lang:en-US">Положение кл.2</c><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">     3.8   %<pbr/></c></p>
+<p style="Normal" xid="13" props="font-family:Ubuntu Mono; margin-left:0.0000in; font-size:14pt; text-indent:0.0000in; lang:en-US; text-position:normal; font-weight:normal; margin-right:0.0000in; font-style:normal; text-decoration:none"><bookmark type="start" name="v1" xid="14"/><bookmark type="end" name="v1" xid="15"/><c props="font-family:Liberation Mono; font-size:12pt; lang:en-US; text-position:normal; font-weight:normal; font-style:normal; text-decoration:none">Управление клапаном 1</c></p>
+</section>
+</abiword>

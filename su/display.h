@@ -185,6 +185,19 @@ class view : public Noritake_VFD_GU3000, public cproperties {
             return rc;
         }
         
+        void pageDisplay( int16_t npg ) {     
+            int16_t n, num=-1;
+            for( n=0; n<pages.size(); n++ ) {
+                string s = "num";
+                if( getproperty( n, s, num )==EXIT_SUCCESS && num==npg ) {
+                    pages.at(n).setprev( m_curpage );
+                    GU3000_clearScreen();
+                    m_curpage = n;
+                    break;
+                }
+            }
+        }
+       
         void pageBack() {     
             int16_t n;
             n = (m_curpage<1) ? m_maxpage: m_curpage-1;

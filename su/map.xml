@@ -86,15 +86,15 @@
     <tag topic="/data" readData="55" writeData="3" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="408" pub="1" sub="1" desc="valve 2 open command" eu="">CV21</tag>
     <tag topic="/data" readData="56" writeData="4" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="408" pub="1" sub="1" desc="valve 2 close command" eu="">CV22</tag>
     <tag topic="/data" readData="20" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 1 response time" eu="">CT11</tag>
-    <tag topic="/data" readData="21" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 1" eu="МПа">PT11</tag>
+    <tag topic="/data" readData="21" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.6" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 1" eu="МПа">PT11</tag>
     <tag topic="/data" readData="23" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 1" eu="oC">TT11</tag>
     <tag topic="/data" readData="29" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 1" eu="">SN11</tag>
     <tag topic="/data" readData="30" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 2 response time" eu="">CT21</tag>
-    <tag topic="/data" readData="31" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 2" eu="МПа">PT21</tag>
+    <tag topic="/data" readData="31" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.5" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 2" eu="МПа">PT21</tag>
     <tag topic="/data" readData="33" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 2" eu="oC">TT21</tag>
     <tag topic="/data" readData="39" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 2" eu="">SN21</tag>
     <tag topic="/data" readData="40" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 3 response time" eu="">CT31</tag>
-    <tag topic="/data" readData="41" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 3" eu="МПа">PT31</tag>
+    <tag topic="/data" readData="41" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.4" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление ЭЦН" eu="МПа">PT31</tag>
     <tag topic="/data" readData="43" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 3" eu="oC">TT31</tag>
     <tag topic="/data" readData="49" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 3" eu="">SN31</tag>
     <tag topic="/data" readData="50" writeData="" minRaw="0" maxRaw="1" minEng="0" maxEng="2" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="456" pub="1" sub="1" desc="door switch" eu="">GS01</tag>
@@ -118,10 +118,10 @@
     <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="мм">LV11</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="мм">LV21</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Выбор клапана " eu="">SV01</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-10000" maxRaw="10000" minEng="-10000" maxEng="10000" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 1" eu="кПа">PT51</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-10000" maxRaw="10000" minEng="-10000" maxEng="10000" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 2" eu="кПа">PT61</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 1" eu="кПа">PT51</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 2" eu="кПа">PT61</tag>
 </tags>
 
 <algo>
@@ -177,40 +177,53 @@
     <display num="1" fontsize="2">
         1
         <lines>
-            <line tag="PT11" format="{desc:18} {value:5.3} {eu}" task="0">1</line>
-            <line tag="PT21" format="{desc:18} {value:5.3} {eu}" task="0">2</line>
-            <line tag="PT31" format="{desc:18} {value:5.3} {eu}" task="0">3</line>
-            <line tag="PT51" format="{desc:18} {value:5.1} {eu}" task="0">4</line>
-            <line tag="PT61" format="{desc:18} {value:5.1} {eu}" task="0">5</line>
-            <line tag="FT31" format="{desc:18} {value:5.1} {eu}" task="0">6</line>
-            <line tag="FV11" format="{desc:18} {value:5.1} {eu}" task="1">7</line>
-            <line tag="FV21" format="{desc:18} {value:5.1} {eu}" task="1">8</line>
+            <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
+            <line tag="PT21" format="{desc,18} {value,5.3} {eu}" task="0">2</line>
+            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
+            <line tag="PT51" format="{desc,18} {value,5.1} {eu}" task="0">4</line>
+            <line tag="PT61" format="{desc,18} {value,5.1} {eu}" task="0">5</line>
+            <line tag="FT31" format="{desc,18} {value,5.1} {eu}" task="0">6</line>
+            <line tag="FV11" format="{desc,18} {value,5.1} {eu}" task="11">7</line>
+            <line tag="FV21" format="{desc,18} {value,5.1} {eu}" task="12">8</line>
         </lines>
     </display>
     <display num="2" fontsize="2">
         2
         <lines>
-            <line tag="IT01" format="{desc:18} {value:5.3} {eu}" task="0">1</line>
-            <line tag="ZV11" format="{desc:18} {value:1}   {eu}" task="0">2</line>
-            <line tag="ZV12" format="{desc:18} {value:1}   {eu}" task="0">3</line>
-            <line tag="FV11" format="{desc:18} {value:5.1} {eu}" task="1">4</line>
-            <line tag="PT11" format="{desc:18} {value:5.3} {eu}" task="0">5</line>
-            <line tag="PT31" format="{desc:18} {value:5.3} {eu}" task="0">6</line>
-            <line tag="FT11" format="{desc:18} {value:5.1} {eu}" task="0">7</line>
-            <line tag="TT11" format="{desc:18} {value:5.1} {eu}" task="0">8</line>
+            <!--line tag="ZV11" format="{desc,18} {value,1}   {eu}" task="0">2</line>
+            <line tag="ZV12" format="{desc,18} {value,1}   {eu}" task="0">3</line-->
+            <line tag="IT01" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
+            <line tag="FV11" format="{desc,18} {value,5.1} {eu}" task="11">2</line>
+            <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
+            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
+            <line tag="PT31" format="{desc,18} {lolo,5.3} {eu}" task="0">5</line>
+            <line tag="PT51" format="{desc,18} {value,5.1} {eu}" task="0">6</line>
+            <line tag="FT11" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
+            <line tag="TT11" format="{desc,18} {value,5.1} {eu}" task="0">8</line>
         </lines>
     </display>
     <display num="3" fontsize="2">
         3
         <lines>
-            <line tag="IT01" format="{desc:18} {value:5.3} {eu}" task="0">1</line>
-            <line tag="ZV21" format="{desc:18} {value:1}   {eu}" task="0">2</line>
-            <line tag="ZV22" format="{desc:18} {value:1}   {eu}" task="0">3</line>
-            <line tag="FV21" format="{desc:18} {value:5.1} {eu}" task="1">4</line>
-            <line tag="PT21" format="{desc:18} {value:5.3} {eu}" task="0">5</line>
-            <line tag="PT31" format="{desc:18} {value:5.3} {eu}" task="0">6</line>
-            <line tag="FT21" format="{desc:18} {value:5.1} {eu}" task="0">7</line>
-            <line tag="TT21" format="{desc:18} {value:5.1} {eu}" task="0">8</line>
+            <line tag="IT01" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
+            <line tag="FV21" format="{desc,18} {value,5.1} {eu}" task="12">2</line>
+            <line tag="PT21" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
+            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
+            <line tag="PT31" format="{desc,18} {lolo,5.3} {eu}" task="0">5</line>
+            <line tag="PT61" format="{desc,18} {value,5.3} {eu}" task="0">6</line>
+            <line tag="FT21" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
+            <line tag="TT21" format="{desc,18} {value,5.1} {eu}" task="0">8</line>
+        </lines>
+    </display>
+    <display num="11" fontsize="2">
+        11
+        <lines>
+            <line tag="FV11" format="{desc,18}" task="0">1</line>
+            <line tag="FV11" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">2</line>
+            <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
+            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
+            <line tag="PT51" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">5</line>
+            <line tag="MV11" format="{desc,18} {task,2} / {value,2} {eu}" task="-1">6</line>
         </lines>
     </display>
 </displays>

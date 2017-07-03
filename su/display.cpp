@@ -161,7 +161,7 @@ int16_t assignValues(cparam &p, string& subject, const string& sop, const string
             
 //            if( subject[nbe]=='{' ) {                                               // подставляем значение свойства   
                 vector<string> vc;
-                strsplit(na, ':', vc);
+                strsplit(na, ',', vc);
                 na = vc.at(0);
 //                cout<<"dsp vc size="<<vc.size();
 //                for(int j=0; j<vc.size(); ++j) cout<<" "<<vc[j]; cout<<endl;
@@ -174,8 +174,8 @@ int16_t assignValues(cparam &p, string& subject, const string& sop, const string
                         if( na!="task" || rVal>=0 ) {
                             int16_t ns = strsplit(vc.at(1), '.', fld);
                             int ch=0;
-    //                        cout<<"dsp fld size="<<vc.size();
-    //                        for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
+//                            cout<<"dsp fld size="<<vc.size();
+//                            for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
                             if( fld.at(0).size() ) ch = fld.at(0)[0];
                             if( ch && isdigit((ch)) ) {
                                 ss<<setw(atoi(fld.at(0).c_str()))<<left;
@@ -233,7 +233,7 @@ void view::outview(int16_t ndisp=-1) {
                 assignValues( *p, buf, son, soff );
             }
         }
-        if( nr == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); }            
+        if( nr == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); buf = ((m_mode==_task_mode)?"*":"")+buf; }            
         println( buf, true );
         if( nr == pg.rowget() ) { GU3000_invertOff(); GU3000_boldOff(); } 
     }
@@ -271,11 +271,11 @@ void view::keymanage() {
 
 //    cout << " key size = "<<sizeof(btns)/sizeof(char*)<<" button str size = "<<sizeof(m_btn)<<endl;
 //    cout << " keys ";
-    for(int j=0; j<sizeof(btns)/4; j++) {         // read buttons states on front panel of box
+    for(int j=0; j<sizeof(btns)/4; j++) {               // read buttons states on front panel of box
 //      getparam( btns[j], rval, nqu, tts, 1 );
-        getparamcount( btns[j], nval[j] );
+        getparamcount( btns[j], nval[j] );              // read number of keystrokes
 //        cout<<nval[j]<<" ";
-        bbtn |= ( (nval[j] != 0 && !olds[j]) << j );
+        bbtn |= ( (nval[j] != 0 && !olds[j]) << j );    // 
         olds[j] = ( (nval[j] != 0) && !first );
     }
 //    cout<<endl;
@@ -314,106 +314,139 @@ void view::keymanage() {
             }                    
             break;
         case _task_mode:
-            double n = pg.gettask();
-            double rem = n-floor(n);
-            n = floor(n) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5); 
-            if(m_btn.esc) {                                 // 0
-//                m_visible = !m_visible;
-//                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
-                int n = m_curpage; 
+            if(m_btn.esc) {                                     // 0
+/*                int n = m_curpage; 
                 pagePrev();
-                if( n > m_maxpage ) pages.pop_back();
-                m_mode = _view_mode;
+                if( n > m_maxpage ) pages.pop_back();*/
+                pg.p = NULL;
+                m_mode = _view_mode;                            // возврат в режим просмотра
             }
-            if(m_btn.down) {                                // 4
-                cout << "btn Down\n";
-//                n = n-nval[4]*5;
-//                pg.settask( n );
-                string sn, srch="FV", srpl="MV";
+            if( pg.p ) {                                                // параметр не NULL
+                string sn;
                 int16_t mot, mode;
-                sn = pg.m_tag;
-                cparam *p = getparam( sn.c_str() );   
-                if( p && p->getproperty("motion",mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                double mine = pg.p->getmineng();
+                double maxe = pg.p->getmaxeng();
+                sn = pg.p->getname();
+                if( sn.substr(0, 2)=="FV" ) {                           // ручное управление клапаном
+                    string srpl="MV", srch="FV";
                     replaceString( sn, srch, srpl );
                     cparam *p1 = getparam( sn.c_str() );
+                    if( pg.p->getproperty("motion", mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                        if( m_btn.down || m_btn.up ) {                                                      // 4 или 5
+                            cout << (m_btn.down) ? "btn Down\n" : "btn Up\n";
+                            pthread_mutex_lock( &mutex_param );   
+                            if( p1 && (mode=p1->getvalue()) < _manual_pulse_open ) {
+                                p1->setvalue(
+                                        m_btn.down ? 
+                                        _manual_pulse_close :           // дадим толчок на закрытие      
+                                        _manual_pulse_open              // дадим толчок на открытие
+                                        );   
+                            }
+                            pthread_mutex_unlock( &mutex_param ); 
+                        }
+                        else
+                        if( (m_btn.left || m_btn.right) && p1 && (mode=p1->getvalue()) == _manual ) {       // 1 или 2
+                            cout << ( m_btn.left ) ? "btn Left\n" : "btn Right\n";
+                            double r =   pg.p->gettask();
+                            double rem = r/10 - floor(r/10);
+                            r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
+                            r = r + ( ( m_btn.left ) ? -nval[1]*5 : nval[2]*5 );
+                            r = max( r, mine );
+                            r = min( r, maxe );
+                            pthread_mutex_lock( &mutex_param );   
+                            pg.p->settask( r, false );                  // сохраним задание клапану
+                            pthread_mutex_unlock( &mutex_param );   
+                        }
+                        else
+                        if( m_btn.enter && p1 && (mode=p1->getvalue()) == _manual ) {                       // 3
+                            cout << "btn Enter\n";
+                            double r;
+                            pthread_mutex_lock( &mutex_param );   
+                            if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
+                                pg.p->settask( r );                     // выполним сохраненное задание клапану
+                            pthread_mutex_unlock( &mutex_param );
+                            m_mode = _view_mode;                        // возврат в режим просмотра
+                       }                    
+                    }
+                }
+                else
+                if( sn.substr(0, 2)=="MV" ) {                           // задание режима клапана
+                    mode = pg.p->gettask();
                     pthread_mutex_lock( &mutex_param );   
-                    if( p1 && (mode=p1->getvalue())!=_manual_pulse ) {
-                        sn = "/top/"+pg.m_tag+"/task";
-                        p->settask(0-_close);               // дадим толчок на закрытие
+                    if( m_btn.down || m_btn.up ) {
+                        mode = (mode + ((m_btn.down) ? -nval[4] : nval[5])) % int(maxe-mine+1); 
+                        pg.p->settask( mode, false );
+                    }
+                    else
+                    if( m_btn.enter ) {
+                        pg.p->setvalue( mode );
+                        m_mode = _view_mode;                            // возврат в режим просмотра
                     }
                     pthread_mutex_unlock( &mutex_param );   
-               }
+                }
+                else
+                if( sn.substr(0, 2)=="PT" ) {                           // задание уставки давления
+                    double r =   pg.p->gettask();
+                    double rem = r/10 - floor(r/10);
+                    r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
+                    double perc = (maxe-mine)/1000.0;
+                    double add = 0;
+
+                    if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {                         // 4 или 5
+                        if( m_btn.down ) { add -= perc; }
+                        else if( m_btn.up ) { add += perc; }
+                        else if( m_btn.left ) { add -= 5*perc; }
+                        else if( m_btn.right ) { add += 5*perc; }
+
+                        r += add;
+                        r = max( r, mine );
+                        r = min( r, maxe );
+                        pthread_mutex_lock( &mutex_param );   
+                        pg.p->settask( r, false );                      // сохраним задание давления
+                        pthread_mutex_unlock( &mutex_param ); 
+                    }
+                    else
+                    if( m_btn.enter ) {                                 // 3
+                        cout << "btn Enter\n";
+                        double r;
+                        pthread_mutex_lock( &mutex_param );   
+                        if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
+                            pg.p->settask( r );                         // выполним сохраненное задание 
+                        pthread_mutex_unlock( &mutex_param );
+                        m_mode = _view_mode;                            // возврат в режим просмотра
+                    }                    
+                }
             }  
-            if(m_btn.up) {                                  // 5
-                cout << "btn Up\n";
-//                n = n+nval[5]*5;
-//                pg.settask( n );
-                string sn, srch="FV", srpl="MV";
-                int16_t mot, mode;
-                sn = pg.m_tag;
-                cparam *p = getparam( sn.c_str() );   
-                if( p && p->getproperty("motion",mot)==EXIT_SUCCESS && mot==_no_motion ) {
-                    replaceString( sn, srch, srpl );
-                    cparam *p1 = getparam( sn.c_str() );
-                    pthread_mutex_lock( &mutex_param );   
-                    if( p1 && (mode=p1->getvalue())!=_manual_pulse ) {
-                        sn = "/top/"+pg.m_tag+"/task";
-                        p->settask(0-_open);                // дадим толчок на открытие
-                    }
-                    pthread_mutex_unlock( &mutex_param );   
-               }
-            }                    
-            if(m_btn.left) {                                // 1
-                cout << "btn Left\n";
-                n = n-nval[1]*5;
-                pg.settask( n );
-                pg.p->settask( n, false );
-            }
-            if(m_btn.right) {                               // 2
-                cout << "btn Right\n";
-                n = n+nval[2]*5;
-                pg.settask( n );
-                pg.p->settask( n, false );
-            }
-            if(m_btn.enter) {                               // 3
-                cout << "btn Enter\n";
-                string sn, sval;
-//                cout<<pg.rows[pg.rowget()]<<" "<<getTagName(pg.rows[pg.rowget()].c_str())<<endl;
-//                cout<<"yahoo\n";
-//                string sn = getTagName(pg.rows[pg.rowget()].c_str());
-//                sn = sn.substr( 0, sn.find(':') );
-                sn = "/top/"+pg.m_tag+"/task";
-                sval = to_string( pg.gettask() );
-                taskparam( sn, sval );
-            }                    
             break;
     }
 }
-
-string getTagName( const char* sin ) {
-    string  s(sin);
-
-    std::size_t found1 = s.find_last_of( "{<" );
-    std::size_t found2 = s.find_last_of( "}>" );
-    
-    if( found1 != std::string::npos && found2 != std::string::npos && found1 < found2 ) {
-        s = s.substr( found1+1, found2-found1-1 );
-    }
-    return s;
-}
-
-string buildLine( const char* smess, const string& sin ) {
-
-    string na = getTagName( sin.c_str() );
-    string va( "no value" );
-
-    if( getparam( na.c_str(), va ) == EXIT_SUCCESS ) {
-        na = smess+va;
-    }
-
-    return na;
-}
 // 
+// переход на окно с номером task
+// 
+void view::gotoDetailPage() {
+    pagestruct& pg = pages.at(m_curpage);
+    int16_t npg;
+    int16_t row = pg.rowget();   
+    
+    if( pg.getproperty( row, "task", npg )==EXIT_SUCCESS ) { 
+        if( npg > 0 ) {                                                 // есть детальный кадр
+            pageDisplay( npg );
+        }
+        else
+        if( npg==-1 ) {                                                 // если возможен ввод значения
+            string snam;
+            if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS ) {    // получим имя тэга
+                cparam* p;
+                if( (p=getparam( snam.c_str() )) != NULL) {                     // получим ссылку на тэг
+                    pg.p = p;
+                    m_mode = _task_mode;                                // перейдем в режим ввода значения
+                }
+            }           
+        }
+    }
+}
+
+/*/ 
 // создание временного окна для ввода задания для параметра
 // 
 void view::gotoDetailPage() {
@@ -423,16 +456,16 @@ void view::gotoDetailPage() {
 //    if( ss.size() && ss[0]=='i' ) {
     string snam;// = getTagName(pg.rows.at(row).c_str());
     
-    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&                                 // если получили имя тэга
-            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {                  // и для него возможно вводить задание
-        int16_t n = m_maxpage+1;                                                            // создаем страницу
+    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&                    // если получили имя тэга
+            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {     // и для него возможно вводить задание
+        int16_t n = m_maxpage+1;                                               // создаем страницу
         pg.getproperty( row, "format", sform ); 
 
-        ss = "Значение  {value:5.1}";
+        ss = "Значение  {value,5.1}";
 
         definedspline( n, 3, "tag", snam );
         definedspline( n, 3, "format", ss );
-        ss = "Задание   <task:5.1}>";
+        ss = "Задание   <task,5.1}>";
         definedspline( n, 5, "tag", snam );
         definedspline( n, 5, "format", ss );
             
@@ -458,4 +491,4 @@ void view::gotoDetailPage() {
         m_mode = _task_mode;
     }
 }
-
+*/

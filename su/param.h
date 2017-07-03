@@ -153,6 +153,8 @@ public: 				// спецификатор доступа public
     }
     double  getmaxraw() { return m_maxRaw; }
     double  getminraw() { return m_minRaw; }
+    double  getmaxeng() { return m_maxEng; }
+    double  getmineng() { return m_minEng; }
     bool    taskset() { return m_task_go; }
     bool    hasnewvalue() { return m_valueupdated; }
     bool    acceptnewvalue() { m_valueupdated = false; }

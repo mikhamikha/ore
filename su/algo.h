@@ -34,10 +34,11 @@ enum motionstate {
 enum modecontrol {
     _not_proc = 0,
     _manual,
-    _manual_pulse,
-    _auto_press = 3,
+    _auto_press,
     _auto_diff,
-    _auto_time
+    _auto_time,
+    _manual_pulse_open,//=11,
+    _manual_pulse_close
 };
 
 typedef std::vector <cproperties> arglist;

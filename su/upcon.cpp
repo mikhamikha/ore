@@ -184,6 +184,7 @@ int16_t upcon::connect() {
 
     if(rc == EXIT_FAILURE) {
         m_status = INIT_ERR;
+        cout << "нет удаленного подключения" << endl;
     }
     else {
         m_status = INITIALIZED;
@@ -345,18 +346,18 @@ int16_t upcon::pubdataproc() {
 //
 // поток обработки обмена с верхним уровнем 
 //
-void* upProcessing(void *args) {
-    upcon *up = (upcon *)(args);
-    if(up->getstatus() == INITIALIZED) {
-        while(up->getstatus()!=TERMINATE) {
+void upcon::run() {
+    cout << "\nstart up connection " << m_id << endl;
+    int16_t rc = connect();
+    if(getstatus() == INITIALIZED) {
+        while(getstatus()!=TERMINATE) {
            pthread_mutex_lock( &mutex_pub );
-           up->pubdataproc();
+           pubdataproc();
            pthread_mutex_unlock( &mutex_pub );
            usleep(1000);
         }
     }
-
-    cout << "\nend up connection " << up->m_id << endl;
+    cout << "\nend up connection " << m_id << endl;
 }
 
 

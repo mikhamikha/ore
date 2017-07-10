@@ -400,6 +400,11 @@ int16_t readCfg() {
             } 
             cout<<endl;
             p.setproperty("name", s);
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
+=======
+            
+            tagdir.addtag( s, p );
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         }
 
         // парсим соединения наверх

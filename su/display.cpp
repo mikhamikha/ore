@@ -255,6 +255,11 @@ void view::run() {
         if( !t.isTiming() || t.isDone() ) { dsp.outview(); t.reset(); t.start(_refresh); }
         usleep(100000);
     }
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
+=======
+    cout << "end display thread " << endl;
+   
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 //    return EXIT_SUCCESS;
 }
 

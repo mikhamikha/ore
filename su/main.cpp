@@ -9,11 +9,13 @@
 
 using namespace std;
 
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
 int main(int argc, char* argv[])
 {
+=======
+int main(int argc, char* argv[]) {
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
     int         nResult;
-    uint32_t    i;
-    pthread_t   *thMBX;
     
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
@@ -29,8 +31,11 @@ int main(int argc, char* argv[])
             printf("Mutex not initialized!!\n");
         }
         cout << "readCFG OK!" << endl;
-        thMBX = new pthread_t[conn.size() + upc.size() + 2]; 
+
+        ftagThreadInitialized=1;
+        
         fieldconnections::iterator coni;
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
         ftagThreadInitialized=1;
         cout << "start conn  thread " << i <<endl;       
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
@@ -60,6 +65,15 @@ int main(int argc, char* argv[])
         dsp.start();
 
 //        nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
+=======
+        for(coni=conn.begin(); coni != conn.end(); ++coni) (*coni)->start();
+
+        upconnections::iterator up;
+        for(up=upc.begin(); up != upc.end(); ++up) (*up)->start();
+        
+        tagdir.start();     
+        dsp.start();
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 
 // ----------- terminate block -------------
         struct termios oldt, newt;
@@ -122,30 +136,36 @@ int main(int argc, char* argv[])
 // ---------- end terminate block ------------
         
         ftagThreadInitialized=0;
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
         cout << "end display thread " << i <<endl;
         dsp.join();
 //        pthread_join(thMBX[i--], NULL);
         cout << "end tag thread " << i <<endl;
         pthread_join(thMBX[i--], NULL);
+=======
+        dsp.join();
+        tagdir.join();
+
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         cout << "end mqtt thread ";
         for(upconnections::reverse_iterator up=upc.rbegin(); up != upc.rend(); ++up) { 
             (*up)->terminate();
-            cout << i << " ";   
-            pthread_join(thMBX[i--], NULL);
+            (*up)->join();
             delete *up;
         }
       
-        cout << "\nend modbus thread ";
-        
         fieldconnections::reverse_iterator rconi;          
         for(rconi=conn.rbegin(); rconi != conn.rend(); ++rconi) { 
             (*rconi)->terminate();
-            cout << i << " ";
-            pthread_join(thMBX[i--], NULL);
+            (*rconi)->join();
             delete *rconi;
         }
         cout<<endl;
+<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
         delete []thMBX;
+=======
+        
+>>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         pthread_mutexattr_destroy(&mutex_tag_attr);   // clean up the mutex attribute
         pthread_mutex_destroy(&mutex_tag);            // clean up the mutex itself
     }

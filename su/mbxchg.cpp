@@ -146,10 +146,9 @@ int16_t cmbxchg::terminate()
 //
 // поток обмена по Modbus с полевым оборудованием
 //
-void* fieldXChange(void *args) 
-{
-    cmbxchg *mbx=(cmbxchg *)(args);
-    if(mbx->init() == INITIALIZED) {
+//void* fieldXChange(void *args) 
+void cmbxchg::run(){
+    if(init() == INITIALIZED) {
         cmbxchg::m_maxReadData = 500;
         cmbxchg::m_maxWriteData= 500;
         if( !cmbxchg::m_pReadData ) {
@@ -162,12 +161,11 @@ void* fieldXChange(void *args)
             memset(cmbxchg::m_pWriteData,     0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
             memset(cmbxchg::m_pLastWriteData, 0, (cmbxchg::m_maxWriteData+1)*sizeof(int16_t) );
         }
-        cout << "start xchg num = " << mbx->m_id << " | " << mbx << " | " << cmbxchg::m_pReadData <<endl;
-//        cout << "minimum command delay = " << mbx->getproperty("minimumcommand")._n << endl;
-        while( mbx->getStatus()!=TERMINATE ) {
-            mbx->runCmdCycle(false);
+        cout << "start xchg num = " << m_id << " | " << cmbxchg::m_pReadData <<endl;
+        while( getStatus()!=TERMINATE ) {
+            runCmdCycle(false);
         }     
-        mbx->runCmdCycle(true);
+        runCmdCycle(true);
         if( !cmbxchg::m_pReadData ) {
             delete []cmbxchg::m_pReadData;
             delete []cmbxchg::m_pReadTrigger;
@@ -175,8 +173,8 @@ void* fieldXChange(void *args)
             delete []cmbxchg::m_pLastWriteData;    
         }
     }
-    cout << "end xchg " << args << endl;
-    return EXIT_SUCCESS;
+    cout << "end xchg " << m_id << endl;
+//    return EXIT_SUCCESS;
 }
 //
 //  modbus cycle commands

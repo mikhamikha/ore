@@ -6,4 +6,6 @@ mqtt/MQTTClient/*
 mqtt/MQTTPacket/*
 valgrind-3.12.0*
 testXML*
+pugixml*
+
 

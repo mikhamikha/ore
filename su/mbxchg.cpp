@@ -237,7 +237,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 rc = modbus_set_slave(m_ctx, cmdi->m_node);
             }   
             if(rc==0) {
-//                pthread_mutex_lock( &mutex_param );
+//                pthread_mutex_lock( &mutex_tag );
                 switch(cmdi->m_func) {                // modbus read commands queue processing
                     case 1: 
                         {
@@ -281,7 +281,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 
  // modbus write commands queue processing
                     case 5:
-                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_tag );
                         // write bit if enable==1 or (2 and new<>old)
                         if( (*cmdi).m_first || fLast || cmdi->m_enable==1 ||    \
                             m_pWriteData[cmdi->m_intAddress]!=m_pLastWriteData[cmdi->m_intAddress] ) {
@@ -296,11 +296,11 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 
                         else fTook=false;
-                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_tag );
                         break;
 
                     case 15:
-                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_tag );
                         // write bit if enable==1 or (2 and new<>old)
 //                        cout<<"func 15 ";
                         if( cmdi->m_first || fLast || cmdi->m_enable==1 ||    \
@@ -325,11 +325,11 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                         } 
                         else fTook=false;
 //                        cout<<endl;
-                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_tag );
                         break;
 
                     case 16:
-                        pthread_mutex_lock( &mutex_param );
+                        pthread_mutex_lock( &mutex_tag );
                         // write if enable==1 or (2 and new<>old)
                         if( /*cmdi->m_first ||*/ cmdi->m_enable==1 ||    \
                             memcmp(m_pWriteData+cmdi->m_intAddress, \
@@ -351,10 +351,10 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                         m_pWriteData+cmdi->m_intAddress, cmdi->m_count*2);                    
                         } 
                         else fTook=false;
-                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_tag );
                         break;
                 }
-//                pthread_mutex_unlock( &mutex_param );
+//                pthread_mutex_unlock( &mutex_tag );
             }
             if (rc == -1) {
                 if( cmdi->incErr() >= _max_conn_err ) {

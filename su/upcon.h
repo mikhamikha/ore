@@ -10,8 +10,6 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include "param.h"
-#include "utils.h"
 #include "main.h"
 #include <algorithm>
 #include <signal.h>
@@ -65,8 +63,8 @@ class upcon: public cproperties {
         ~upcon();
         int16_t connect();                                   // connect to broker
         int16_t disconnect();
-        int16_t publish(cparam &);
-        int16_t subscribe(cparam &);
+        int16_t publish(ctag &);
+        int16_t subscribe(ctag &);
         int16_t pubdataproc();                              // publication of data from buffer
         int16_t getstatus() { return m_status; };
         int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
@@ -82,6 +80,6 @@ int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_m
 void connectionLost(void *context, char *cause);
 void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
 
-int16_t publish(cparam &);
+int16_t publish(ctag &);
 
 #endif

@@ -11,8 +11,6 @@
 #include <iterator>
 #include <algorithm>
 #include "main.h"
-#include "param.h"
-#include "utils.h"
 #include <errno.h>
 
 //#define EXIT_SUCCESS    0
@@ -117,6 +115,7 @@ struct equalID
 
 typedef std::vector< cmbxchg * > fieldconnections;
 extern fieldconnections conn;
+void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
 
 #endif
 

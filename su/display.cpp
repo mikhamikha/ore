@@ -35,22 +35,19 @@ void view::definedspline( int16_t nd, int16_t nr, const char* sr, const std::str
 //
 void to_866(string& sin, string& sout) {
     uint16_t    n, j;
-//    wchar_t     ws[2];    
     char        ss[2];
-//    int i = 0;
     vector<char>buf;
 
     for(j=0; j<sin.length(); ) {
 //        printf("%d=%d>", j, sin[j]);
         if(sin.at(j)<208) {
             buf.push_back(sin.at(j));
-//            *(*sout+i) = sin[j];
             ++j;
         } 
         else if(j<sin.length()-1){
             ss[1]=sin.at(j); 
             ss[0]=sin.at(j+1);
-            n = *((int16_t *)ss);
+            n = *((uint16_t *)ss);
     
             if(n>=53392 && n<=53439) {
                 n = n-53264;
@@ -67,9 +64,7 @@ void to_866(string& sin, string& sout) {
             buf.push_back(n);
             j += 2;
         }
-//        ++i;
     }
-//    string s(buf.begin(), buf.end());
     sout.assign( buf.begin(), buf.end() );
 }
 
@@ -124,7 +119,7 @@ int16_t assignValues(string& subject, const string& sop, const string& scl, char
                 string na(subject, nbe+1, nen-nbe-1);
                 string va;
 //                cout<<" beg="<<nbe<<" end="<<nen<<" tag="<<na<<" | ";
-                if(getparam( na, va ) == EXIT_SUCCESS) {
+                if(gettag( na, va ) == EXIT_SUCCESS) {
                     memcpy( buf+pos, string(subject, oldp, nbe-oldp).c_str(), nbe-oldp );
                     oldp = nen;
                     pos += (nbe-oldp);
@@ -145,37 +140,39 @@ int16_t assignValues(string& subject, const string& sop, const string& scl, char
 //
 // функция замены тэгов в строках {tag} на их значения
 //
-int16_t assignValues(cparam &p, string& subject, const string& sop, const string& scl) {
+int16_t assignValues(ctag &p, string& subject, const string& sop, const string& scl) {
     size_t      nbe = 0, nen = 0, found;
     int16_t     rc=EXIT_SUCCESS;
     bool        fgo = true;
 
     while(fgo) {
-        nbe = subject.find_first_of(sop, nen); 
+        nbe = subject.find_first_of(sop, nen);                                  // ищем открывающую скобку
         fgo = (nbe != std::string::npos);
-        found = sop.find(subject[nbe]);
-        if( fgo && found != std::string::npos && found<scl.size() && \
-                (nen = subject.find(scl[found], nbe)) != std::string::npos ) {
+        if(fgo) found = sop.find(subject[nbe]);                                 // определяем тип открывающей скобки
+            fgo = (found != std::string::npos);
+        if( fgo &&  found<scl.size() &&         \
+                (nen = subject.find(scl[found], nbe)) != std::string::npos ) {  // ищем закрывающую скобку с тем же типом
             string na(subject, nbe+1, nen-nbe-1);
             string va = "нет значения", vatmp;
             
-//            if( subject[nbe]=='{' ) {                                               // подставляем значение свойства   
-                vector<string> vc;
-                strsplit(na, ',', vc);
-                na = vc.at(0);
-//                cout<<"dsp vc size="<<vc.size();
-//                for(int j=0; j<vc.size(); ++j) cout<<" "<<vc[j]; cout<<endl;
-                if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) {
-                    to_866(vatmp, va);
+            vector<string> vc;
+            strsplit(na, ',', vc);                                                  
+            na = vc.at(0);
+            if(na.size()) {                                                     // имя непустое
+                if( na[0]=='@' ) {                                              // нужно вывести описание значения
+                    na = na.substr(1);
+                    p.getdescvalue( na, vatmp );
+                    to_866(vatmp, va);                                          // перекодируем
+                }          
+                else if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) {  // выводим само значение
+                    to_866(vatmp, va);                                          // перекодируем
                     if(vc.size() > 1) {
                         vector<string> fld;
                         stringstream ss;
-                        double rVal = atof(va.c_str());
+                        double rVal = ( isdigit(va[0]) ) ? atof(va.c_str()) : 0;
                         if( na!="task" || rVal>=0 ) {
                             int16_t ns = strsplit(vc.at(1), '.', fld);
                             int ch=0;
-//                            cout<<"dsp fld size="<<vc.size();
-//                            for(int j=0; j<fld.size(); ++j) cout<<" "<<fld[j]; cout<<endl;   
                             if( fld.at(0).size() ) ch = fld.at(0)[0];
                             if( ch && isdigit((ch)) ) {
                                 ss<<setw(atoi(fld.at(0).c_str()))<<left;
@@ -186,18 +183,13 @@ int16_t assignValues(cparam &p, string& subject, const string& sop, const string
                                 }
                                 else ss<<va;
                                 va = ss.str();
-                            }
+//                                cout<<p.getname()<<" "<<fld[0]<<" "<<va<<"|"<<endl;
+                           }
                         }
                     }
                 }
-                else va="-1";
-/*            }
-            else if( subject[nbe]=='<' ) {                                          // подставляем значение задания
-                pagestruct* pg = dsp.curpage();
-                if(pg) va = to_string(pg->gettask());
             }
-*/
-            subject.replace( nbe, nen-nbe+1, va );
+            subject.replace( nbe, nen-nbe+1, va );                              // меняем {} на значение
             nen = nbe+va.length();
         }
         else fgo =false;
@@ -228,33 +220,42 @@ void view::outview(int16_t ndisp=-1) {
         pg.getproperty( nr, "format", bufa );       
         to_866( bufa, buf );
         if( pg.getproperty( nr, "tag", snam )==EXIT_SUCCESS ) {
-            cparam *p = getparam( snam.c_str() );
+            ctag *p = tagdir.gettag( snam.c_str() );
             if( p ) {
                 assignValues( *p, buf, son, soff );
             }
         }
-        if( nr == pg.rowget() ) { GU3000_invertOn(); GU3000_boldOn(); buf = ((m_mode==_task_mode)?"*":"")+buf; }            
+        if( nr == pg.rowget() ) { 
+            GU3000_invertOn(); 
+            GU3000_boldOn(); 
+            buf = ((m_mode==_task_mode)?"*":"")+buf; 
+        }            
         println( buf, true );
-        if( nr == pg.rowget() ) { GU3000_invertOff(); GU3000_boldOff(); } 
+        if( nr == pg.rowget() ) { 
+            GU3000_invertOff(); 
+            GU3000_boldOff(); 
+        } 
     }
 }
 
 //
 // поток обработки консоли 
 //
-void* viewProcessing(void *args) {
+//void* viewProcessing(void *args) {
+void view::run() {
     cton t;    
     const int16_t _refresh = 200;
-    cout<<"start dsp thread\n";
+
+    cout << "start display thread " << endl;
     dsp.setMaxPage( dsp.pagessize()-1 );
     sleep(5);
 
-    while (fParamThreadInitialized) {
+    while (ftagThreadInitialized) {
         dsp.keymanage();
         if( !t.isTiming() || t.isDone() ) { dsp.outview(); t.reset(); t.start(_refresh); }
         usleep(100000);
     }
-    return EXIT_SUCCESS;
+//    return EXIT_SUCCESS;
 }
 
 void view::keymanage() {
@@ -272,8 +273,8 @@ void view::keymanage() {
 //    cout << " key size = "<<sizeof(btns)/sizeof(char*)<<" button str size = "<<sizeof(m_btn)<<endl;
 //    cout << " keys ";
     for(int j=0; j<sizeof(btns)/4; j++) {               // read buttons states on front panel of box
-//      getparam( btns[j], rval, nqu, tts, 1 );
-        getparamcount( btns[j], nval[j] );              // read number of keystrokes
+//      gettag( btns[j], rval, nqu, tts, 1 );
+        tagdir.gettagcount( btns[j], nval[j] );              // read number of keystrokes
 //        cout<<nval[j]<<" ";
         bbtn |= ( (nval[j] != 0 && !olds[j]) << j );    // 
         olds[j] = ( (nval[j] != 0) && !first );
@@ -318,7 +319,7 @@ void view::keymanage() {
 /*                int n = m_curpage; 
                 pagePrev();
                 if( n > m_maxpage ) pages.pop_back();*/
-                pg.p = NULL;
+//                pg.p = NULL;
                 m_mode = _view_mode;                            // возврат в режим просмотра
             }
             if( pg.p ) {                                                // параметр не NULL
@@ -330,11 +331,11 @@ void view::keymanage() {
                 if( sn.substr(0, 2)=="FV" ) {                           // ручное управление клапаном
                     string srpl="MV", srch="FV";
                     replaceString( sn, srch, srpl );
-                    cparam *p1 = getparam( sn.c_str() );
+                    ctag *p1 = tagdir.gettag( sn.c_str() );
                     if( pg.p->getproperty("motion", mot)==EXIT_SUCCESS && mot==_no_motion ) {
                         if( m_btn.down || m_btn.up ) {                                                      // 4 или 5
                             cout << (m_btn.down) ? "btn Down\n" : "btn Up\n";
-                            pthread_mutex_lock( &mutex_param );   
+                            pthread_mutex_lock( &mutex_tag );   
                             if( p1 && (mode=p1->getvalue()) < _manual_pulse_open ) {
                                 p1->setvalue(
                                         m_btn.down ? 
@@ -342,7 +343,7 @@ void view::keymanage() {
                                         _manual_pulse_open              // дадим толчок на открытие
                                         );   
                             }
-                            pthread_mutex_unlock( &mutex_param ); 
+                            pthread_mutex_unlock( &mutex_tag ); 
                         }
                         else
                         if( (m_btn.left || m_btn.right) && p1 && (mode=p1->getvalue()) == _manual ) {       // 1 или 2
@@ -353,18 +354,18 @@ void view::keymanage() {
                             r = r + ( ( m_btn.left ) ? -nval[1]*5 : nval[2]*5 );
                             r = max( r, mine );
                             r = min( r, maxe );
-                            pthread_mutex_lock( &mutex_param );   
+                            pthread_mutex_lock( &mutex_tag );   
                             pg.p->settask( r, false );                  // сохраним задание клапану
-                            pthread_mutex_unlock( &mutex_param );   
+                            pthread_mutex_unlock( &mutex_tag );   
                         }
                         else
-                        if( m_btn.enter && p1 && (mode=p1->getvalue()) == _manual ) {                       // 3
+                        if( m_btn.enter && p1 && (mode=p1->getvalue()) == _manual ) {   // 3
                             cout << "btn Enter\n";
                             double r;
-                            pthread_mutex_lock( &mutex_param );   
+                            pthread_mutex_lock( &mutex_tag );   
                             if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
                                 pg.p->settask( r );                     // выполним сохраненное задание клапану
-                            pthread_mutex_unlock( &mutex_param );
+                            pthread_mutex_unlock( &mutex_tag );
                             m_mode = _view_mode;                        // возврат в режим просмотра
                        }                    
                     }
@@ -372,9 +373,23 @@ void view::keymanage() {
                 else
                 if( sn.substr(0, 2)=="MV" ) {                           // задание режима клапана
                     mode = pg.p->gettask();
-                    pthread_mutex_lock( &mutex_param );   
-                    if( m_btn.down || m_btn.up ) {
-                        mode = (mode + ((m_btn.down) ? -nval[4] : nval[5])) % int(maxe-mine+1); 
+                    pthread_mutex_lock( &mutex_tag );   
+                    if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {
+                        cout<<"valve mode="<<mode<<" vmodes="<<vmodes.size();
+                        int16_t add;
+                        add = ((m_btn.down || m_btn.left) ? -1 : 1);                        
+                        mode = (mode+add) % vmodes.size(); 
+                        mode = (mode<0) ? vmodes.size()-abs(mode) : mode;
+                        if( mode < vmodes.size() ) {
+                            int16_t idsp=0, i=0;
+                            do {
+                                string ss;
+                                vmodes[mode].getproperty( "visible", idsp );
+                                vmodes[mode].getproperty( "name", ss );   
+                                cout<<" askmode="<<mode<<" "<<ss<<" vis="<<idsp<<endl;
+                                mode = ( (!idsp) ? mode + add : mode ) % vmodes.size();
+                            } while( !idsp && i++<vmodes.size() );
+                        }
                         pg.p->settask( mode, false );
                     }
                     else
@@ -382,7 +397,12 @@ void view::keymanage() {
                         pg.p->setvalue( mode );
                         m_mode = _view_mode;                            // возврат в режим просмотра
                     }
-                    pthread_mutex_unlock( &mutex_param );   
+                    else
+                    if( m_btn.esc ) {
+                        pg.p->settask( pg.p->getvalue(), false );
+                        m_mode = _view_mode;                            // возврат в режим просмотра
+                    }
+                    pthread_mutex_unlock( &mutex_tag );   
                 }
                 else
                 if( sn.substr(0, 2)=="PT" ) {                           // задание уставки давления
@@ -392,7 +412,7 @@ void view::keymanage() {
                     double perc = (maxe-mine)/1000.0;
                     double add = 0;
 
-                    if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {                         // 4 или 5
+                    if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {         
                         if( m_btn.down ) { add -= perc; }
                         else if( m_btn.up ) { add += perc; }
                         else if( m_btn.left ) { add -= 5*perc; }
@@ -401,18 +421,18 @@ void view::keymanage() {
                         r += add;
                         r = max( r, mine );
                         r = min( r, maxe );
-                        pthread_mutex_lock( &mutex_param );   
+                        pthread_mutex_lock( &mutex_tag );   
                         pg.p->settask( r, false );                      // сохраним задание давления
-                        pthread_mutex_unlock( &mutex_param ); 
+                        pthread_mutex_unlock( &mutex_tag ); 
                     }
                     else
                     if( m_btn.enter ) {                                 // 3
                         cout << "btn Enter\n";
                         double r;
-                        pthread_mutex_lock( &mutex_param );   
+                        pthread_mutex_lock( &mutex_tag );   
                         if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
                             pg.p->settask( r );                         // выполним сохраненное задание 
-                        pthread_mutex_unlock( &mutex_param );
+                        pthread_mutex_unlock( &mutex_tag );
                         m_mode = _view_mode;                            // возврат в режим просмотра
                     }                    
                 }
@@ -436,9 +456,10 @@ void view::gotoDetailPage() {
         if( npg==-1 ) {                                                 // если возможен ввод значения
             string snam;
             if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS ) {    // получим имя тэга
-                cparam* p;
-                if( (p=getparam( snam.c_str() )) != NULL) {                     // получим ссылку на тэг
+                ctag* p;
+                if( (p=tagdir.gettag( snam.c_str() )) != NULL) {             // получим ссылку на тэг
                     pg.p = p;
+                    pg.p->settask( pg.p->getvalue(), false );
                     m_mode = _task_mode;                                // перейдем в режим ввода значения
                 }
             }           
@@ -477,10 +498,10 @@ void view::gotoDetailPage() {
         pages.at(n).rowset(5);
         pages.at(n).m_tag = snam;
         
-        pages.at(n).p = getparam( snam.c_str() );
+        pages.at(n).p = gettag( snam.c_str() );
         if( pages.at(n).p ) pages.at(n).settask( pages.at(n).p->gettask() );  
         
-        getparam( snam.c_str(), ss );
+        gettag( snam.c_str(), ss );
         cout<<"gotodetail init "<<snam<<" curPg="<<m_curpage<<" row="<<row<<" val = "<<ss;
         pages.at(n).settask( atof(ss.c_str()) );
         ss="2";

@@ -1,31 +1,32 @@
 #include "algo.h"
 
 alglist algos;
+vlvmode vmodes;
 
-double getval(cparam* p) {
+double getval(ctag* p) {
     double rval=-1;
     if( p ) rval = p->getvalue();
 
     return rval;
 }
 
-int8_t getqual(cparam* p) {
+int8_t getqual(ctag* p) {
     int8_t nval=0;
     if ( p ) nval = p->getquality();
 
     return nval;
 }
 
-cparam* getaddr(string& str) {
-    cparam* p = getparam( str.c_str() );
-    cout<<"getparam "<<hex<<long(p);
+ctag* getaddr(string& str) {
+    ctag* p = tagdir.gettag( str.c_str() );
+    cout<<"gettag "<<hex<<long(p);
     if(p) cout<<" name="<< p->getname();
     cout<<endl;
 
     return p;
 }
 
-bool testaddr(cparam* x) {
+bool testaddr(ctag* x) {
     return (x==NULL);
 }
 
@@ -57,10 +58,10 @@ int16_t calgo::init() {
         for_each( arr_out.begin(), arr_out.end(), printdata<string> ); cout<<endl;
         args.resize(arr_in.size());
         res.resize(arr_out.size());   
-        transform( arr_in.begin(), arr_in.end(), args.begin(), getaddr );
-        transform( arr_out.begin(), arr_out.end(), res.begin(), getaddr );
-        cout<<"args"; for( paramvector::iterator it=args.begin(); it!=args.end(); ++it ) cout<<' '<<hex<<*it; cout<<endl;
-        cout<<"res"; for( paramvector::iterator it=res.begin(); it!=res.end(); ++it ) cout<<' '<<*it; cout<<dec<<endl;        
+        transform( arr_in.begin(), arr_in.end(), args.begin(), getaddr );               // получим ссылки на тэги
+        transform( arr_out.begin(), arr_out.end(), res.begin(), getaddr );              // получим ссылки на тэги
+        cout<<"args"; for( tagvector::iterator it=args.begin(); it!=args.end(); ++it ) cout<<' '<<hex<<*it; cout<<endl;
+        cout<<"res"; for( tagvector::iterator it=res.begin(); it!=res.end(); ++it ) cout<<' '<<*it; cout<<dec<<endl;        
         
         switch(algtype(nType)) {
             case _valveEval:
@@ -68,6 +69,8 @@ int16_t calgo::init() {
                 setproperty( "motion", _no_motion );
                break;
             case _valveProcessing: {
+                double d;
+                int16_t rc=-100;
                 res[0]->setproperty( "count", 0 );            
                 res[0]->setproperty( "motion", _no_motion );
                 res[0]->setproperty( "motion_old", _no_motion ); 
@@ -75,9 +78,9 @@ int16_t calgo::init() {
                 res[0]->setproperty( "sp", args[8]->getvalue() );
                 res[0]->setproperty( "err1", 0 );
                 res[0]->setproperty( "err2", 0 );
-                res[0]->setproperty( "kp", 1 );
-                res[0]->setproperty( "kd", 0 );
-                res[0]->setproperty( "ki", 0 );
+                if( (rc=res[0]->getproperty( "kp", d ))!=EXIT_SUCCESS ) res[0]->setproperty( "kp", 1 );
+                if( res[0]->getproperty( "kd", d )!=EXIT_SUCCESS ) res[0]->setproperty( "kd", 0 );
+                if( res[0]->getproperty( "ki", d )!=EXIT_SUCCESS ) res[0]->setproperty( "ki", 0.01 );
                 res[0]->setproperty( "pollT", 10000.0 );
                 res[0]->setproperty( "out", res[0]->getvalue() );
                 setproperty( "pulsewidth", 2000 );
@@ -158,14 +161,14 @@ int16_t calgo::solveIt() {
                 break;
             // Управление клапаном
             case _valveProcessing:
-                if( args.size() >= 10 && res.size() >= 1 ) {
+                if( args.size() >= 9 && res.size() >= 1 ) {
 
-                    pthread_mutex_lock( &mutex_param );
+                    pthread_mutex_lock( &mutex_tag );
                     
-                    cparam* pfc         = args[0];
-                    cparam* pcmd        = args[3];
-                    cparam* pdir        = args[4];  
-                    cparam* pvl         = res[0];
+                    ctag* pfc         = args[0];
+                    ctag* pcmd        = args[3];
+                    ctag* pdir        = args[4];  
+                    ctag* pvl         = res[0];
                     int16_t cnt         = pfc->getvalue();
                     int16_t cnt_old     = pfc->getoldvalue();
                     int16_t lso         = args[1]->getvalue();
@@ -188,11 +191,15 @@ int16_t calgo::solveIt() {
                     int16_t rc2         = (args[3]->getquality()!=OPC_QUALITY_GOOD); 
                     int16_t pulsewidth=0;
                     int32_t pollT;
+                    const double task   = pvl->gettask();
+                    const double maxOpen= pvl->getmaxeng();
+                    const double minOpen= pvl->getmineng();
 
                     pvl->getproperty( "configured", iscfgd );
                     pvl->getproperty( "valve", nv );
-                    
-                    pthread_mutex_unlock( &mutex_param );
+                    pvl->getproperty( "out", outv );
+                   
+                    pthread_mutex_unlock( &mutex_tag );
 
                     if( !mode || iscfgd<=0 )  {
 //                        if( pvl->getname()=="FV11" ) cout<<endl;
@@ -205,8 +212,8 @@ int16_t calgo::solveIt() {
                     if( mode==_auto_press ) {                                                   // PID 
                         pvl->getproperty( "pollT", pollT );
                         if( (m_twait.isDone() || !m_twait.isTiming()) ) {
-                            double sp, err, err1, err2, kp, kd, ki, hi, lo;
-                            pvl->getproperty( "sp", sp );
+                            double sp, err, err1, err2, kp, kd, ki, hi, lo, piddead;
+                            int16_t pidtype;
                             pvl->getproperty( "err1", err1 );
                             pvl->getproperty( "err2", err2 );
                             pvl->getproperty( "kp", kp );
@@ -214,8 +221,10 @@ int16_t calgo::solveIt() {
                             pvl->getproperty( "ki", ki );
                             pvl->getproperty( "hi", hi );
                             pvl->getproperty( "lo", lo );
-                            pvl->getproperty( "out", outv );
-                            err = pt - sp;
+                            getproperty( "pidtype", pidtype );
+                            getproperty( "piddead", piddead );   
+                            err = (pidtype==2) ? pttask - pt : pt - pttask;
+                            err = (fabs(err)>piddead) ? err : 0;
                             outv = outv + kp * ( err-err1 + ki*err + kd*(err-err1*2+err2) );    // вычислим задание для клапана
                             outv = min( hi, outv );                                             // загоним в границы
                             outv = max( lo, outv );
@@ -223,11 +232,13 @@ int16_t calgo::solveIt() {
                             pvl->setproperty( "err1", err );
                             pvl->setproperty( "err2", err1 );
                             m_twait.start( pollT );
+                            cout<<"pid "<<pvl->getname()<<" pt="<<pt<<" pttask="<<pttask<<" err="<<err2<<" | "<<err1<<" | "<<err\
+                                <<" kp="<<kp<<" ki="<<ki<<" kd="<<kd<<" out="<<outv<<endl;
                         }
                     }
                     else {                                                                      // если ручной режим
-                        pvl->setproperty( "sp", pt );
                         pvl->setproperty( "out", pvl->gettask() );
+                        if( args[8]->gettask()!=pt ) args[8]->settask( pt, false );             // значение сохраним в задание   
                     }
 
                     if( sw && sw!=nv ) break;
@@ -240,10 +251,8 @@ int16_t calgo::solveIt() {
 
                     if( mot==_no_motion ) {                                                     // if valve standby
                         if( mot_old==_no_motion && nqual==OPC_QUALITY_GOOD ) {                  // && old state same
-                           if( mode==_auto_press ) pvl->settask(outv);                   
-                           if( (pvl->taskset() || mode>=_manual_pulse_open) && !cmd ) {         // if task set
-                                int16_t task = round(pvl->gettask());
-                               
+                            if( mode==_auto_press && outv!=task ) pvl->settask(outv);                   
+                            if( (pvl->taskset() || mode>=_manual_pulse_open) && !cmd ) {        // if task set
                                 switch(mode) {                                            
                                     case _manual_pulse_open:                                  
                                         mot = _open;                            
@@ -254,11 +263,11 @@ int16_t calgo::solveIt() {
                                         cout<<" imp mot close="<<mot<<endl;
                                         break;                                                             
                                     default:        
-                                        if( pvl->gettask() - pv  > delta ) {                    // cmd to open
+                                        if( task - pv > delta || task==maxOpen ) {              // cmd to open
                                             if(!lsc || !cnt) mot = _open;                       // if closed wait for reset counter
                                         }                                                
                                         else                                             
-                                        if( pv - pvl->gettask() > delta ) {                     // cmd to close
+                                        if( pv - task > delta || task==minOpen ) {              // cmd to close
                                             if(!lso || !cnt) mot = _close;                      // if opened wait for reset counter
                                         }
                                         else pvl->cleartask();
@@ -278,7 +287,7 @@ int16_t calgo::solveIt() {
                             if( mode<_manual_pulse_open && fabs(pv-pvl->gettask()) > delta) {   // if задание не достигнуто
                                 pvl->settask(pvl->gettask());                                   // запустим снова
                             }
-                            if( mode<_manual_pulse_open && !m_tcmd.isDone() && mot_old>=_opening ) {
+                            if( mode<_manual_pulse_open && !m_tcmd.isDone() && mot_old>=_opening && !lsc && !lso) {
                                 if( mot_old==_opening ) delta -= (pvl->gettask() - pv);
                                 if( mot_old==_closing ) delta += (pvl->gettask() - pv);
                                 delta = min( fabs(delta), max_delta );
@@ -288,6 +297,8 @@ int16_t calgo::solveIt() {
                                 mode = mode_old; 
                                 pvl->settask( pv, false );                                      // set task value without process start    
                             }
+                            if(lsc) pvl->settask( pvl->getmineng(), false );
+                            if(lso) pvl->settask( pvl->getmaxeng(), false );
                             m_tcmd.reset();
                             mot_old = mot;
                             args[6]->setvalue( 0 );                                             // освободим управление 
@@ -295,11 +306,16 @@ int16_t calgo::solveIt() {
                     }
                     else if( mot ) {                                                            // if valve moving (motion != 0)
                         res[0]->cleartask();
-                        
-                        bool stopOp = ( mot%10==_open  && ( (lso && !lso_old) || (mode<_manual_pulse_open)&&(pv > (pvl->gettask()-delta)) ) ); 
-                        bool stopCl = ( mot%10==_close  && ( (lsc && !lsc_old) || (mode<_manual_pulse_open)&&(pv < (pvl->gettask()+delta)) ) );
+                        if( mode==_auto_press && outv!=task ) pvl->settask(outv, false);        // выдадим на клапан новое расчетное задание
+                        const bool lsup = (lso && !lso_old);
+                        const bool lsdown = (lsc && !lsc_old);
+                        const bool openReached = (mode<_manual_pulse_open) && (task!=maxOpen) && (pv > (task-delta));
+                        const bool closeReached = (mode<_manual_pulse_open)&& (task!=minOpen) && (pv < (task+delta));
+                      
+                        const bool stopOp = ( mot%10==_open   && ( lsup   || openReached  ) ); 
+                        const bool stopCl = ( mot%10==_close  && ( lsdown || closeReached ) );
 
-                        if( !rc2 && (m_tcmd.isDone() || (stopOp || stopCl) || rc0 ) ) {         // limit switch (open or close ) position reached
+                        if( !rc2 && (m_tcmd.isDone() || stopOp || stopCl || rc0 ) ) {           // limit switch (open or close ) position reached
                             mot_old = mot;                                                      // or task completed                     
                             if(mot>=_opening) pcmd->settask( 0 );
                             if(mot%10==_close) pdir->settask( 0 );
@@ -340,10 +356,10 @@ int16_t calgo::solveIt() {
                 break;
             case _valveCalibrate:
                 if( args.size() >= 8 && res.size() >= 1 ) {
-                    cparam* pfc         = args[0];
-                    cparam* pcmd        = args[3];
-                    cparam* pdir        = args[4];
-                    cparam* pvl         = res[0];
+                    ctag* pfc         = args[0];
+                    ctag* pcmd        = args[3];
+                    ctag* pdir        = args[4];
+                    ctag* pvl         = res[0];
                     int16_t cnt         = pfc->getvalue();
                     int16_t cnt_old;
                     int16_t lso         = args[1]->getvalue();
@@ -461,11 +477,11 @@ int16_t calgo::solveIt() {
             case _floweval:  
 //                cout<<" eval flow for delta pressure size="<<args.size()<<" | "<<res.size()<<endl;
                 if( args.size() >= 5 && res.size() >= 1 && nqual==OPC_QUALITY_GOOD ) {
-                    cparam* pfv  = args[0];  // valve mm opened
-                    cparam* ppt1 = args[1];  // давление в пласте
-                    cparam* ppt2 = args[2];  // давление у насоса
-                    cparam* pdt  = args[3];  // density 
-                    cparam* pkv  = args[4];  // Kv factor
+                    ctag* pfv  = args[0];  // valve mm opened
+                    ctag* ppt1 = args[1];  // давление в пласте
+                    ctag* ppt2 = args[2];  // давление у насоса
+                    ctag* pdt  = args[3];  // density 
+                    ctag* pkv  = args[4];  // Kv factor
 
                     double sq, r1=1, r11=4, ht1 = pfv->getvalue()-1, _tan = 0.0448210728500398; 
 /*                    

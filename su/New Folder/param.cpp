@@ -1,5 +1,5 @@
 #include "main.h"
-//#include "param.h"
+//#include "tag.h"
 //#include "mbxchg.h"
 
 #include <fstream>	
@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define _param_prc_delay    100000
+#define _tag_prc_delay    100000
 #define _ten_thou           10000
 
 using namespace std;
@@ -20,13 +20,13 @@ pthread_mutex_t         mutex_pub   = PTHREAD_MUTEX_INITIALIZER;
 //pthread_cond_t  data_ready  = PTHREAD_COND_INITIALIZER;
 //pthread_cond_t  pub_ready   = PTHREAD_COND_INITIALIZER;
 
-pthread_mutex_t         mutex_param;// = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutexattr_t     mutex_param_attr;
+pthread_mutex_t         mutex_tag;// = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutexattr_t     mutex_tag_attr;
 
-paramlist tags;
-bool fParamThreadInitialized;
+taglist tags;
+bool ftagThreadInitialized;
 
-cparam::cparam() {
+ctag::ctag() {
     setproperty( string("raw"),         double(0)  );
     setproperty( string("value"),       double(0)  );
     setproperty( string("task"),        double(0)  );
@@ -41,7 +41,7 @@ cparam::cparam() {
     setproperty( string("simvalue"),    double(0)  );    
     setproperty( string("mindev"),      double(0)  );   
     setproperty( string("maxdev"),      double(0)  );   
-   
+    
     m_task = 0;
     m_task_go = false;
     m_task_delta = 1;
@@ -63,7 +63,7 @@ cparam::cparam() {
 //    m_motion    = 0;
 }
 
-void cparam::init() {
+void ctag::init() {
     string sOff; 
 //    cmbxchg     *mb = (cmbxchg *)p_conn;
 
@@ -110,7 +110,7 @@ void cparam::init() {
 
     int16_t nPortErrOff=0, nErrOff=0;
     
-    cout<<"param::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
+    cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
         " maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<< \
         " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo<<endl;
     
@@ -121,13 +121,13 @@ void cparam::init() {
 
     if( m_readOff == -2 ) {
         m_quality = OPC_QUALITY_GOOD;
-        if( m_name.find("LV") == 0 ) {              // if parameter (valve position mm) must be evaluate from other
+        if( m_name.find("LV") == 0 ) {              // if tageter (valve position mm) must be evaluate from other
             string  s1;
             int16_t num;
             
             num = atoi( m_name.substr(2, 2).c_str() );
             s1 = "FV"+to_string(num);
-            m_pos = getparam( s1.c_str() );         // valve position in percent
+            m_pos = gettag( s1.c_str() );         // valve position in percent
             cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
         }
         if( m_name.find("FV") == 0 ) {
@@ -135,6 +135,9 @@ void cparam::init() {
             setproperty( "task_delta", double(1) );            
             setproperty( "max_task_delta", double(10) );           
             if( m_name.size()>3 && isdigit(m_name[2]) ) setproperty( "valve", m_name.substr(2,1).c_str() ); 
+/*            double d;
+            getproperty( "kp", d );
+            cout << "Init tag "<< m_name<< " kp = " << d << endl; */
         }
     }
     // подписка на команды
@@ -145,7 +148,7 @@ void cparam::init() {
     }
 }
 
-int16_t cparam::getraw() {
+int16_t ctag::getraw() {
     int16_t     rc  = EXIT_SUCCESS;
 //    cmbxchg     *mb = (cmbxchg *)p_conn;
 
@@ -202,7 +205,7 @@ int16_t cparam::getraw() {
 //  приведение к инж. единицам, фильтрация, аналог==дискрет
 //  анализ изменения значения сравнением с зоной нечувствительности
 //
-int16_t cparam::getvalue(double &rOut) {
+int16_t ctag::getvalue(double &rOut) {
     int16_t     nVal;
     double      rVal;
     timespec    tv;
@@ -251,8 +254,8 @@ int16_t cparam::getvalue(double &rOut) {
 */                
                 nTime = m_fltTime*1000;
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-                if(m_isBool==1) rVal = (rVal >= m_hihi);                            // if it is a discret parameter
-                if(m_isBool==2) rVal = (rVal < m_hihi);                             // if it is a discret parameter & inverse
+                if(m_isBool==1) rVal = (rVal >= m_hihi);                            // if it is a discret tageter
+                if(m_isBool==2) rVal = (rVal < m_hihi);                             // if it is a discret tageter & inverse
                 rOut = rVal;                                                        // current value
             }
             else {
@@ -290,7 +293,7 @@ int16_t cparam::getvalue(double &rOut) {
     return rc;
 }
 
-int16_t cparam::setvalue( double rin=0 ) {
+int16_t ctag::setvalue( double rin=0 ) {
     int16_t rc = EXIT_FAILURE;
 //    cmbxchg *mb;
     string  sOff;
@@ -311,12 +314,13 @@ int16_t cparam::setvalue( double rin=0 ) {
 //        if( m_name.substr(0,4)=="FV11") cout << "? setvalue really raw = "<< rin <<endl;   
         m_raw = rin;
         m_quality = OPC_QUALITY_GOOD;
+        settask( rin, false );
     }
     
     return rc;
 }
 
-int16_t cparam::settask(double rin, bool fgo) {
+int16_t ctag::settask(double rin, bool fgo) {
     int16_t rc = EXIT_SUCCESS;
     
     if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
@@ -329,13 +333,13 @@ int16_t cparam::settask(double rin, bool fgo) {
         cout<<endl<<"settask "<<m_name<<" task=="<<rin<<" -> "<<m_task<<endl; 
     m_task_go = fgo; 
     
-    if( m_writeOff >= 0 ) {
+    if( m_writeOff >= 0 ) {                                     // если это modbus
 //      if( m_name.substr(0,3)=="FC1")
 //            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;   
-        pthread_mutex_lock( &mutex_param );
-        cmbxchg::m_pWriteData[m_writeOff] = m_task;
-        cmbxchg::m_pLastWriteData[m_writeOff] = m_task-1;
-        pthread_mutex_unlock( &mutex_param );
+        pthread_mutex_lock( &mutex_tag );
+        cmbxchg::m_pWriteData[m_writeOff] = int(m_task)&USHRT_MAX;
+        cmbxchg::m_pLastWriteData[m_writeOff] = cmbxchg::m_pWriteData[m_writeOff]-1;
+        pthread_mutex_unlock( &mutex_tag );
         m_task_go = false; 
     }
     setproperty( "task", rin );
@@ -387,18 +391,19 @@ int16_t readCfg() {
         // парсим тэги
         tools = doc.select_nodes("//tags/tag");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            cparam  p;
+            ctag  p;
             string  s = it->node().text().get();
             cout<<"Tag "<<s;
             for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
                 spar = attr.name();
                 sval = attr.value();
                 p.setproperty( spar, sval );
+//                double d;
+//                p.getproperty( spar, d );
                 cout<<" "<<spar<<"="<<sval;
             } 
             cout<<endl;
             p.setproperty("name", s);
-            /*if(p.getproperty("name", s)==EXIT_SUCCESS)*/ tags.push_back(make_pair(s, p));
         }
 
         // парсим соединения наверх
@@ -468,6 +473,23 @@ int16_t readCfg() {
             ndisp++;
         }
         
+        // парсим режимы клапана
+        tools = doc.select_nodes("//valve/mode");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cproperties prp;
+
+            cout<<"parse valve mode "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                prp.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;   
+            vmodes.push_back(prp);
+        }
+       
         rc = EXIT_SUCCESS;
     }
     else {
@@ -478,70 +500,70 @@ int16_t readCfg() {
 }
 
 //
-// ask value parameter by it name
+// ask tageter addr by it name
 //
-int16_t getparam( const char* na, double& va, int16_t& qual, timespec* ts, int16_t trigger=0 ) {
-    int16_t     rc=EXIT_FAILURE;
+ctag* gettag( const char*  na ) {
+    ctag*     rc=NULL;
 
-    pthread_mutex_lock( &mutex_param );
-    cparam* pp = getparam( na );
-    if( pp!=NULL ) {
-        qual= pp->getquality();
-        va = (!trigger) ? pp->getvalue() : pp->gettrigger();
-        ts  = pp->getTS();
-        rc=EXIT_SUCCESS;
-    }
-    pthread_mutex_unlock( &mutex_param );
-
-    return rc;
-}
-
-//
-// ask value parameter by it name
-//
-int16_t getparam(const char* na, std::string& va) {
-    int16_t     rc=EXIT_FAILURE;
-    
-    pthread_mutex_lock( &mutex_param );
-    cparam* pp = getparam( na );
-    if( pp!=NULL ) {
-        va = to_string( pp->getvalue() );
-        if( pp->getquality() != OPC_QUALITY_GOOD ) va += " bad";
-        rc=EXIT_SUCCESS;
-    }
-    pthread_mutex_unlock( &mutex_param );
-
-    return rc;
-}
-
-//
-// ask parameter addr by it name
-//
-cparam* getparam( const char*  na ) {
-    cparam*     rc=NULL;
-
-    pthread_mutex_lock( &mutex_param );
-    paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
+//    pthread_mutex_lock( &mutex_tag );
+    taglist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<ctag>(na) );
     if( ifi != tags.end() ) {
         rc = &(ifi->second);
     }
-    pthread_mutex_unlock( &mutex_param );
+//    pthread_mutex_unlock( &mutex_tag );
     if(!rc) {
-        cout<<"getparam() не нашел параметр "<<na<<". Завершаю работу..."<<endl;
+        cout<<"gettag() не нашел параметр "<<na<<". Завершаю работу..."<<endl;
         exit(0);
     }
     return rc;
 }
 
 //
+// ask value tageter by it name
+//
+int16_t gettag( const char* na, double& va, int16_t& qual, timespec* ts, int16_t trigger=0 ) {
+    int16_t     rc=EXIT_FAILURE;
+
+    pthread_mutex_lock( &mutex_tag );
+    ctag* pp = gettag( na );
+    if( pp!=NULL ) {
+        qual= pp->getquality();
+        va = (!trigger) ? pp->getvalue() : pp->gettrigger();
+        ts  = pp->getTS();
+        rc=EXIT_SUCCESS;
+    }
+    pthread_mutex_unlock( &mutex_tag );
+
+    return rc;
+}
+
+//
+// ask value tageter by it name
+//
+int16_t gettag(const char* na, std::string& va) {
+    int16_t     rc=EXIT_FAILURE;
+    
+    pthread_mutex_lock( &mutex_tag );
+    ctag* pp = gettag( na );
+    if( pp!=NULL ) {
+        va = to_string( pp->getvalue() );
+        if( pp->getquality() != OPC_QUALITY_GOOD ) va += " bad";
+        rc=EXIT_SUCCESS;
+    }
+    pthread_mutex_unlock( &mutex_tag );
+
+    return rc;
+}
+
+//
 // возврат разницы между новым значением параметра и предыдущим считанным 
 //
-int16_t getparamcount( const char* na, int16_t& val ) {
+int16_t gettagcount( const char* na, int16_t& val ) {
     int16_t     rc=EXIT_FAILURE;
     double      rvc, rvo;
 
-    pthread_mutex_lock( &mutex_param );
-    cparam* pp = getparam( na );
+    pthread_mutex_lock( &mutex_tag );
+    ctag* pp = gettag( na );
     if( pp!=NULL && pp->getquality()==OPC_QUALITY_GOOD ) {
         rvc =  pp->getvalue();
         rvo =  pp->getoldvalue();
@@ -549,62 +571,65 @@ int16_t getparamcount( const char* na, int16_t& val ) {
         val = rvc-rvo;
         rc=EXIT_SUCCESS;
     }
-    pthread_mutex_unlock( &mutex_param );
+    pthread_mutex_unlock( &mutex_tag );
 
     return rc;
 }
 
-int16_t getparamlimits( const char* na, double& emin, double& emax) {
+int16_t gettaglimits( const char* na, double& emin, double& emax) {
     int16_t     rc=EXIT_FAILURE;
     double      rvc, rvo;
 
-    pthread_mutex_lock( &mutex_param );
-    cparam* pp = getparam( na );
+    pthread_mutex_lock( &mutex_tag );
+    ctag* pp = gettag( na );
     if( pp!=NULL && pp->getquality()==OPC_QUALITY_GOOD ) {
         pp->getlimits( emin, emax );
         rc=EXIT_SUCCESS;
     }
-    pthread_mutex_unlock( &mutex_param );
+    pthread_mutex_unlock( &mutex_tag );
 
     return rc;
 }
 
-/*
+
 //
-// task for writing value on parameter name
+// task for writing value on tageter name
 //
-int16_t taskparam( std::string& na, std::string& fi, std::string& va ) {
+int16_t tasktag( std::string& na, std::string& fi, std::string& va ) {
     int16_t rc=EXIT_FAILURE;
     double  rval;
     string  val(va);
     
     reduce(val, (char *)" \t\n");
-    cout<<"taskparam "<<na<<" field "<<fi<<" value "<<val<<endl;
+    cout<<"tasktag "<<na<<" field "<<fi<<" value "<<val<<endl;
     if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) {
-        pthread_mutex_lock( &mutex_param );
-        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(na) );
-        if( ifi != tags.end() ) {
+        
+        ctag* pp = gettag(na.c_str());
+        if( pp ) {
+            pthread_mutex_lock( &mutex_tag );
             std::istringstream(val) >> rval;
-            if( fi.find("task") != std::string::npos ) ifi->second.settask( rval );
-            else ifi->second.setproperty(fi, rval);
+            if( fi.find("task") != std::string::npos ) pp->settask( rval );
+            else
+            if( fi=="value" ) pp->setvalue( rval );
+            else pp->setproperty(fi, rval);
             rc=EXIT_SUCCESS;
+            pthread_mutex_unlock( &mutex_tag );
         }
-        pthread_mutex_unlock( &mutex_param );
     }
     return rc;
 }
-*/
+
 
 //
-// task for writing value on parameter full name 
+// task for writing value on tageter full name 
 //
-int16_t taskparam( std::string& na, std::string& va ) {
+int16_t tasktag( std::string& na, std::string& va ) {
     int16_t rc=EXIT_FAILURE;
     double  rval;
     string  val(va);
     
     reduce(val, (char *)" \t\n");
-    cout<<"taskparam "<<na<<" value "<<val;
+    cout<<"tasktag "<<na<<" value "<<val;
             
     std::vector<string> vc;
     std::string stag, sf;
@@ -615,47 +640,58 @@ int16_t taskparam( std::string& na, std::string& va ) {
         stag = vc.back(); vc.pop_back();
         cout<<" name "<<stag<<" field "<<sf<< " value "<<val<<" size "<<vc.size()<<endl;
             
-//        pthread_mutex_lock( &mutex_param );
-        paramlist::iterator ifi = find_if( tags.begin(), tags.end(), compareP<cparam>(stag) );
-        if( ifi != tags.end() ) {
+        ctag* pp = gettag(stag.c_str());
+        if( pp ) {
+            pthread_mutex_lock( &mutex_tag );
             std::istringstream(val) >> rval;
-            if( sf.find("task") != std::string::npos ) ifi->second.settask( rval );
+            if( sf.find("task") != std::string::npos ) pp->settask( rval );
             else
-            if( sf=="value" ) ifi->second.setvalue( rval );
-            else ifi->second.setproperty(sf, rval);
+            if( sf=="value" ) pp->setvalue( rval );
+            else pp->setproperty(sf, rval);
             rc=EXIT_SUCCESS;
+            pthread_mutex_unlock( &mutex_tag );
         }
-//        pthread_mutex_unlock( &mutex_param );
     }
     return rc;
+}
+
+// 
+// получить текстовое описание по значению
+//
+void ctag::getdescvalue( string& name, string& sval )
+{
+    int16_t ival;
+    getproperty( name, ival );
+    if( m_name.substr(0,2)=="MV" && ival < vmodes.size() ) vmodes[ival].getproperty( "display", sval );
 }
 
 //
 // поток обработки параметров 
 //
-void* paramProcessing(void *args) {
-    paramlist::iterator ih, iend;
+//void* tagProcessing(void *args) {
+void ctag::run() {
+    taglist::iterator ih, iend;
     alglist::iterator iah, iaend;   
     int16_t nRes, nRes1, nVal;
     uint8_t nQ;
     double  rVal;
     int32_t nCnt=0;
 
-    cout << "start parameters processing " << args << endl;
+    cout << "start tageters processing " << endl;
     sleep(1);
     cton tt;
-    while ( fParamThreadInitialized ) {
-//        cout<<"T1 = "<<tt.getTT();
-//        pthread_mutex_lock( &mutex_param );
-//        cout<<" T2 = "<<tt.getTT();
-       
-//        pthread_cond_wait( &data_ready, &mutex_param );// start processing after data receive     
+    while ( ftagThreadInitialized ) {
+/*        cout<<"T1 = "<<tt.getTT();
+        pthread_mutex_lock( &mutex_tag );
+        cout<<" T2 = "<<tt.getTT();
+        pthread_cond_wait( &data_ready, &mutex_tag );// start processing after data receive     
+*/
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
             string  sOff;
             int16_t nu;
-            cparam  &pp = ih->second;
+            ctag  &pp = ih->second;
             
             nRes1= pp.getvalue( rVal );
 
@@ -665,15 +701,14 @@ void* paramProcessing(void *args) {
             }
 
             // выдача задания на модули вв
-            pthread_mutex_lock( &mutex_param );
+            pthread_mutex_lock( &mutex_tag );
             if( pp.getquality()==OPC_QUALITY_GOOD ) {
-//                if( pp.taskset() ) pp.setvalue();
-                if( pp.isbool() && pp.m_tasktimer.isDone() ) {                  // если было импульсное задание и вышел таймер
-                    pp.settask( !pp.gettask() );                                // инверитруем выход
+                if( pp.isbool() && pp.m_tasktimer.isDone() ) {  // если было импульсное задание и вышел таймер
+                    pp.settask( !pp.gettask() );                // инверитруем выход
                     pp.m_tasktimer.reset();
                 }
             }
-            pthread_mutex_unlock( &mutex_param );
+            pthread_mutex_unlock( &mutex_tag );
             ++ih;
         }
 //        cout<<" T3 = "<<tt.getTT();
@@ -685,15 +720,15 @@ void* paramProcessing(void *args) {
             ++iah;
         }
 //        cout<<" T4 = "<<tt.getTT();
-//        pthread_mutex_unlock( &mutex_param );
+//        pthread_mutex_unlock( &mutex_tag );
 //        cout<<" T5 = "<<tt.getTT()<<endl;
         tt.start(1000);
-        usleep(_param_prc_delay);
+        usleep(_tag_prc_delay);
     }     
     
-    cout << "end parameters processing" << endl;
+    cout << "end tageters processing" << endl;
     
-    return EXIT_SUCCESS;
+//    return EXIT_SUCCESS;
 }
 
 

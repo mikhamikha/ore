@@ -8,7 +8,7 @@
 #include "main.h"
 
 using namespace std;
- 
+
 int main(int argc, char* argv[])
 {
     int         nResult;
@@ -18,18 +18,20 @@ int main(int argc, char* argv[])
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
         int ret=0;
-        ret = pthread_mutexattr_settype(&mutex_param_attr, PTHREAD_MUTEX_ERRORCHECK_NP); // PTHREAD_MUTEX_ERRORCHECK_NP avoids double locking on same thread.
+        ret = pthread_mutexattr_settype(&mutex_tag_attr, PTHREAD_MUTEX_ERRORCHECK_NP); 
+        // PTHREAD_MUTEX_ERRORCHECK_NP avoids double locking on same thread.
+        
         if(ret != 0) {
             printf("Mutex attribute not initialized!!\n");
         }
-        ret = pthread_mutex_init(&mutex_param, &mutex_param_attr);
+        ret = pthread_mutex_init(&mutex_tag, &mutex_tag_attr);
         if(ret != 0) {
             printf("Mutex not initialized!!\n");
         }
         cout << "readCFG OK!" << endl;
         thMBX = new pthread_t[conn.size() + upc.size() + 2]; 
         fieldconnections::iterator coni;
-        fParamThreadInitialized=1;
+        ftagThreadInitialized=1;
         cout << "start conn  thread " << i <<endl;       
         for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
             nResult = pthread_create(thMBX+i, NULL, fieldXChange, (void *)(*coni));
@@ -51,17 +53,14 @@ int main(int argc, char* argv[])
             }            
             ++i;
         }
+        i--;
+//        cout << "start tag thread " << i <<endl;
+//        nResult = pthread_create(thMBX+i, NULL,  tagProcessing, (void *)NULL);
+        
+        dsp.start();
 
-        cout << "start param thread " << i <<endl;
-        nResult = pthread_create(thMBX+i++, NULL,  paramProcessing, (void *)NULL);
-        cout << "start display thread " << i <<endl;
-        nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
+//        nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
 
-        //          printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",'А', 'Я', 'Ё', 'а', 'п', 'р', 'я', 'ё'); \
-                    printf("А=%d Я=%d Ё=%d | а=%d п=%d р=%d я=%d ё=%d\n",wchar_t(L'А'), wchar_t(L'Я'), wchar_t(L'Ё'), \
-                            wchar_t(L'а'), wchar_t(L'п'), wchar_t(L'р'), wchar_t(L'я'), wchar_t(L'ё'));
-//        cout << "param thread " << i <<endl;
-       
 // ----------- terminate block -------------
         struct termios oldt, newt;
         int ch;
@@ -122,10 +121,11 @@ int main(int argc, char* argv[])
         tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 // ---------- end terminate block ------------
         
-        fParamThreadInitialized=0;
+        ftagThreadInitialized=0;
         cout << "end display thread " << i <<endl;
-        pthread_join(thMBX[i--], NULL);
-        cout << "end param thread " << i <<endl;
+        dsp.join();
+//        pthread_join(thMBX[i--], NULL);
+        cout << "end tag thread " << i <<endl;
         pthread_join(thMBX[i--], NULL);
         cout << "end mqtt thread ";
         for(upconnections::reverse_iterator up=upc.rbegin(); up != upc.rend(); ++up) { 
@@ -146,8 +146,8 @@ int main(int argc, char* argv[])
         }
         cout<<endl;
         delete []thMBX;
-        pthread_mutexattr_destroy(&mutex_param_attr);   // clean up the mutex attribute
-        pthread_mutex_destroy(&mutex_param);            // clean up the mutex itself
+        pthread_mutexattr_destroy(&mutex_tag_attr);   // clean up the mutex attribute
+        pthread_mutex_destroy(&mutex_tag);            // clean up the mutex itself
     }
 }
 

@@ -1,6 +1,6 @@
-// заголовочный файл param.h
-#ifndef _PARAM_H
-	#define _PARAM_H
+// заголовочный файл tag.h
+#ifndef _TAG_H
+	#define _TAG_H
 
 #include <string>	
 #include <algorithm>
@@ -13,26 +13,26 @@
 #include "utils.h" 
 #include <pugixml.hpp>
 
-#define m_pos       param1
+#define m_pos       tag1
 /*
-#define m_ft1       param1
-#define m_ft2       param2
+#define m_ft1       tag1
+#define m_ft2       tag2
 
-#define m_fc        param1
-#define m_lso       param2
-#define m_lsc       param3
-#define m_cmdo      param4
-#define m_cmdc      param5
+#define m_fc        tag1
+#define m_lso       tag2
+#define m_lsc       tag3
+#define m_cmdo      tag4
+#define m_cmdc      tag5
 
-#define m_dt        param1
-#define m_kv        param2
-#define m_fv        param3
-#define m_pt1       param4
-#define m_pt2       param5
+#define m_dt        tag1
+#define m_kv        tag2
+#define m_fv        tag3
+#define m_pt1       tag4
+#define m_pt2       tag5
 */
 
 // объявление класса Параметр
-class cparam: public cproperties { 			// имя класса
+class ctag: public cproperties { 			// имя класса
 
 private: 				// спецификатор доступа private
 protected: 				// спецификатор доступа protected
@@ -41,7 +41,7 @@ protected: 				// спецификатор доступа protected
     timespec	m_oldts;
     double		m_rvalue;
     double		m_rvalue_old;
-    int16_t     m_task;             // task to out
+    double      m_task;             // task to out
     int16_t     m_task_delta;       // task out allowable deviation 
     bool        m_task_go;          // flag 4 task to out
     double      m_raw;              // raw value from module
@@ -72,12 +72,12 @@ protected: 				// спецификатор доступа protected
     bool        m_firstscan;
 
     // referenses to counter, limit switches (opened & closed), commands (open & close)
-    cparam*     param1; //m_fc;
+    ctag*     tag1; //m_fc;
 /*    
-    cparam*         param2;//m_lso;
-    cparam*         param3;//m_lsc;
-    cparam*         param4;//m_cmdo;
-    cparam*         param5;//m_cmdc;
+    ctag*         tag2;//m_lso;
+    ctag*         tag3;//m_lsc;
+    ctag*         tag4;//m_cmdo;
+    ctag*         tag5;//m_cmdc;
 
 //  int32_t         m_cnt_old;
     int16_t         m_motion;  
@@ -85,9 +85,9 @@ protected: 				// спецификатор доступа protected
 */
     
 public: 				// спецификатор доступа public
-    cparam();			// конструктор класса
-//    cparam(const cparam&) {}		// конструктор класса
-   ~cparam(){};   
+    ctag();			// конструктор класса
+//    ctag(const ctag&) {}		// конструктор класса
+   ~ctag(){};   
 //    int16_t     m_sub;   
     cton        m_tasktimer;
     void		*p_conn;	
@@ -164,6 +164,9 @@ public: 				// спецификатор доступа public
 
     int16_t rawValveValueEvaluate();
     int16_t flowEvaluate(); 
+    void    getdescvalue( string& name, string& sval );
+    void    run();
+   
     std::string to_text() {
         std::string s;
         std::stringstream out;
@@ -176,29 +179,30 @@ public: 				// спецификатор доступа public
         s = out.str();
         return s;
     }
-}; // конец объявления класса cparam
+}; // конец объявления класса ctag
 
 int16_t readCfg();
 void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
-void* paramProcessing(void *args); // поток обработки параметров 
+void* tagProcessing(void *args); // поток обработки параметров 
 
-//int16_t taskparam( std::string&, std::string&, std::string& );
-int16_t taskparam( std::string&, std::string& );
+int16_t tasktag( std::string&, std::string&, std::string& );
+int16_t tasktag( std::string&, std::string& );
 
-int16_t getparam( const char*, double&, int16_t& qual, timespec*, int16_t );
-int16_t getparam( const char*, std::string& );
-cparam* getparam( const char* );
-int16_t getparamcount( const char*, int16_t& );
-int16_t getparamlimits( const char*, double&, double& );
+int16_t gettag( const char*, double&, int16_t& qual, timespec*, int16_t );
+int16_t gettag( const char*, std::string& );
+ctag* i gettag( const char* );
+int16_t gettagcount( const char*, int16_t& );
+int16_t gettaglimits( const char*, double&, double& );
 
-typedef std::vector<std::pair<std::string, cparam> > paramlist;
+typedef std::vector<std::pair<std::string, ctag> > taglist;
 
-extern paramlist                tags;
-extern bool                     fParamThreadInitialized;
-extern pthread_mutex_t          mutex_param;
-extern pthread_mutexattr_t      mutex_param_attr;
+extern taglist                tags;
+extern bool                     ftagThreadInitialized;
+extern pthread_mutex_t          mutex_tag;
+extern pthread_mutexattr_t      mutex_tag_attr;
 //extern pthread_cond_t  data_ready;
 extern pthread_mutex_t          mutex_pub;
 //extern pthread_cond_t  pub_ready;
 
-#endif // _PARAM_H
+#endif // _tag_H
+

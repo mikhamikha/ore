@@ -178,6 +178,7 @@ class cproperties {
         template <class T>
         int16_t setproperty( std::string na, T va) {       // fill settings
             int16_t res = EXIT_FAILURE;
+//            if(na=="ki") cout<<endl<<"setproperty ki="<<va<<endl;
             settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
             
             if (i != m_set.end()) {

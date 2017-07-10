@@ -83,7 +83,7 @@ int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_m
        
     while( ib != ie ) {
         if((*ib)->handle() == uint32_t(context)) {
-            taskparam( top, val );
+            tagdir.tasktag( top, val );
             break;
         }
         ++ib;
@@ -192,7 +192,7 @@ int16_t upcon::connect() {
     return rc;
 }
 
-int16_t upcon::subscribe(cparam &tag) {    
+int16_t upcon::subscribe(ctag &tag) {    
     int16_t                     rc = EXIT_FAILURE;
 	MQTTAsync_responseOptions   ropts = MQTTAsync_responseOptions_initializer;
 	MQTTAsync_message           pubmsg = MQTTAsync_message_initializer;
@@ -214,7 +214,9 @@ int16_t upcon::subscribe(cparam &tag) {
         while(subtop.size()) {
             sf = subtop.back();
             subtop.pop_back();
-            tag.setproperty( sf, double(0) );           // add subscribing fields to tag properties
+            double d;
+            if(tag.getproperty(sf, d)!=EXIT_SUCCESS)
+                tag.setproperty( sf, double(0) );         // add subscribing fields to tag properties
 //            if(subtop.size()==1) {                      // subscribe for all fields of tag
 //                sztop = topic+"/"+name+"/#";;
                 sztop = topic+"/"+name+"/"+sf;
@@ -233,7 +235,7 @@ int16_t upcon::subscribe(cparam &tag) {
     return rc;
 }
 
-int16_t upcon::publish(cparam &tag) {    
+int16_t upcon::publish(ctag &tag) {    
     int16_t         res = EXIT_FAILURE;
     string          topic;
     string          name;
@@ -272,7 +274,7 @@ int16_t upcon::publish(cparam &tag) {
     return res;
 }
 
-int16_t publish(cparam &tag) {    
+int16_t publish(ctag &tag) {    
     int16_t         res = EXIT_FAILURE;
     string          topic;
 /*   string          name;

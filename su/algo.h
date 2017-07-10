@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include "main.h"
 
-#define     _loc_data_buffer_size   10
+#define _loc_data_buffer_size   10
+#define _valve_mode_amount      7
 
 enum algtype {
     _valveEval = 1,                 // Расчет положения клапана
@@ -41,13 +42,14 @@ enum modecontrol {
     _manual_pulse_close
 };
 
-typedef std::vector <cproperties> arglist;
-typedef std::vector<cparam*> paramvector;
+typedef std::vector <cproperties> vlvmode;
+//typedef std::vector <cproperties> arglist;
+typedef std::vector<ctag*> tagvector;
 
 // объявление класса Алгоритм
 class calgo: public cproperties { 			// имя класса
-    paramvector args;
-    paramvector res;
+    tagvector args;
+    tagvector res;
     int16_t     nType;
 //    double      rdata[_loc_data_buffer_size];
     int16_t     fInit; 
@@ -65,5 +67,6 @@ class calgo: public cproperties { 			// имя класса
 typedef std::vector <calgo*> alglist;
 
 extern alglist algos;
+extern vlvmode vmodes;
 
 #endif

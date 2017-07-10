@@ -7,7 +7,6 @@
 #include <vector>
 #include "main.h"
 #include <cwchar>
-#include <stdio.h>
 
 const char      _invert_on  = '\x11';
 const char      _invert_off = '\x10';
@@ -15,9 +14,8 @@ const char      _bold_on[]  = { 0x1F, 0x28, 'g', 0x41, 0x01 };
 const char      _bold_off[] = { 0x1F, 0x28, 'g', 0x41, 0x01 };
 const int16_t   _cmd_len = 5;
 
-//typedef std::vector <std::string> rowsarray;
 typedef std::vector <cproperties> rowsarray;
-int16_t assignValues( cparam &p, string& subject, const string& sop, const string& scl );
+int16_t assignValues( ctag &p, string& subject, const string& sop, const string& scl );
 //int16_t assignValues( string&, const string&, const string&, char*, int16_t& );   
 void to_866( string&, string& );
 
@@ -39,20 +37,20 @@ class pagestruct: public cproperties {
             m_task = 0;
         }
         
-//    rowsarray   attr; 
     string      m_tag;
-    cparam      *p; 
+    ctag      *p; 
 
     void setprev(int16_t n) { m_prevpage = n; }
     int16_t getprev() { return m_prevpage; }
     void rownext(int16_t n=1) { 
 //        cout<<" old row "<<m_currow;
-        m_currow = abs(m_currow+n)%rows.size(); 
+        m_currow = (m_currow+n)%rows.size(); 
 //        cout<<" new row "<<m_currow<<endl;
     }    
     void rowprev(int16_t n=1) { 
 //        cout<<" old row "<<m_currow;
-        m_currow = abs(m_currow-n)%rows.size(); 
+        m_currow = (m_currow-n)%rows.size();
+        if(m_currow<0) m_currow = rows.size()-abs(m_currow);
 //        cout<<" new row "<<m_currow<<endl;
     }
     int16_t rowget() { return m_currow; }
@@ -63,9 +61,10 @@ class pagestruct: public cproperties {
         if(_r>=0 && _r<=rows.size()-1) { m_currow = _r; rc=EXIT_SUCCESS; }
         return rc;
     }
+/*
     void settask( double rval ) {
         double emin, emax;
-        getparamlimits( m_tag.c_str(), emin, emax );
+        gettaglimits( m_tag.c_str(), emin, emax );
         cout<<" settask emin ="<<emin<<" emax="<<emax<<" rval="<<rval;
 
         if(rval<emin) m_task = emin;
@@ -78,7 +77,7 @@ class pagestruct: public cproperties {
     double gettask() {
         return m_task;
     }
-        
+*/        
     template <class T>
     void setproperty( std::string& spr, T& svl ) {
         cproperties::setproperty(spr, svl);
@@ -126,7 +125,7 @@ struct cbtn {
 };
 
 
-class view : public Noritake_VFD_GU3000, public cproperties {
+class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
     pagearray   pages; 
     int16_t     m_curpage;
     int16_t     m_maxpage;
@@ -173,9 +172,9 @@ class view : public Noritake_VFD_GU3000, public cproperties {
         }
         
         void setproperty( int16_t npg, std::string& spr, std::string& svl ) {
-            int16_t n = atoi(svl.c_str());
             addpages(npg);
-            pages.at(npg).setproperty(spr, n);
+            cout<<"\npage="<<pages.size()<<"\n";
+            pages.at(npg).setproperty(spr, svl);
         }
 
         int16_t getproperty( int16_t npg, std::string& spr, int16_t& res ) {
@@ -219,7 +218,7 @@ class view : public Noritake_VFD_GU3000, public cproperties {
             m_curpage = pages.at(m_curpage).getprev();
             if(m_curpage<0 || m_curpage>=pages.size()) m_curpage = 0;
         }
-
+        void run();
         void setMaxPage(int16_t n) { m_maxpage = n; }
         void keymanage();
         void gotoDetailPage();

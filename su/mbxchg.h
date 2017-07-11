@@ -102,24 +102,9 @@ class cmbxchg: public cproperties, public cthread {
         int16_t terminate();
         void run();
 };
-/*
-struct equalID 
-{
-    int32_t _i;
-    equalID(int32_t i):_i(i) { }
-    
-    bool operator () (cmbxchg *p) {
-        return (p->m_id==_i);
-    }
-};
-*/
+
 typedef std::vector< cmbxchg * > fieldconnections;
 extern fieldconnections conn;
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
-=======
-//void* fieldXChange(void *args);    // поток обмена по Modbus с полевым оборудованием
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 
 #endif
 

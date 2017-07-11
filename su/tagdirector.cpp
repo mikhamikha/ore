@@ -7,11 +7,7 @@ ctagdirector tagdir;
 
 
 //
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-// ask tageter addr by it name
-=======
 // get tag addr by it name
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 //
 ctag* ctagdirector::gettag( const char*  na ) {
     ctag*     rc=NULL;
@@ -22,27 +18,17 @@ ctag* ctagdirector::gettag( const char*  na ) {
         rc = &(ifi->second);
     }
 //    pthread_mutex_unlock( &mutex_tag );
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-=======
 /*
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
     if(!rc) {
         cout<<"gettag() не нашел параметр "<<na<<". Завершаю работу..."<<endl;
         exit(0);
     }
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-=======
 */
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
     return rc;
 }
 
 //
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-// ask value tageter by it name
-=======
 // ask value tag by it name
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 //
 int16_t ctagdirector::gettag( const char* na, double& va, int16_t& qual, timespec* ts, int16_t trigger=0 ) {
     int16_t     rc=EXIT_FAILURE;
@@ -61,11 +47,7 @@ int16_t ctagdirector::gettag( const char* na, double& va, int16_t& qual, timespe
 }
 
 //
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-// ask value tageter by it name
-=======
 // ask value tag by it name
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 //
 int16_t ctagdirector::gettag(const char* na, std::string& va) {
     int16_t     rc=EXIT_FAILURE;
@@ -195,28 +177,14 @@ void ctagdirector::run() {
     sleep(1);
     cton tt;
     while ( ftagThreadInitialized ) {
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-/*        cout<<"T1 = "<<tt.getTT();
-        pthread_mutex_lock( &mutex_tag );
-        cout<<" T2 = "<<tt.getTT();
-        pthread_cond_wait( &data_ready, &mutex_tag );// start processing after data receive     
-*/
-=======
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
             string  sOff;
             int16_t nu;
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-            ctag  &pp = ih->second;
-            
-            nRes1= pp.getvalue( rVal );
-=======
             ctag&   pp = ih->second;
             
             nRes1 = pp.getvalue( rVal );                        // вычислим значение параметра
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 
             // публикация свежих данных
             if( pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<upc.size() ) {
@@ -242,12 +210,6 @@ void ctagdirector::run() {
             if(p) p->solveIt();
             ++iah;
         }
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-//        cout<<" T4 = "<<tt.getTT();
-//        pthread_mutex_unlock( &mutex_tag );
-//        cout<<" T5 = "<<tt.getTT()<<endl;
-=======
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         tt.start(1000);
         usleep(_tag_prc_delay);
     }     

@@ -9,13 +9,8 @@
 
 using namespace std;
 
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-int main(int argc, char* argv[])
-{
-=======
 int main(int argc, char* argv[]) {
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
-    int         nResult;
+    int nResult;
     
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
@@ -35,37 +30,6 @@ int main(int argc, char* argv[]) {
         ftagThreadInitialized=1;
         
         fieldconnections::iterator coni;
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-        ftagThreadInitialized=1;
-        cout << "start conn  thread " << i <<endl;       
-        for(coni=conn.begin(), i=0; coni != conn.end(); ++coni) { 
-            nResult = pthread_create(thMBX+i, NULL, fieldXChange, (void *)(*coni));
-            if (nResult != 0) {
-//              perror("Создание первого потока!");
-//              return EXIT_FAILURE;
-                break;
-            }
-            ++i;
-        }            
-        cout << "start upcon  thread " << i <<endl; 
-        for(upconnections::iterator up=upc.begin(); up != upc.end(); ++up) {
-            if( (*up)->connect()==EXIT_SUCCESS )
-                nResult = pthread_create(thMBX+i, NULL, upProcessing, (void *)(*up));
-            if (nResult != 0) {
-//              perror("Создание первого потока!");
-//              return EXIT_FAILURE;
-                break;
-            }            
-            ++i;
-        }
-        i--;
-//        cout << "start tag thread " << i <<endl;
-//        nResult = pthread_create(thMBX+i, NULL,  tagProcessing, (void *)NULL);
-        
-        dsp.start();
-
-//        nResult = pthread_create(thMBX+i, NULL,  viewProcessing, (void *)NULL);
-=======
         for(coni=conn.begin(); coni != conn.end(); ++coni) (*coni)->start();
 
         upconnections::iterator up;
@@ -73,7 +37,6 @@ int main(int argc, char* argv[]) {
         
         tagdir.start();     
         dsp.start();
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
 
 // ----------- terminate block -------------
         struct termios oldt, newt;
@@ -136,17 +99,9 @@ int main(int argc, char* argv[]) {
 // ---------- end terminate block ------------
         
         ftagThreadInitialized=0;
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-        cout << "end display thread " << i <<endl;
-        dsp.join();
-//        pthread_join(thMBX[i--], NULL);
-        cout << "end tag thread " << i <<endl;
-        pthread_join(thMBX[i--], NULL);
-=======
         dsp.join();
         tagdir.join();
 
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         cout << "end mqtt thread ";
         for(upconnections::reverse_iterator up=upc.rbegin(); up != upc.rend(); ++up) { 
             (*up)->terminate();
@@ -161,11 +116,6 @@ int main(int argc, char* argv[]) {
             delete *rconi;
         }
         cout<<endl;
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-        delete []thMBX;
-=======
-        
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         pthread_mutexattr_destroy(&mutex_tag_attr);   // clean up the mutex attribute
         pthread_mutex_destroy(&mutex_tag);            // clean up the mutex itself
     }

@@ -11,13 +11,10 @@ class ctagdirector: public cthread {
         taglist tags;
        
     public:
-<<<<<<< 65512ba9996f76309fff3db429f77239cb6c5d13
-=======
         void addtag( string& s, ctag& p ) {
             if( gettag(s.c_str())==NULL )
                 tags.push_back(make_pair(s, p)); 
         }
->>>>>>> 25. a)pthread_create into class method run() b)PID algoritm complete
         int16_t tasktag( std::string&, std::string&, std::string& );
         int16_t tasktag( std::string&, std::string& );
 

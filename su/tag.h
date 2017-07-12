@@ -115,8 +115,17 @@ public: 				// спецификатор доступа public
     int16_t setvalue(double);                   // write tasks to modbus writedata area 
     double  gettask( bool fraw=false ) {        // get task value; if fraw==true then unscaled task
         double val;
-        if( !fraw && m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) 
+        if( !fraw && m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) { 
             val = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_task-m_minRaw)+m_minEng;
+            val = min( val, m_maxEng );         // ограничим значение инженерной шкалой
+            val = max( val, m_minEng );
+            
+            if( m_minDev!=m_maxDev )  {         // если задана шкала параметра < шкалы прибора,
+                val = (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(val-m_minDev)+m_minEng;
+                val = min( val, m_maxEng );     // ограничим значение инженерной шкалой
+                val = max( val, m_minEng );
+            }        
+        }
         else val = m_task;
 
         return val;    
@@ -185,9 +194,9 @@ int16_t readCfg();
 extern bool                     ftagThreadInitialized;
 extern pthread_mutex_t          mutex_tag;
 extern pthread_mutexattr_t      mutex_tag_attr;
-//extern pthread_cond_t  data_ready;
+//extern pthread_cond_t         data_ready;
 extern pthread_mutex_t          mutex_pub;
-//extern pthread_cond_t  pub_ready;
+//extern pthread_cond_t         pub_ready;
 
 #endif // _tag_H
 

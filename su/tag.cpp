@@ -242,12 +242,13 @@ int16_t ctag::getvalue(double &rOut) {
                 rVal = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_raw-m_minRaw)+m_minEng;
                 rVal = min( rVal, m_maxEng );                                       // ограничим значение инженерной шкалой
                 rVal = max( rVal, m_minEng );
-/*                
+                
                 if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
-                    rVal = min( rVal, m_maxDev );                                   // ограничим значение инженерной шкалой
-                    rVal = max( rVal, m_minDev );
+                    rVal =  (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(rVal-m_minDev)+m_minEng;
+                    rVal = min( rVal, m_maxEng );                                   // ограничим значение инженерной шкалой
+                    rVal = max( rVal, m_minEng );
                 }
-*/                
+                
                 nTime = m_fltTime*1000;
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
                 if(m_isBool==1) rVal = (rVal >= m_hihi);                            // if it is a discret tageter
@@ -282,7 +283,6 @@ int16_t ctag::getvalue(double &rOut) {
 */
             m_rvalue = rVal;
         } 
-//        if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
     }    
     if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
    
@@ -307,7 +307,6 @@ int16_t ctag::setvalue( double rin=0 ) {
     else 
     */    
     if( m_writeOff == -2 ) {
-//        if( m_name.substr(0,4)=="FV11") cout << "? setvalue really raw = "<< rin <<endl;   
         m_raw = rin;
         m_quality = OPC_QUALITY_GOOD;
         settask( rin, false );
@@ -318,20 +317,29 @@ int16_t ctag::setvalue( double rin=0 ) {
 
 int16_t ctag::settask(double rin, bool fgo) {
     int16_t rc = EXIT_SUCCESS;
-    
-    if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
-        double rVal = rin;
+    double  rVal = rin;
+   
+   cout<<endl<<"settask "<<m_name<<" task=="<<rVal; 
+   
+   if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
+        if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
+            rVal = (m_maxDev-m_minDev)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minDev;
+            rVal = min( rVal, m_maxDev );                                   // ограничим значение инженерной шкалой
+            rVal = max( rVal, m_minDev );
+            cout<<" dev="<<rVal;
+        }        
         rVal = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minRaw;
-        m_task    = rVal;  
-    }
-    else m_task = rin;
-//        if( m_name.substr(0,3)=="FC1")
-        cout<<endl<<"settask "<<m_name<<" task=="<<rin<<" -> "<<m_task<<endl; 
+        cout<<" raw="<<rVal;
+   }
+    m_task    = rVal;  
     m_task_go = fgo; 
     
-    if( m_writeOff >= 0 ) {                                     // если это modbus
 //      if( m_name.substr(0,3)=="FC1")
-//            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;   
+    cout<<endl; 
+    
+    if( m_writeOff >= 0 ) {                                     // если это modbus
+//      if( m_name.substr(0,3)=="FC1") \
+            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;   
         pthread_mutex_lock( &mutex_tag );
         cmbxchg::m_pWriteData[m_writeOff] = int(m_task)&USHRT_MAX;
         cmbxchg::m_pLastWriteData[m_writeOff] = cmbxchg::m_pWriteData[m_writeOff]-1;
@@ -341,7 +349,6 @@ int16_t ctag::settask(double rin, bool fgo) {
     setproperty( "task", rin );
     return rc;
 }
-
 
 //  
 //	Чтение и парсинг конфигурационного файла

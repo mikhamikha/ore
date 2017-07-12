@@ -125,6 +125,8 @@ int16_t calgo::solveIt() {
                         int16_t cnt_old  = args[0]->getoldvalue();                  // предыдущий счетчик
                         int16_t lso      = args[1]->getvalue();                     // конечный открытия
                         int16_t lsc      = args[2]->getvalue();                     // конечный закрытия
+                        int16_t lso_old  = args[1]->getoldvalue();                  // конечный открытия
+                        int16_t lsc_old  = args[2]->getoldvalue();                  // конечный закрытия
                         int16_t cmd      = args[3]->gettask(true);                  // команда движения
                         int16_t dir      = args[4]->gettask(true);                  // команда обратного движения
                         int16_t mode     = args[5]->getvalue(); 
@@ -143,7 +145,8 @@ int16_t calgo::solveIt() {
                         if(lso && mot>0) raw = res[0]->getmaxraw();
                         if(lsc && mot<0) raw = 0; 
 //                        cout<<" newRaw= "<<raw;
-                        if( !cmd && (lsc || lso || cnt>20000) && cnt && args[0]->getquality()==OPC_QUALITY_GOOD ) {      
+                        lso = (lso /*&& !lso_old*/) || (lsc /*&& !lsc_old*/) || cnt>20000;
+                        if( !cmd && lso && cnt && args[0]->getquality()==OPC_QUALITY_GOOD && !res[0]->taskset() ) {      
                             args[0]->settask(0);                                    // сброс счетчика
                         } 
 //                        cout<<" newRaw= "<<raw<<endl;
@@ -314,9 +317,10 @@ int16_t calgo::solveIt() {
                       
                         const bool stopOp = ( mot%10==_open   && ( lsup   || openReached  ) ); 
                         const bool stopCl = ( mot%10==_close  && ( lsdown || closeReached ) );
+                        const bool fstop = (m_tcmd.isDone() || stopOp || stopCl);
 
-                        if( !rc2 && (m_tcmd.isDone() || stopOp || stopCl || rc0 ) ) {           // limit switch (open or close ) position reached
-                            mot_old = mot;                                                      // or task completed                     
+                        if( !rc2 && (fstop || rc0) ) {                                  // limit switch (open or close) position reached
+                            mot_old = mot;                                              // or task completed                     
                             if(mot>=_opening) pcmd->settask( 0 );
                             if(mot%10==_close) pdir->settask( 0 );
                             m_tcmd.reset();
@@ -332,26 +336,19 @@ int16_t calgo::solveIt() {
                     if( pvl->getname()=="FV11" ) \
                         cout<<" mot= "<<mot_old<<"|"<<mot<<" cmd= "<<cmd<<"|"<<dir<<" cnt= "<<cnt_old<<"|"<<cnt \
                             <<" pv="<<pv<<" task= "<<pvl->taskset()<<"|"<<pvl->gettask()<<"|"<<delta \
-                            <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur<<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<pulsewidth \
+                            <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur\
+                            <<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<pulsewidth<<" scaleVLV="<<minOpen<<"|"<<maxOpen\
                             <<" t="<<m_tcmd.getTT()<<"|"<<m_tcmd.getPreset()<<"|"<<m_tcmd.isDone()<<endl;                        
                     
                     pvl->setproperty( "task_delta", delta );                    
                     pvl->setproperty( "motion", mot );
                     pvl->setproperty( "motion_old", mot_old );
-//                    pvl->setproperty( "configured", iscfgd );
-//                    pvl->setproperty( "count", cnt );                  
                     args[1]->setoldvalue( lso );   
                     args[2]->setoldvalue( lsc );
 
                     if( mode<_manual_pulse_open ) {
                         args[7]->setoldvalue( mode );
                     }
-/*
-                    if( 1 && m_name.substr(0,3)=="FV1" ) { 
-                        cout<<m_raw;
-                        cout<<" motion="<<m_motion<<endl;
-                    }
-*/
                 }
                 break;
             case _valveCalibrate:

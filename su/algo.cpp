@@ -66,7 +66,8 @@ int16_t calgo::init() {
         switch(algtype(nType)) {
             case _valveEval:
 //                res[0]->setproperty( "count", args[0]->getvalue() );
-                setproperty( "motion", _no_motion );
+//               res[0]->setproperty( "configured", 1 );   
+               setproperty( "motion", _no_motion );
                break;
             case _valveProcessing: {
                 double d;
@@ -74,7 +75,7 @@ int16_t calgo::init() {
                 res[0]->setproperty( "count", 0 );            
                 res[0]->setproperty( "motion", _no_motion );
                 res[0]->setproperty( "motion_old", _no_motion ); 
-//                res[0]->setproperty( "configured", -1 );   
+//                res[0]->setproperty( "configured", 1 );   
                 res[0]->setproperty( "sp", args[8]->getvalue() );
                 res[0]->setproperty( "err1", 0 );
                 res[0]->setproperty( "err2", 0 );
@@ -101,9 +102,6 @@ int16_t calgo::solveIt() {
     uint8_t         nqual;
     double          raw;
 
-
-//    if( !fInit ) rc = init();
-    
     if( fInit>0 ) {
         arr_qual.resize(args.size());
         transform( args.begin(), args.end(), arr_qual.begin(), getqual );                          // get quality 
@@ -120,25 +118,30 @@ int16_t calgo::solveIt() {
                     res[0]->getproperty( "configured", iscfgd );
                     getproperty( "enable", fEn );
                     
-                    if( fEn && iscfgd>0 ) {
-                        int16_t cnt      = args[0]->getvalue();                     // текущий счетчик
-                        int16_t cnt_old  = args[0]->getoldvalue();                  // предыдущий счетчик
-                        int16_t lso      = args[1]->getvalue();                     // конечный открытия
-                        int16_t lsc      = args[2]->getvalue();                     // конечный закрытия
-                        int16_t lso_old  = args[1]->getoldvalue();                  // конечный открытия
-                        int16_t lsc_old  = args[2]->getoldvalue();                  // конечный закрытия
-                        int16_t cmd      = args[3]->gettask(true);                  // команда движения
-                        int16_t dir      = args[4]->gettask(true);                  // команда обратного движения
-                        int16_t mode     = args[5]->getvalue(); 
-                        double  raw      = res[0]->getrawval();
+                    if( fEn /*&& iscfgd>0*/ ) {
+                        int16_t cnt     = args[0]->getvalue();                     // текущий счетчик
+                        int16_t cnt_old = args[0]->getoldvalue();                  // предыдущий счетчик
+                        int16_t lso     = args[1]->getvalue();                     // конечный открытия
+                        int16_t lsc     = args[2]->getvalue();                     // конечный закрытия
+                        int16_t lso_old = args[1]->getoldvalue();                  // конечный открытия
+                        int16_t lsc_old = args[2]->getoldvalue();                  // конечный закрытия
+                        int16_t cmd     = args[3]->gettask(true);                  // команда движения
+                        int16_t dir     = args[4]->gettask(true);                  // команда обратного движения
+                        ctag* pmode     = args[5]; 
+                        double  raw     = res[0]->getrawval();
+                        double  delta, max_delta;
                         
-                        int16_t mot, iscfgd;
+                        res[0]->getproperty( "max_task_delta", max_delta );   
+                        res[0]->getproperty( "task_delta", delta );   
+                       
+                        int16_t mot;
                         
                         getproperty( "motion", mot );                               // вспомним, была ли движуха
 //                        res[0]->getproperty( "count", cnt_old ); 
                         
-//                        cout<<" valveEval="<<" cnt= "<<cnt_old<<"|"<<cnt<<" raw="<<raw<<" cmd = "<<cmd<<"|"<<dir \
-                            <<" lso="<<lso<<" lsc="<<lsc<<" fcQ="<<hex<<int16_t(args[0]->getquality())<<dec;                   
+                        cout<<" valveEval="<<res[0]->getname()<<" cnt= "<<cnt_old<<"|"<<cnt<<" raw="<<raw<<" cmd = "<<cmd<<"|"<<dir \
+                            <<" lso="<<lso_old<<"|"<<lso<<" lsc="<<lsc_old<<"|"<<lsc\
+                            <<" fcQ="<<hex<<int16_t(args[0]->getquality())<<dec<<" isCfgd="<<iscfgd<<endl;                   
                         if( cmd ) mot = 1;                                          // команда движения
                         if( cmd && dir ) mot = -1;                                  // команда обратного движения
                         if(cnt) raw = raw + mot*(cnt - cnt_old);                    // считаем положение клапана в импульсах
@@ -146,14 +149,25 @@ int16_t calgo::solveIt() {
                         if(lsc && mot<0) raw = 0; 
 //                        cout<<" newRaw= "<<raw;
                         lso = (lso /*&& !lso_old*/) || (lsc /*&& !lsc_old*/) || cnt>20000;
-                        if( !cmd && lso && cnt && args[0]->getquality()==OPC_QUALITY_GOOD && !res[0]->taskset() ) {      
+                        if( !cmd && lso && cnt && args[0]->getquality()==OPC_QUALITY_GOOD && !res[0]->taskset() ) { 
+                            if( iscfgd==-3 ) {
+                                iscfgd=1;
+                                res[0]->setrawscale( 0, cnt );
+                                iscfgd=1;   
+                                delta = cnt/1000;
+                                delta = min( fabs(delta), max_delta );
+                                res[0]->setrawval( lsc ? 0: cnt );
+                                pmode->setvalue( pmode->getoldvalue() );
+                            }
                             args[0]->settask(0);                                    // сброс счетчика
                         } 
 //                        cout<<" newRaw= "<<raw<<endl;
                         setproperty( "motion", mot );                               // сохраним данные о движении до следующего опроса  
 //                        res[0]->setproperty( "count", cnt ); 
-                        args[0]->setoldvalue( cnt );   
-                        res[0]->setrawval( raw );                                   // сохраним значение положения в сырых единицах
+                        if( iscfgd>0 ) {  
+                            args[0]->setoldvalue( cnt );   
+                            res[0]->setrawval( raw );                                   // сохраним значение положения в сырых единицах
+                        }
 /*
                         if( mode <= _auto_press ) {
                             res[0]->setproperty( "sp", res[0]->getvalue() );
@@ -204,47 +218,60 @@ int16_t calgo::solveIt() {
                    
                     pthread_mutex_unlock( &mutex_tag );
 
-                    if( !mode || iscfgd<=0 )  {
-//                        if( pvl->getname()=="FV11" ) cout<<endl;
+                    if( !mode /*|| iscfgd<=0*/ )  {
+/*                        if(mode_old) {
+                            pvl->setproperty( "motion", _no_motion );
+                            pvl->setproperty( "motion_old", _no_motion );                       
+                            pcmd->settask( 0 );
+                            pdir->settask( 0 );
+                            args[7]->setoldvalue( 0 );
+                        }
+*/
                         break; 
                     } 
    
-                    if( pvl->getname()=="FV11" ) \
-                        cout<<"vlv proc "<<pvl->getname()<<" selV="<<sw<<" curV="<<nv<<" mode="<<mode<<" isCfg="<<iscfgd;
-                   
-                    if( mode==_auto_press ) {                                                   // PID 
-                        pvl->getproperty( "pollT", pollT );
-                        if( (m_twait.isDone() || !m_twait.isTiming()) ) {
-                            double sp, err, err1, err2, kp, kd, ki, hi, lo, piddead;
-                            int16_t pidtype;
-                            pvl->getproperty( "err1", err1 );
-                            pvl->getproperty( "err2", err2 );
-                            pvl->getproperty( "kp", kp );
-                            pvl->getproperty( "kd", kd );
-                            pvl->getproperty( "ki", ki );
-                            pvl->getproperty( "hi", hi );
-                            pvl->getproperty( "lo", lo );
-                            getproperty( "pidtype", pidtype );
-                            getproperty( "piddead", piddead );   
-                            err = (pidtype==2) ? pttask - pt : pt - pttask;
-                            err = (fabs(err)>piddead) ? err : 0;
-                            outv = outv + kp * ( err-err1 + ki*err + kd*(err-err1*2+err2) );    // вычислим задание для клапана
-                            outv = min( hi, outv );                                             // загоним в границы
-                            outv = max( lo, outv );
-                            pvl->setproperty( "out", outv );                                    // сохраним значение задания
-                            pvl->setproperty( "err1", err );
-                            pvl->setproperty( "err2", err1 );
-                            m_twait.start( pollT );
-                            cout<<"pid "<<pvl->getname()<<" pt="<<pt<<" pttask="<<pttask<<" err="<<err2<<" | "<<err1<<" | "<<err\
-                                <<" kp="<<kp<<" ki="<<ki<<" kd="<<kd<<" out="<<outv<<endl;
-                        }
-                    }
-                    else {                                                                      // если ручной режим
-                        pvl->setproperty( "out", pvl->gettask() );
-                        if( args[8]->gettask()!=pt ) args[8]->settask( pt, false );             // значение сохраним в задание   
+//                    if( pvl->getname()=="FV11" ) 
+                        cout<<"vlv proc "<<pvl->getname()<<" selV="<<sw<<" curV="<<nv<<" mode="<<mode_old<<"|"<<mode<<" isCfg="<<iscfgd;
+                    switch(mode) {
+                        case _auto_pid:                                                             // PID
+                            pvl->getproperty( "pollT", pollT );
+                            if( (m_twait.isDone() || !m_twait.isTiming()) ) {
+                                double sp, err, err1, err2, kp, kd, ki, hi, lo, piddead;
+                                int16_t pidtype;
+                                pvl->getproperty( "err1", err1 );
+                                pvl->getproperty( "err2", err2 );
+                                pvl->getproperty( "kp", kp );
+                                pvl->getproperty( "kd", kd );
+                                pvl->getproperty( "ki", ki );
+                                pvl->getproperty( "hi", hi );
+                                pvl->getproperty( "lo", lo );
+                                getproperty( "pidtype", pidtype );
+                                getproperty( "piddead", piddead );   
+                                err = (pidtype==2) ? pttask - pt : pt - pttask;
+                                err = (fabs(err)>piddead) ? err : 0;
+                                outv = outv + kp * ( err-err1 + ki*err + kd*(err-err1*2+err2) );    // вычислим задание для клапана
+                                outv = min( hi, outv );                                             // загоним в границы
+                                outv = max( lo, outv );
+                                pvl->setproperty( "out", outv );                                    // сохраним значение задания
+                                pvl->setproperty( "err1", err );
+                                pvl->setproperty( "err2", err1 );
+                                m_twait.start( pollT );
+                                cout<<"pid "<<pvl->getname()<<" pt="<<pt<<" pttask="<<pttask<<" err="<<err2<<" | "<<err1<<" | "<<err\
+                                    <<" kp="<<kp<<" ki="<<ki<<" kd="<<kd<<" out="<<outv<<endl;
+                            }
+                            break;
+                        case _auto_time:                                                            // автомат по времени
+                            outv = task;
+                            break;
+                        default:                                                                    // если ручной режим
+                            pvl->setproperty( "out", pvl->gettask() );
+                            if( args[8]->gettask()!=pt ) args[8]->settask( pt, false );             // значение сохраним в задание
                     }
 
-                    if( sw && sw!=nv ) break;
+                    if( sw && sw!=nv ) {
+                        cout<<endl;
+                        break;
+                    }
                     
                     pvl->getproperty( "max_task_delta", max_delta );   
                     pvl->getproperty( "task_delta", delta );   
@@ -254,7 +281,7 @@ int16_t calgo::solveIt() {
 
                     if( mot==_no_motion ) {                                                     // if valve standby
                         if( mot_old==_no_motion && nqual==OPC_QUALITY_GOOD ) {                  // && old state same
-                            if( mode==_auto_press && outv!=task ) pvl->settask(outv);                   
+                            if( (mode==_auto_pid /*|| mode==_auto_time*/) && outv!=task ) pvl->settask(outv);                   
                             if( (pvl->taskset() || mode>=_manual_pulse_open) && !cmd ) {        // if task set
                                 switch(mode) {                                            
                                     case _manual_pulse_open:                                  
@@ -286,9 +313,9 @@ int16_t calgo::solveIt() {
                                 if( mot==_close ) pdir->settask( 1 );
                             }
                         }
-                        else if( !cmd || mot_old<_opening || m_tcmd.isDone()) {                 // valve state is idle && old state is moving 
+                        else if( !cmd || mot_old<_opening || m_tcmd.isDone()) {                 // valve state is idle && old state is moving
                             if( mode<_manual_pulse_open && fabs(pv-pvl->gettask()) > delta) {   // if задание не достигнуто
-                                pvl->settask(pvl->gettask());                                   // запустим снова
+//                                pvl->settask(pvl->gettask());                                   // запустим снова
                             }
                             if( mode<_manual_pulse_open && !m_tcmd.isDone() && mot_old>=_opening && !lsc && !lso) {
                                 if( mot_old==_opening ) delta -= (pvl->gettask() - pv);
@@ -308,8 +335,7 @@ int16_t calgo::solveIt() {
                         }          
                     }
                     else if( mot ) {                                                            // if valve moving (motion != 0)
-                        res[0]->cleartask();
-                        if( mode==_auto_press && outv!=task ) pvl->settask(outv, false);        // выдадим на клапан новое расчетное задание
+                        if( mode==_auto_pid && outv!=task ) pvl->settask(outv, false);          // выдадим на клапан новое расчетное задание
                         const bool lsup = (lso && !lso_old);
                         const bool lsdown = (lsc && !lsc_old);
                         const bool openReached = (mode<_manual_pulse_open) && (task!=maxOpen) && (pv > (task-delta));
@@ -317,10 +343,11 @@ int16_t calgo::solveIt() {
                       
                         const bool stopOp = ( mot%10==_open   && ( lsup   || openReached  ) ); 
                         const bool stopCl = ( mot%10==_close  && ( lsdown || closeReached ) );
-                        const bool fstop = (m_tcmd.isDone() || stopOp || stopCl);
+                        const bool fstop  = ( m_tcmd.isDone() || stopOp || stopCl );
 
-                        if( !rc2 && (fstop || rc0) ) {                                  // limit switch (open or close) position reached
-                            mot_old = mot;                                              // or task completed                     
+                        if( !rc2 && (fstop || rc0) ) {                                          // limit switch (open or close) position reached
+                            mot_old = mot;                                                      // or task completed                     
+                            pvl->cleartask();
                             if(mot>=_opening) pcmd->settask( 0 );
                             if(mot%10==_close) pdir->settask( 0 );
                             m_tcmd.reset();
@@ -333,7 +360,7 @@ int16_t calgo::solveIt() {
                             mot += 10;
                         }
                     }
-                    if( pvl->getname()=="FV11" ) \
+//                    if( pvl->getname()=="FV11" ) 
                         cout<<" mot= "<<mot_old<<"|"<<mot<<" cmd= "<<cmd<<"|"<<dir<<" cnt= "<<cnt_old<<"|"<<cnt \
                             <<" pv="<<pv<<" task= "<<pvl->taskset()<<"|"<<pvl->gettask()<<"|"<<delta \
                             <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur\
@@ -346,12 +373,14 @@ int16_t calgo::solveIt() {
                     args[1]->setoldvalue( lso );   
                     args[2]->setoldvalue( lsc );
 
-                    if( mode<_manual_pulse_open ) {
+                    if( mode != mode_old && mode<_manual_pulse_open && mode!=_auto_time && mode_old!=_auto_time \
+                            && mot==_no_motion && mot_old==_no_motion ) {
                         args[7]->setoldvalue( mode );
+                        cout<<"valve proc change mode "<<mode_old<<"|"<<mode<<endl; 
                     }
                 }
                 break;
-            case _valveCalibrate:
+            case _valveCalibrate:                                                       // режим конфигурирования
                 if( args.size() >= 8 && res.size() >= 1 ) {
                     ctag* pfc         = args[0];
                     ctag* pcmd        = args[3];
@@ -369,105 +398,153 @@ int16_t calgo::solveIt() {
                     double  cur         = args[5]->getvalue();
                     int16_t sw          = args[6]->getvalue();                   
                     int16_t mode        = args[7]->getvalue();                   
-                    int16_t mot, mot_old, iscfgd, nv;
+                    int16_t mode_old    = args[7]->getoldvalue();                   
+                    int16_t nv;
+                    static int16_t iscfgd;
+                   
                     double  pv          = pvl->getvalue();
-                    double  task        = pvl->gettask();
-                    double  delta, max_delta;
+                    double  rtaskmot;   
                     int16_t rc0         = (args[0]->getquality()!=OPC_QUALITY_GOOD);
                     int16_t rc2         = (args[3]->getquality()!=OPC_QUALITY_GOOD); 
+                    const double task   = pvl->gettask();
+                    const double maxOpen= pvl->getmaxeng();
+                    const double minOpen= pvl->getmineng();
 
-                    pvl->getproperty( "configured", iscfgd );
+
+//                    pvl->getproperty( "configured", iscfgd );
                     pvl->getproperty( "valve", nv );
                     
-                    if( (sw && sw!=nv) || !mode || iscfgd>=0 ) {
+                    if( (sw && sw!=nv) || mode!=_calibrate /* || iscfgd>=0*/ ) {        // если не режим конфигурирования, уходим
 //                        if( pvl->getname()=="FV11" ) cout<<endl;
                         break; 
                     }
                     
+                    if( mode_old!=_calibrate ) {
+                        args[7]->setoldvalue(_calibrate);   
+                        iscfgd = -1;
+                    }
+                   
                     if( pvl->getname()=="FV11" ) \
                         cout<<"vlv calbr "<<pvl->getname()<<" selV="<<sw<<" curV="<<nv<<" mode="<<mode<<" isCfg="<<iscfgd;
                     
-                    pvl->getproperty( "max_task_delta", max_delta );   
-                    pvl->getproperty( "task_delta", delta );   
-                    pvl->getproperty( "motion", mot );
-                    pvl->getproperty( "motion_old", mot_old );
-                    pvl->getproperty( "count", cnt_old );                   
-                    cout<<" mot= "<<mot_old<<"|"<<mot<<" cnt= "<<cnt_old<<" task="<<pvl->gettask() \
+                    cout<<" cnt= "<<cnt_old<<" task="<<pvl->gettask() \
                         <<" lso= "<<lso_old<<"|"<<lso<<" lsc= "<<lsc_old<<"|"<<lsc<<" I="<<cur<<" fcQ="<<rc0<<" cvQ="<<rc2<<endl;
                    
-                    if( mot==_no_motion ) {                                                     // if valve standby
+/*                    if( mot==_no_motion ) {                                                     // if valve standby
                         if( mot_old==_no_motion && nqual==OPC_QUALITY_GOOD ) {                  // && old state same
                             if( pvl->taskset() && ( iscfgd==-1 || iscfgd==-2 ) && !cmd ) {      // if valve scale not calibrated
-                                if( lsc || lso ) {                                              // if limit one switch is ON
+*/
+                            if( !sw && ( iscfgd==-1 || iscfgd==-2 ) ) {
+                                if( lsc || lso ) {                                              // if one limitswitch is ON
                                     if( !cnt ) { 
                                         iscfgd=-3;
-                                        mot = lsc ? _open : _close;
+                                        rtaskmot = lsc ? maxOpen : minOpen;
                                     }
-                                    else args[0]->settask(0);                                   // сброс счетчика
                                 }
                                 else if( iscfgd==-1 ) {                                         // if valve in middle position
                                     iscfgd = -2;
-                                    mot = _close;
+                                    rtaskmot = minOpen;
                                 }
-                                else pvl->cleartask();
+                                else rtaskmot=-1;
+                                if(rtaskmot>=0 && !pvl->taskset()) pvl->settask(rtaskmot);
                             } 
-                            if( mot ) {
-                                m_tcmd.start( 300000 );                                         // start timer to check moving process
-                                if( mot==_close ) pdir->settask( 1 );
-                                args[6]->setvalue( nv );                                        // захватим управление
-                            }
-                        }
-                        else if( !cmd || mot_old<_opening ) {                                   // valve state is idle && old state is moving 
-                            if( iscfgd==-2 && lsc ) {                                           // если калибровка + нижний конечник
-                                pvl->settask(task);                                             // запустим снова
-                            }
-                            if( iscfgd==-3 && (lso || lsc) && cnt>1000 ) { 
-                                pvl->setrawscale( 0, cnt );
-                                iscfgd=1;   
-                                delta = cnt/1000;
-                                delta = min( fabs(delta), max_delta );
-                                pvl->setrawval( lsc ? 0: cnt );
-                            }
-                            m_tcmd.reset();
-                            mot_old = mot;
-                            args[6]->setvalue( 0 );   
-                        }          
-                    }
-                    else if( mot ) {                                                            // if valve moving (motion != 0)
-                        pvl->cleartask();
-                        
-                        bool stopOp = ( mot%10==_open  && ( lso && !lso_old ) ); 
-                        bool stopCl = ( mot%10==_close && ( lsc && !lsc_old ) );
-
-                        if( !rc2 && (m_tcmd.isDone() || (stopOp || stopCl) || rc0 ) ) {         // limit switch (open or close ) position reached
-                            mot_old = mot;                                                      // or task completed                     
-                            if(mot>=_opening) pcmd->settask( 0 );
-                            if(mot%10==_close) pdir->settask( 0 );
-                            m_tcmd.reset();
-                            mot = 0;
-                            if(rc0) mot_old = -1;
-                        }
-                        if( !mot_old && (mot==_open || m_tcmd.getTT()>1000) ) {                 // если есть задание        
-                            pcmd->settask( 1 );                                                 // даем команду клапану
-                            mot_old = mot;
-                            mot += 10;
-                        }
-                    }
-                    
-                    pvl->setproperty( "task_delta", delta );                    
-                    pvl->setproperty( "motion", mot );
-                    pvl->setproperty( "motion_old", mot_old );
-                    pvl->setproperty( "configured", iscfgd );
-                    pvl->setproperty( "count", cnt );                  
-                    args[1]->setoldvalue( lso );   
-                    args[2]->setoldvalue( lsc );   
+//                    pvl->setproperty( "configured", iscfgd );
+                }
+                break;
+            case _timeValveControl:                                             // алгоритм управления клапанами по времени
+                if( args.size() >= 6 && res.size() >= 2 ) {
+                    ctag*   pmode1        = args[0];                            // режим клапана 1
+                    ctag*   pmode2        = args[1];                            // режим клапана 2
+                    ctag*   plso1         = args[2];                            // конечник открыто клапана 1
+                    ctag*   plso2         = args[3];                            // конечник открыто клапана 2
+                    ctag*   plsc1         = args[4];                            // конечник открыто клапана 1
+                    ctag*   plsc2         = args[5];                            // конечник открыто клапана 2
                    
-/*
-                    if( 1 && m_name.substr(0,3)=="FV1" ) { 
-                        cout<<m_raw;
-                        cout<<" motion="<<m_motion<<endl;
+                    ctag*   psw           = res[0];                             // ключ выбора клапана 
+                    ctag*   pvl1          = res[1];                             // клапан 1
+                    ctag*   pvl2          = res[2];                             // клапан 2 
+                    int32_t ntim; 
+                    const int16_t rc2     = (args[3]->getquality()!=OPC_QUALITY_GOOD); 
+                    static int16_t selv   = 0;
+                    const int16_t lso1    = plso1->getvalue();
+                    const int16_t lso2    = plso2->getvalue();
+                    const int16_t lsc1    = plsc1->getvalue();
+                    const int16_t lsc2    = plsc2->getvalue();
+                   
+                  
+                    const int16_t sw      = psw->getvalue();                   
+                    const int16_t sw_old  = psw->getoldvalue();                   
+                    // текущий режим - авт по времени
+                    const bool    fMode   = ( pmode1->getvalue()==_auto_time ) && ( pmode2->getvalue()==_auto_time );
+                    // переход в авт режим по времени
+                    const bool    fInMode = ( pmode1->getvalue()==_auto_time && pmode1->getoldvalue()!=_auto_time ) \
+                                            || ( pmode2->getvalue()==_auto_time && pmode2->getoldvalue()!=_auto_time );
+                    // выход из режима
+                    const bool    fOutMode1 = ( pmode1->getvalue()!=_auto_time && pmode1->getoldvalue()==_auto_time );
+                    const bool    fOutMode2 = ( pmode2->getvalue()!=_auto_time && pmode2->getoldvalue()==_auto_time );
+                    if( fOutMode1 ) pmode2->setvalue( _manual );
+                    if( fOutMode2 ) pmode1->setvalue( _manual );
+                    if( fOutMode1 || fOutMode2 ) {                   
+                        pmode2->setoldvalue( pmode2->getvalue() );
+                        pmode1->setoldvalue( pmode1->getvalue() );
                     }
-*/
+                    if( fInMode ) {
+                        pmode1->setvalue(_auto_time);
+                        pmode2->setvalue(_auto_time);
+                        pmode1->setoldvalue(_auto_time);
+                        pmode2->setoldvalue(_auto_time);
+                        psw->setvalue(_no_valve);
+                        m_twait.reset();
+                        selv = 0;
+                    }
+                    const int16_t state = m_twait.isDone() ? _done_a : (m_twait.isTiming() ? _buzy_a : _idle_a);
+                    cout<<"timeValvecontrol"\
+                        <<" mode1="<<pmode1->getoldvalue()<<"|"<<pmode1->getvalue()\
+                        <<" mode2="<<pmode2->getoldvalue()<<"|"<<pmode2->getvalue()\
+                        <<" Mode="<<fMode<<" inMode="<<fInMode<<" outMode="<<fOutMode1<<"|"<<fOutMode2\
+                        <<" SelValve="<<sw<<" state="<<state<<endl;
+                    if( !fMode ) { break; }                                                             // уйдем, если другой режим
+                    if( !sw ) {
+                        if( state == _idle_a ) {                                                        // если режим ожидания
+                            if( !selv ) {                                                               // если клапан не выбран
+                                int16_t lso = ( ( lso2*2 + lso1 ) & _mask_v );                          // проверим конеч открытия
+                                switch( lso ) {
+                                    case 0: 
+//                                        if( pvl1->gettask()!=pvl1->getmaxeng())
+                                            pvl1->settask( pvl1->getmaxeng() ); break;                  // не открыты - откроем 1
+                                    case 1: break;                                                      // открыт 1
+                                    case 2: break;                                                      // открыт 2
+                                    case 3: lso=1; break;                                               // открыты оба - выбор 1 
+                                }
+                                selv = lso;                                                             // выберем открытый
+                            }
+                            cout<<"selv="<<selv;
+                            if( selv ) {                                                                // если есть выбранный
+                                ctag* pvl;
+                                int16_t fLSO = ( selv==_first_v  ) ? lso1 : lso2;
+                                int16_t fLSC = ( selv==_first_v  ) ? lsc2 : lsc1;
+                                if( fLSO ) {                                                            // и он открыт
+                                    pvl = ( selv==_first_v  ) ? pvl2 : pvl1;
+                                    cout<<endl<<"autotime change "<<pvl->getname()<<" task="<<pvl->gettask()<<"|"<<pvl->getmineng();
+//                                    if( pvl->gettask()!=pvl->getmineng())
+                                    if( !fLSC ) pvl->settask( pvl->getmineng() );                       // закроем второй                    
+                                    string s = string("autotime")+to_string( selv );
+                                    getproperty( s.c_str(), ntim );   
+                                    cout<<" timer="<<ntim<<endl;
+                                    m_twait.start( ntim*1000 );                                         // запустим таймер
+                                }
+                                else {
+                                    cout << "Алг auto_time: Нет конечника!\n";
+                                }
+                            }
+                        }
+                        else if( state == _done_a ) {                                                   // если время первого прошло
+                            ctag* pvl = ( selv==_first_v  ) ? pvl2 : pvl1;
+                            pvl->settask( pvl->getmaxeng() );                                           // откроем второй                    
+                            selv ^= _mask_v;                                                            // сделаем основным 
+                            m_twait.reset();                                                            // сбросим таймер
+                        }
+                    }
                 }
                 break;
             // Расчет расхода по перепаду давления на сечении клапана   

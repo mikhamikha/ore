@@ -367,8 +367,8 @@ void view::keymanage() {
                             if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
                                 pg.p->settask( r );                     // выполним сохраненное задание клапану
                             pthread_mutex_unlock( &mutex_tag );
-                            m_mode = _view_mode;                        // возврат в режим просмотра
-                       }                    
+//                            m_mode = _view_mode;                      // возврат в режим просмотра
+                        }                    
                     }
                 }
                 else
@@ -458,7 +458,14 @@ void view::gotoDetailPage() {
             string snam;
             if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS ) {    // получим имя тэга
                 ctag* p;
-                if( (p=tagdir.gettag( snam.c_str() )) != NULL) {             // получим ссылку на тэг
+                if( (p=tagdir.gettag( snam.c_str() )) != NULL) {        // получим ссылку на тэг
+                    bool fmode = true;
+                    if( snam.substr(0, 2)=="FV" ) {                     // ручное управление клапаном
+                        string srpl="MV", srch="FV";
+                        replaceString( snam, srch, srpl );
+                        ctag *p1 = tagdir.gettag( snam.c_str() );                   
+                        fmode = ( p1->getvalue()==_manual );
+                    }
                     pg.p = p;
                     pg.p->settask( pg.p->getvalue(), false );
                     m_mode = _task_mode;                                // перейдем в режим ввода значения
@@ -468,49 +475,3 @@ void view::gotoDetailPage() {
     }
 }
 
-/*/ 
-// создание временного окна для ввода задания для параметра
-// 
-void view::gotoDetailPage() {
-    pagestruct& pg = pages.at(m_curpage);
-    int16_t row = pg.rowget();
-    string ss, sform;// = pg.attr.at(row); 
-//    if( ss.size() && ss[0]=='i' ) {
-    string snam;// = getTagName(pg.rows.at(row).c_str());
-    
-    if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS &&                    // если получили имя тэга
-            pg.getproperty( row, "task", ss )==EXIT_SUCCESS && ss=="1" ) {     // и для него возможно вводить задание
-        int16_t n = m_maxpage+1;                                               // создаем страницу
-        pg.getproperty( row, "format", sform ); 
-
-        ss = "Значение  {value,5.1}";
-
-        definedspline( n, 3, "tag", snam );
-        definedspline( n, 3, "format", ss );
-        ss = "Задание   <task,5.1}>";
-        definedspline( n, 5, "tag", snam );
-        definedspline( n, 5, "format", ss );
-            
-//        s = s.substr(0, s.find(':'));
-        ss = "Режим управления";
-        definedspline( n, 0, "format", ss );
-        definedspline( n, 2, "format", snam );         
-        pages.at(n).setprev( m_curpage );
-        pages.at(n).rowset(5);
-        pages.at(n).m_tag = snam;
-        
-        pages.at(n).p = gettag( snam.c_str() );
-        if( pages.at(n).p ) pages.at(n).settask( pages.at(n).p->gettask() );  
-        
-        gettag( snam.c_str(), ss );
-        cout<<"gotodetail init "<<snam<<" curPg="<<m_curpage<<" row="<<row<<" val = "<<ss;
-        pages.at(n).settask( atof(ss.c_str()) );
-        ss="2";
-        string sfont("fonts");
-        setproperty( n, sfont, ss );
-        GU3000_clearScreen();
-        m_curpage = n;
-        m_mode = _task_mode;
-    }
-}
-*/

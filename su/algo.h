@@ -13,33 +13,48 @@
 #include "main.h"
 
 #define _loc_data_buffer_size   10
-#define _valve_mode_amount      7
+#define _valve_mode_amount      8 
 
 enum algtype {
     _valveEval = 1,                 // Расчет положения клапана
     _valveProcessing = 2,           // Управление клапаном   
-    _valveCalibrate,
+    _valveCalibrate,                // Калибровка клапана
+    _timeValveControl,              // Управление клапаном по времени
+    _pidValveControl,               // Управление клапаном по ПИД
     _floweval=10,                   // Расчет расхода по перепаду давления на сечении клапана 
     _summ=11,                       // Суммирование входных аргументов и запись в выходной
     _sub=12                         // Вычитание входных аргументов и запись в выходной
 };
 
 enum motionstate {
-    _no_motion = 0,
-    _open   = 1,
-    _close,
-    _opening = 11,
-    _closing
+    _no_motion = 0,                 // клапан бездвижен
+    _open   = 1,                    // команда открытия
+    _close,                         // команда закрытия
+    _opening = 11,                  // идет открытие
+    _closing                        // идет закрытие
 };
 
 enum modecontrol {
-    _not_proc = 0,
-    _manual,
-    _auto_press,
-    _auto_diff,
-    _auto_time,
-    _manual_pulse_open,//=11,
-    _manual_pulse_close
+    _not_proc = 0,                  // отключен
+    _manual,                        // ручное управление
+    _auto_pid,                      // ПИД 
+    _auto_time,                     // автоматический по времени
+    _calibrate,                     // режим калибровки
+    _manual_pulse_open,//=11,       // импульс на открытие
+    _manual_pulse_close,            // импульс на закрытие
+};
+
+enum valvenum {
+    _no_valve=0,
+    _first_v,
+    _second_v,
+    _mask_v
+};
+
+enum state_algo {
+    _idle_a,
+    _buzy_a,
+    _done_a
 };
 
 typedef std::vector <cproperties> vlvmode;

@@ -108,7 +108,7 @@ void ctag::init() {
     
     cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
         " maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<< \
-        " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo<<endl;
+        " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo;
     
     if( (m_readOff >= 0 || m_writeOff >= 0) && /*mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS &&*/ \
                 getproperty("ErrPtr", nErrOff) == EXIT_SUCCESS ) {     // read errors of read modbus operations
@@ -126,16 +126,18 @@ void ctag::init() {
             m_pos = tagdir.gettag( s1.c_str() );         // valve position in percent
             cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
         }
-        if( m_name.find("FV") == 0 ) {
+        if( m_name.substr(0,2)=="FV" ) {
             setproperty( "configured", 1 );
             setproperty( "task_delta", double(1) );            
             setproperty( "max_task_delta", double(10) );           
             if( m_name.size()>3 && isdigit(m_name[2]) ) setproperty( "valve", m_name.substr(2,1).c_str() ); 
+            cout<<" configured";
 /*            double d;
             getproperty( "kp", d );
             cout << "Init tag "<< m_name<< " kp = " << d << endl; */
         }
     }
+    cout<<endl;
     // подписка на команды
     int16_t nu;
     if( (nu=getsubcon())>=0 && nu<upc.size() ) {
@@ -332,7 +334,7 @@ int16_t ctag::settask(double rin, bool fgo) {
         cout<<" raw="<<rVal;
    }
     m_task    = rVal;  
-    m_task_go = fgo; 
+    if(fgo) m_task_go = fgo; 
     
 //      if( m_name.substr(0,3)=="FC1")
     cout<<endl; 

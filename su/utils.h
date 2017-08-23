@@ -189,6 +189,7 @@ class cproperties {
                 m_set.push_back(make_pair(na, content(va)));
                 res = EXIT_SUCCESS;
             }
+//            if(na=="configured") cout<<"\nset property "<<na<<" = "<<va<<endl;
             return res;
         }        
 

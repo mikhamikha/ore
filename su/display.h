@@ -48,10 +48,16 @@ class pagestruct: public cproperties {
 //        cout<<" new row "<<m_currow<<endl;
     }    
     void rowprev(int16_t n=1) { 
-//        cout<<" old row "<<m_currow;
-        m_currow = (m_currow-n)%rows.size();
-        if(m_currow<0) m_currow = rows.size()-abs(m_currow);
-//        cout<<" new row "<<m_currow<<endl;
+        int16_t _tmp;
+        int16_t _size = rows.size();
+        cout<<" old row "<<m_currow<<" rows="<<_size<<" n="<<n;
+        _tmp = (m_currow-n);
+        cout<<" immed="<<_tmp;
+        _tmp = (_tmp % _size);
+        cout<<" immed="<<_tmp;
+        if(_tmp<0) _tmp = _size-abs(_tmp);
+        m_currow = _tmp;
+        cout<<" new row "<<m_currow<<endl;
     }
     int16_t rowget() { return m_currow; }
     int16_t rowssize() { return rows.size(); }

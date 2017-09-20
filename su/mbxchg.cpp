@@ -71,7 +71,7 @@ cmbxchg::cmbxchg()
     setproperty( "path",                "" );///dev/ttyS2")) );
     setproperty( "enabled",             int16_t(0) );
     setproperty( "protocol",            int16_t(RTU) );    // пока работаем только RTU
-    setproperty( "baudrate",            int16_t(0) );//9600)) );
+    setproperty( "baudrate",            int32_t(0) );//9600)) );
     setproperty( "parity",              int16_t('E') );
     setproperty( "databits",            int16_t(7) );
     setproperty( "stopbits",            int16_t(1) );
@@ -89,8 +89,9 @@ int16_t cmbxchg::init()
     int16_t proto;
     int16_t rc = getproperty("protocol", proto);
     std::string path;
-    int16_t     baud, parity, data, stop;
-    
+    int16_t     parity, data, stop;
+    int32_t     baud;
+
     m_ctx = NULL;
     if(rc==EXIT_SUCCESS) {
         if (proto == TCP) {

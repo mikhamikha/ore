@@ -139,7 +139,7 @@ int16_t calgo::solveIt() {
                         getproperty( "motion", mot );                               // вспомним, была ли движуха
 //                        res[0]->getproperty( "count", cnt_old ); 
                         
-                        cout<<" valveEval="<<res[0]->getname()<<" cnt= "<<cnt_old<<"|"<<cnt<<" raw="<<raw<<" cmd = "<<cmd<<"|"<<dir \
+//                        cout<<" valveEval="<<res[0]->getname()<<" cnt= "<<cnt_old<<"|"<<cnt<<" raw="<<raw<<" cmd = "<<cmd<<"|"<<dir \
                             <<" lso="<<lso_old<<"|"<<lso<<" lsc="<<lsc_old<<"|"<<lsc\
                             <<" fcQ="<<hex<<int16_t(args[0]->getquality())<<dec<<" isCfgd="<<iscfgd<<endl;                   
                         if( cmd ) mot = 1;                                          // команда движения
@@ -278,7 +278,8 @@ int16_t calgo::solveIt() {
                     pvl->getproperty( "motion", mot );
                     pvl->getproperty( "motion_old", mot_old );
                     getproperty( "pulsewidth", pulsewidth );
-
+                    const int _lag_start=2000;
+                        
                     if( mot==_no_motion ) {                                                     // if valve standby
                         if( mot_old==_no_motion && nqual==OPC_QUALITY_GOOD ) {                  // && old state same
                             if( (mode==_auto_pid /*|| mode==_auto_time*/) && outv!=task ) pvl->settask(outv);                   
@@ -306,10 +307,10 @@ int16_t calgo::solveIt() {
                             if( mot ) {
                                 args[6]->setvalue( nv );                                        // захватим управление  
                                 if( mode>=_manual_pulse_open ) {
-                                    m_tcmd.start( ( (mot==_open)?pulsewidth:pulsewidth+1000 ) );
+                                    m_tcmd.start( ( (mot==_open)?pulsewidth:pulsewidth+_lag_start ) );
                                 }
                                 else
-                                    m_tcmd.start( 300000 );                                     // start timer to check moving process
+                                    m_tcmd.start( 500000 );                                     // start timer to check moving process
                                 if( mot==_close ) pdir->settask( 1 );
                             }
                         }
@@ -354,7 +355,7 @@ int16_t calgo::solveIt() {
                             mot = 0;
                             if(rc0) mot_old = -1;
                         }
-                        if( !mot_old && (mot==_open || m_tcmd.getTT()>=1000) ) {                // если есть задание        
+                        if( !mot_old && (mot==_open || m_tcmd.getTT()>=_lag_start) ) {          // если есть задание        
                             pcmd->settask( 1 );                                                 // даем команду клапану
                             mot_old = mot;
                             mot += 10;
@@ -498,7 +499,7 @@ int16_t calgo::solveIt() {
                         selv = 0;
                     }
                     const int16_t state = m_twait.isDone() ? _done_a : (m_twait.isTiming() ? _buzy_a : _idle_a);
-                    cout<<"timeValvecontrol"\
+                    if( fMode ) cout<<"timeValvecontrol"\
                         <<" mode1="<<pmode1->getoldvalue()<<"|"<<pmode1->getvalue()\
                         <<" mode2="<<pmode2->getoldvalue()<<"|"<<pmode2->getvalue()\
                         <<" Mode="<<fMode<<" inMode="<<fInMode<<" outMode="<<fOutMode1<<"|"<<fOutMode2\

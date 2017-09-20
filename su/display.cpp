@@ -156,7 +156,7 @@ int16_t assignValues(ctag &p, string& subject, const string& sop, const string& 
             string va = "нет значения", vatmp;
             
             vector<string> vc;
-            strsplit(na, ',', vc);                                                  
+            strsplit(na, ',', vc);                                              // ищем признаки форматирования
             na = vc.at(0);
             if(na.size()) {                                                     // имя непустое
                 if( na[0]=='@' ) {                                              // нужно вывести описание значения
@@ -166,7 +166,7 @@ int16_t assignValues(ctag &p, string& subject, const string& sop, const string& 
                 }          
                 else if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) {  // выводим само значение
                     to_866(vatmp, va);                                          // перекодируем
-                    if(vc.size() > 1) {
+                    if(vc.size() > 1) {                                         // есть признаки форматирования
                         vector<string> fld;
                         stringstream ss;
                         double rVal = ( isdigit(va[0]) ) ? atof(va.c_str()) : 0;
@@ -175,7 +175,8 @@ int16_t assignValues(ctag &p, string& subject, const string& sop, const string& 
                             int ch=0;
                             if( fld.at(0).size() ) ch = fld.at(0)[0];
                             if( ch && isdigit((ch)) ) {
-                                ss<<setw(atoi(fld.at(0).c_str()))<<left;
+                                bool rightF = (vc.size() > 2 && (vc[2]=="R" || vc[2]=="r"));
+                                ss<<setw(atoi(fld.at(0).c_str()))<<(rightF? std::right: std::left);
                                 ch = 0;
                                 if( ns > 1 && fld.at(1).size() ) ch = fld.at(1)[0];
                                 if( ch && isdigit(ch) ) {

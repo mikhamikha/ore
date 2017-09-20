@@ -8,7 +8,7 @@
             <path>/dev/ttyS2</path>                   <!-- port or IP-address:port -->
             <enabled>1</enabled>                      <!-- 1 - enabled, 0 - disabled -->
             <protocol>2</protocol>                    <!-- 0 - TCP, 1 - TCP_PI(protocol independet), 2 - RTU -->
-            <baudrate>4800</baudrate>                 <!-- 4800 -->
+            <baudrate>19200</baudrate>               <!-- 4800 -->
             <parity>0</parity>                        <!-- 0 = None, 1 = Odd, 2 = Even -->               
             <databits>8</databits>                    <!-- 8 -->         
             <stopbits>1</stopbits>                    <!-- 1 -->         
@@ -23,7 +23,7 @@
                 <cmd enable="2" internal="0"  regcount="1"  pollint="0"    node="2" func="5"   address="0"   swap="0" num="2" /> <!-- write DO0 NL-8AI -->
                 <cmd enable="2" internal="1"  regcount="1"  pollint="0"    node="2" func="5"   address="1"   swap="0" num="3" /> <!-- write DO1 NL-8AI -->
                 <cmd enable="2" internal="2"  regcount="1"  pollint="0"    node="2" func="5"   address="2"   swap="0" num="4" /> <!-- write DO2 NL-8AI -->
-                <cmd enable="0" internal="20" regcount="30" pollint="1000" node="1" func="3"   address="257" swap="0" num="5" /> <!-- read NL-8AI -->
+                <cmd enable="1" internal="20" regcount="30" pollint="1000" node="1" func="3"   address="257" swap="0" num="5" /> <!-- read NL-8AI -->
                 <!--cmd enable="1" internal="50" regcount="1"  pollint="0"    node="4" func="103" address="520" swap="0" num="6" /--> <!-- read NL-16DI -->
                 <cmd enable="1" internal="51" regcount="4"  pollint="0"    node="3" func="3"   address="0"   swap="0" num="7" /> <!-- read counters M7080B -->
                 <cmd enable="1" internal="55" regcount="2"  pollint="0"    node="3" func="1"   address="0"   swap="0" num="8" /> <!-- read DO0, DO1 M7080B -->
@@ -43,7 +43,7 @@
             <path>/dev/ttyS3</path>                   <!-- port or IP-address:port -->
             <enabled>1</enabled>                      <!-- 1 - enabled, 0 - disabled -->
             <protocol>2</protocol>                    <!-- 0 - TCP, 1 - TCP_PI(protocol independet), 2 - RTU -->
-            <baudrate>19200</baudrate>                <!-- 115200 -->
+            <baudrate>115200</baudrate>                <!-- 115200 -->
             <parity>0</parity>                        <!-- 0 = None, 1 = Odd, 2 = Even -->               
             <databits>8</databits>                    <!-- 8 -->         
             <stopbits>1</stopbits>                    <!-- 1 -->         
@@ -106,8 +106,8 @@
     <tag topic="/data" readData="66" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HS06</tag>
     <tag topic="/data" readData="51" writeData="5" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
     <tag topic="/data" readData="53" writeData="7" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7764" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 1 Kv" eu="">KV11</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 2 Kv" eu="">KV21</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Расход 1" eu="м3/ч">FT11</tag>
@@ -171,7 +171,7 @@
         <args>PT21;PT31</args>
         <res>PT61</res>
     </alg>
-    <alg num="12" type="4" desc="Работа в автомате по времени" enable="1" autotime1="60" autotime2="60">
+    <alg num="12" type="4" desc="Работа в автомате по времени" enable="1" autotime1="180" autotime2="180">
         <args>MV11;MV21;ZV11;ZV21;ZV12;ZV22</args>
         <res>SV01;FV11;FV21</res>
     </alg>
@@ -221,10 +221,10 @@
         11
         <lines>
             <line tag="FV11" format="{desc,18}" task="0">1</line>
-            <line tag="FV11" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">2</line>
+            <line tag="FV11" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">2</line>
             <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
             <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PT51" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">5</line>
+            <line tag="PT51" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">5</line>
             <line tag="MV11" format="{desc,18} {@task,1} {eu}" task="-1">6</line>
         </lines>
     </display>
@@ -232,10 +232,10 @@
         12
         <lines>
             <line tag="FV21" format="{desc,18}" task="0">1</line>
-            <line tag="FV21" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">2</line>
+            <line tag="FV21" format="Задание/Факт {task,5.1,r} / {value,5.1} {eu}" task="-1">2</line>
             <line tag="PT21" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
-            <line tag="PT41" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PT61" format="Задание/Факт {task,5.1} / {value,5.1} {eu}" task="-1">5</line>
+            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
+            <line tag="PT61" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">5</line>
             <line tag="MV21" format="{desc,18} {@task,1} {eu}" task="-1">6</line>
         </lines>
     </display>
@@ -246,8 +246,9 @@
     <mode num="1" name="manual"     display="РУЧН"      visible="1"/>
     <mode num="2" name="autopress"  display="ПЕРЕПАД"   visible="1"/>
     <mode num="3" name="autotime"   display="ВРЕМЯ"     visible="1"/>
-    <mode num="4" name="pulseopen"  display="ПУЛЬС ОТК" visible="0"/>
-    <mode num="5" name="pulseclose" display="ПУЛЬС ЗАК" visible="0"/>
+    <mode num="4" name="calibrate"  display="КАЛИБР."   visible="1"/>
+    <mode num="5" name="pulseopen"  display="ПУЛЬС ОТК" visible="0"/>
+    <mode num="6" name="pulseclose" display="ПУЛЬС ЗАК" visible="0"/>
 </valve>
 
 </cfg>

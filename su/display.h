@@ -67,23 +67,7 @@ class pagestruct: public cproperties {
         if(_r>=0 && _r<=rows.size()-1) { m_currow = _r; rc=EXIT_SUCCESS; }
         return rc;
     }
-/*
-    void settask( double rval ) {
-        double emin, emax;
-        gettaglimits( m_tag.c_str(), emin, emax );
-        cout<<" settask emin ="<<emin<<" emax="<<emax<<" rval="<<rval;
-
-        if(rval<emin) m_task = emin;
-        else
-            if(rval>emax) m_task = emax;
-            else m_task = rval;
         
-        cout<<" m_task="<<m_task<<endl;
-    }
-    double gettask() {
-        return m_task;
-    }
-*/        
     template <class T>
     void setproperty( std::string& spr, T& svl ) {
         cproperties::setproperty(spr, svl);

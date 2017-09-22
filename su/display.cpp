@@ -380,16 +380,15 @@ void view::keymanage() {
                         cout<<"valve mode="<<mode<<" vmodes="<<vmodes.size();
                         int16_t add;
                         add = ((m_btn.down || m_btn.left) ? -1 : 1);                        
-                        mode = (mode+add) % vmodes.size(); 
-                        mode = (mode<0) ? vmodes.size()-abs(mode) : mode;
                         if( mode < vmodes.size() ) {
                             int16_t idsp=0, i=0;
                             do {
                                 string ss;
+                                mode = (mode+add) % vmodes.size(); 
+                                mode = (mode<0) ? vmodes.size()-abs(mode) : mode;
                                 vmodes[mode].getproperty( "visible", idsp );
                                 vmodes[mode].getproperty( "name", ss );   
                                 cout<<" askmode="<<mode<<" "<<ss<<" vis="<<idsp<<endl;
-                                mode = ( (!idsp) ? mode + add : mode ) % vmodes.size();
                             } while( !idsp && i++<vmodes.size() );
                         }
                         pg.p->settask( mode, false );

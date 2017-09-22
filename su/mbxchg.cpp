@@ -38,7 +38,7 @@ ccmd::ccmd(const ccmd &s)
     m_errCnt     = 0;
 }
 
-ccmd::ccmd(std::vector<int16_t> &v)
+ccmd::ccmd(std::vector<int32_t> &v)
 {
     m_enable     = v[0];
     m_intAddress = v[1]; 

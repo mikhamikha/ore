@@ -38,10 +38,10 @@ class ccmd {
     public:
         int16_t     m_enable;       // 0 - disabled, 1 - enabled, 2 - conditional write
         int16_t     m_intAddress;   // offset in m_pReadData [m_pWriteData]
-        int16_t     m_pollInt;      // poll interval in seconds
+        int32_t     m_pollInt;      // poll interval in seconds
         int16_t     m_node;         // slave address of device
         int16_t     m_func;         // function number
-        int16_t     m_devAddr;      // address in device for read (write) 
+        uint16_t    m_devAddr;      // address in device for read (write) 
         int16_t     m_count;        // registers number
         int16_t     m_swap;         // 0 - ABCD, 1 - CDAB, 2 - DCBA, 3 - BADC
         int16_t     m_num;
@@ -49,7 +49,7 @@ class ccmd {
         int16_t     m_errCnt;
         std::pair<uint16_t,std::string> m_err;
         ccmd(const ccmd &s);
-        ccmd(std::vector<int16_t> &v);
+        ccmd(std::vector<int32_t> &v);
         std::string ToString();
         cton       m_time;
         int16_t incErr() {

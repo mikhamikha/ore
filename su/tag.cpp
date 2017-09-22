@@ -377,7 +377,7 @@ int16_t readCfg() {
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
                 if(string(tool.name())=="commands") {
                     for(pugi::xml_node cmd = tool.first_child(); cmd; cmd = cmd.next_sibling()) {   
-                        std::vector<int16_t> result;
+                        std::vector<int32_t> result;
                         result.clear();
                         for(pugi::xml_attribute attr = cmd.first_attribute(); attr; attr = attr.next_attribute()) {
                             result.push_back(atoi(attr.value()));

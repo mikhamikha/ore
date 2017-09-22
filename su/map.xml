@@ -106,8 +106,10 @@
     <tag topic="/data" readData="66" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HS06</tag>
     <tag topic="/data" readData="51" writeData="5" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
     <tag topic="/data" readData="53" writeData="7" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7764" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag>
+    <!--tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7764" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag-->
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
+    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 1 Kv" eu="">KV11</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 2 Kv" eu="">KV21</tag>
     <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Расход 1" eu="м3/ч">FT11</tag>
@@ -126,28 +128,28 @@
 
 <algo>
     <alg num="1" type="1" desc="Расчет положения клапана 1" enable="1">
-        <args>FC11;ZV11;ZV12;CV11;CV12;MV11</args>
+        <args>MV11;FC11;ZV11;ZV12;CV11;CV12</args>
         <res>FV11</res>
     </alg>   
     <alg num="2" type="1" desc="Расчет положения клапана 2" enable="1">
-        <args>FC21;ZV21;ZV22;CV21;CV22;MV21</args>
+        <args>MV21;FC21;ZV21;ZV22;CV21;CV22</args>
         <res>FV21</res>
     </alg>   
-    <alg num="3" type="2" desc="Управление клапаном 1" enable="1" pulsewidth="1000" valve="1" pidtype="1" piddead="1" autotime="60">
-        <args>FC11;ZV11;ZV12;CV11;CV12;IT01;SV01;MV11;PT51</args>
+    <alg num="3" type="2" desc="Управление клапаном 1" enable="1" pulsewidth="1000" valve="1">
+        <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01;PT51</args>
         <res>FV11</res>
     </alg>
-    <alg num="4" type="2" desc="Управление клапаном 2" enable="1" pulsewidth="1000" valve="2" pidtype="1" piddead="1" autotime="60">
-        <args>FC21;ZV21;ZV22;CV21;CV22;IT01;SV01;MV21;PT61</args>
+    <alg num="4" type="2" desc="Управление клапаном 2" enable="1" pulsewidth="1000" valve="2">
+        <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01;PT61</args>
         <res>FV21</res>
     </alg>
     
     <alg num="5" type="3" desc="Калибровка клапана 1" enable="1">
-        <args>FC11;ZV11;ZV12;CV11;CV12;IT01;SV01;MV11</args>
+        <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01</args>
         <res>FV11</res>
     </alg>   
     <alg num="6" type="3" desc="Калибровка клапана 2" enable="1">
-        <args>FC21;ZV21;ZV22;CV21;CV22;IT01;SV01;MV21</args>
+        <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01</args>
         <res>FV21</res>
     </alg>   
    
@@ -171,9 +173,17 @@
         <args>PT21;PT31</args>
         <res>PT61</res>
     </alg>
-    <alg num="12" type="4" desc="Работа в автомате по времени" enable="1" autotime1="180" autotime2="180">
+    <alg num="12" type="4" desc="Работа клапанов в автомате по времени" enable="1" autotime1="180" autotime2="180">
         <args>MV11;MV21;ZV11;ZV21;ZV12;ZV22</args>
         <res>SV01;FV11;FV21</res>
+    </alg>
+    <alg num="13" type="5" desc="Работа клапана 1 в автомате по PID" enable="1" period="10000" pidtype="1" piddead="1">
+        <args>MV11;ZV11;ZV12;PT51</args>
+        <res>FV11</res>
+    </alg>
+    <alg num="14" type="5" desc="Работа клапана 2 в автомате по PID" enable="1" period="10000" pidtype="1" piddead="1">
+        <args>MV21;ZV21;ZV22;PT61</args>
+        <res>FV21</res>
     </alg>
 </algo>
 

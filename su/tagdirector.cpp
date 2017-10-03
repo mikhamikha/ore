@@ -167,7 +167,9 @@ int16_t ctagdirector::tasktag( std::string& na, std::string& va ) {
 //
 void ctagdirector::run() {
     taglist::iterator ih, iend;
+    unitlist::iterator iuh, iuend;   
     alglist::iterator iah, iaend;   
+    
     int16_t nRes, nRes1, nVal;
     uint8_t nQ;
     double  rVal;
@@ -203,13 +205,24 @@ void ctagdirector::run() {
             ++ih;
         }
 //        cout<<" T3 = "<<tt.getTT();
+        /*
+        iuh   = units.begin();
+        iuend = units.end();
+        while ( iuh != iuend ) {
+            cunit* p = *iuh;
+            if(p) p->solveIt();
+            ++iuh;
+        }
+        */
+        
         iah   = algos.begin();
         iaend = algos.end();
-        while ( iah != iaend ) {
+        while ( iah != iuend ) {
             calgo* p = *iah;
             if(p) p->solveIt();
             ++iah;
         }
+   
         tt.start(1000);
         usleep(_tag_prc_delay);
     }     

@@ -12,22 +12,6 @@
 #include <pugixml.hpp>
 
 #define m_pos       tag1
-/*
-#define m_ft1       tag1
-#define m_ft2       tag2
-
-#define m_fc        tag1
-#define m_lso       tag2
-#define m_lsc       tag3
-#define m_cmdo      tag4
-#define m_cmdc      tag5
-
-#define m_dt        tag1
-#define m_kv        tag2
-#define m_fv        tag3
-#define m_pt1       tag4
-#define m_pt2       tag5
-*/
 
 // объявление класса Параметр
 class ctag: public cproperties { 			// имя класса

@@ -126,29 +126,44 @@
     <tag topic="/data" readData="E" writeData="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 2" eu="кПа">PT61</tag>
 </tags>
 
+<units>
+    <unit name="V1" num="1" type="1" desc="Valve 1" kp="1" ki="0.1" kd="0" pulsewidth="2000">
+        <lso>ZV11</lso>
+        <lsc>ZV12</lsc>
+        <fc>FC11</fc>
+        <pos>FV11</pos>
+        <mode>MV11</mode>
+        <selected>SV01</selected>
+        <cmd1>CV11</cmd1>
+        <cmd2>CV12</cmd2>
+        <block1>IT01</block1>
+        <reg>PT51</reg>
+    </unit>
+</units>
+
 <algo>
-    <alg num="1" type="1" desc="Расчет положения клапана 1" enable="1">
+    <alg num="1" type="1" desc="Расчет положения клапана 1" enable="0">
         <args>MV11;FC11;ZV11;ZV12;CV11;CV12</args>
         <res>FV11</res>
     </alg>   
-    <alg num="2" type="1" desc="Расчет положения клапана 2" enable="1">
+    <alg num="2" type="1" desc="Расчет положения клапана 2" enable="0">
         <args>MV21;FC21;ZV21;ZV22;CV21;CV22</args>
         <res>FV21</res>
     </alg>   
-    <alg num="3" type="2" desc="Управление клапаном 1" enable="1" pulsewidth="1000" valve="1">
+    <alg num="3" type="2" desc="Управление клапаном 1" enable="0" pulsewidth="1000" valve="1">
         <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01;PT51</args>
         <res>FV11</res>
     </alg>
-    <alg num="4" type="2" desc="Управление клапаном 2" enable="1" pulsewidth="1000" valve="2">
+    <alg num="4" type="2" desc="Управление клапаном 2" enable="0" pulsewidth="1000" valve="2">
         <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01;PT61</args>
         <res>FV21</res>
     </alg>
     
-    <alg num="5" type="3" desc="Калибровка клапана 1" enable="1">
+    <alg num="5" type="3" desc="Калибровка клапана 1" enable="0">
         <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01</args>
         <res>FV11</res>
     </alg>   
-    <alg num="6" type="3" desc="Калибровка клапана 2" enable="1">
+    <alg num="6" type="3" desc="Калибровка клапана 2" enable="0">
         <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01</args>
         <res>FV21</res>
     </alg>   

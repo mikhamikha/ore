@@ -360,7 +360,7 @@ int16_t readCfg() {
     int16_t     nI=0, i, j;
     cmbxchg     *mb = NULL;  
     upcon       *up = NULL;
-    calgo       *alg= NULL;    
+    cunit       *uni= NULL;    
     
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file("map.xml");    
@@ -426,7 +426,28 @@ int16_t readCfg() {
             cout<<endl;   
         }
 
-        // парсим алгоритмы
+        // парсим объекты
+        tools = doc.select_nodes("//units/unit[@name='valve']");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            uni = new cunit();
+            units.push_back(uni);
+            
+            cout<<"parse units "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                uni->setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                uni->setproperty( tool.name(), tool.text().get() );
+                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+            }
+            cout<<endl;   
+        }
+       /*/ парсим алгоритмы
         int16_t cnt=0;
         tools = doc.select_nodes("//algo/alg");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
@@ -448,7 +469,7 @@ int16_t readCfg() {
             }
             cout<<endl;   
         }
-       
+       */
         // парсим описания дисплеев
         tools = doc.select_nodes("//displays/display[@num]");
         int16_t ndisp=0;

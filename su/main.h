@@ -12,7 +12,7 @@
 #include "mbxchg.h"
 #include "tag.h"
 #include "tagdirector.h"
-#include "algo.h"
+#include "unit.h"
 #include "upcon.h"
 #include "display.h"
 

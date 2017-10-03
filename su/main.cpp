@@ -115,6 +115,11 @@ int main(int argc, char* argv[]) {
             (*rconi)->join();
             delete *rconi;
         }
+        unitlist::reverse_iterator uni;          
+        for(uni=units.rbegin(); uni != units.rend(); ++uni) { 
+            delete *uni;
+        }
+   
         cout<<endl;
         pthread_mutexattr_destroy(&mutex_tag_attr);   // clean up the mutex attribute
         pthread_mutex_destroy(&mutex_tag);            // clean up the mutex itself

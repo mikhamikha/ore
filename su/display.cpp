@@ -1,4 +1,4 @@
-//#include "display.h"
+#include "display.h"
 #include "main.h"
 
 #define _dsp_width      256

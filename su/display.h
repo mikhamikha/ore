@@ -6,6 +6,11 @@
 #include <string>
 #include <vector>
 #include "main.h"
+#include "utils.h"
+#include "tag.h"
+#include "tagdirector.h"
+#include "unitdirector.h"
+#include "unit.h"
 #include <cwchar>
 
 const char      _invert_on  = '\x11';

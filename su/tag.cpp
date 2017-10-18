@@ -1,6 +1,9 @@
+#include "utils.h"
+#include "tag.h"
+#include "tagdirector.h"
 #include "main.h"
-//#include "tag.h"
-//#include "mbxchg.h"
+#include "upcon.h"
+#include "unit.h"
 
 #include <fstream>	
 #include <sstream>	
@@ -28,7 +31,7 @@ ctag::ctag() {
     setproperty( string("task"),        double(0)  );
     setproperty( string("quality"),     int32_t(0) );
     setproperty( string("timestamp"),   string("") );  
-    setproperty( string("deadband"),    double(0)  );
+    setproperty( string("dead"),        double(0)  );
     setproperty( string("sec"),         int32_t(0) );
     setproperty( string("msec"),        int32_t(0) );
     setproperty( string("mineng"),      double(0)  );   
@@ -63,7 +66,7 @@ void ctag::init() {
     string sOff; 
 //    cmbxchg     *mb = (cmbxchg *)p_conn;
 
-    if( getproperty("readdata", sOff)==0 ) {
+    if( getproperty("rAddr", sOff)==0 ) {
         if( !sOff.empty() && isdigit(sOff[0]) ) {
             vector<string> vc;
             int16_t nOff;
@@ -78,7 +81,7 @@ void ctag::init() {
             m_readOff = -2;
         }
     }
-    if( getproperty("writedata", sOff)==0 ) {
+    if( getproperty("wAddr", sOff)==0 ) {
         if( !sOff.empty() && isdigit(sOff[0]) ) m_writeOff = atoi(sOff.c_str());
         else /*if(sOff[0]=='E')*/ m_writeOff = -2;
     }
@@ -92,32 +95,31 @@ void ctag::init() {
     getproperty( "mineng",  m_minEng   ) | \
     getproperty( "maxeng",  m_maxEng   ) | \
     getproperty( "flttime", m_fltTime  ) | \
-    getproperty( "isbool",  m_isBool   ) | \
+    getproperty( "type",    m_type   ) | \
     getproperty( "hihi",    m_hihi     ) | \
     getproperty( "hi",      m_hi       ) | \
     getproperty( "lolo",    m_lolo     ) | \
     getproperty( "lo",      m_lo       ) | \
-    getproperty( "deadband",m_deadband ) | \
+    getproperty( "dead",    m_deadband ) | \
     getproperty( "name",    m_name     ) | \
-    getproperty( "topic",   m_topic    );
-//    m_isBool = (bt!=0);
-    getproperty( "mindev",  m_minDev   );
+    getproperty( "topic",   m_topic    ) | \
+    getproperty( "mindev",  m_minDev   ) | \
     getproperty( "maxdev",  m_maxDev   );
 
     int16_t nPortErrOff=0, nErrOff=0;
     
-    cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_isBool<<" deadband "<<m_deadband<< \
+    cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_type<<" deadband "<<m_deadband<< \
         " maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<< \
         " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo;
     
     if( (m_readOff >= 0 || m_writeOff >= 0) && /*mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS &&*/ \
-                getproperty("ErrPtr", nErrOff) == EXIT_SUCCESS ) {     // read errors of read modbus operations
+                getproperty("ErrPtr", nErrOff) == _exOK ) {     // read errors of read modbus operations
          if( (nErrOff + nPortErrOff) < cmbxchg::m_maxReadData ) m_connErr = nErrOff + nPortErrOff;
     }
 
     if( m_readOff == -2 ) {
         m_quality = OPC_QUALITY_GOOD;
-        if( m_name.find("LV") == 0 ) {              // if tageter (valve position mm) must be evaluate from other
+        if( m_name.find("LV") == 0 ) {              // if tag (valve position mm) must be evaluate from other
             string  s1;
             int16_t num;
             
@@ -126,18 +128,10 @@ void ctag::init() {
             m_pos = tagdir.gettag( s1.c_str() );         // valve position in percent
             cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
         }
-        if( m_name.substr(0,2)=="FV" ) {
-            setproperty( "configured", 1 );
-            setproperty( "task_delta", double(1) );            
-            setproperty( "max_task_delta", double(10) );           
-            if( m_name.size()>3 && isdigit(m_name[2]) ) setproperty( "valve", m_name.substr(2,1).c_str() ); 
-            cout<<" configured";
-/*            double d;
-            getproperty( "kp", d );
-            cout << "Init tag "<< m_name<< " kp = " << d << endl; */
-        }
     }
     cout<<endl;
+    double rval;
+    if( getproperty("default", rval)==_exOK ) { setvalue(rval); } 
     // подписка на команды
     int16_t nu;
     if( (nu=getsubcon())>=0 && nu<upc.size() ) {
@@ -147,7 +141,7 @@ void ctag::init() {
 }
 
 int16_t ctag::getraw() {
-    int16_t     rc  = EXIT_SUCCESS;
+    int16_t     rc  = _exOK;
 //    cmbxchg     *mb = (cmbxchg *)p_conn;
 
     m_raw_old = m_raw;
@@ -211,7 +205,7 @@ int16_t ctag::getvalue(double &rOut) {
     int64_t     nctt;
     int64_t     nD;
     int64_t     nodt;             // time on previous step
-    int16_t     rc=EXIT_FAILURE;
+    int16_t     rc=_exFail;
     double      rsim_en = 0, rsim_v;
 //    cmbxchg     *mb = (cmbxchg *)p_conn;
 
@@ -226,19 +220,19 @@ int16_t ctag::getvalue(double &rOut) {
 
 //    if( m_name.substr(0,4)=="PT31")  cout<<to_text()<<endl;
     if( (rc = getproperty("simen", rsim_en) | \
-            getproperty("simva", rsim_v)) == EXIT_SUCCESS && rsim_en != 0 ) {   // simulation mode switched ON 
+            getproperty("simva", rsim_v)) == _exOK && rsim_en != 0 ) {   // simulation mode switched ON 
         m_quality_old = m_quality;
         rVal  = rsim_v;
         rOut  = rsim_v;
         m_quality = OPC_QUALITY_GOOD;
-        rc = EXIT_SUCCESS;
+        rc = _exOK;
     }
     else { 
 //       if( m_name.find("FV") ==std::string::npos ) 
            rc = getraw();
     }
 
-    if( rc==EXIT_SUCCESS ) {
+    if( rc==_exOK ) {
         if( rsim_en == 0 ) {                                                        // simulation mode switched OFF
             if( m_maxRaw!=m_minRaw && m_maxEng!=m_minEng ) {
                 rVal = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_raw-m_minRaw)+m_minEng;
@@ -253,8 +247,8 @@ int16_t ctag::getvalue(double &rOut) {
                 
                 nTime = m_fltTime*1000;
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-                if(m_isBool==1) rVal = (rVal >= m_hihi);                            // if it is a discret tageter
-                if(m_isBool==2) rVal = (rVal < m_hihi);                             // if it is a discret tageter & inverse
+                if(m_type==1) rVal = (rVal >= m_hihi);                              // if it is a discret tageter
+                if(m_type==2) rVal = (rVal < m_hihi);                               // if it is a discret tageter & inverse
                 rOut = rVal;                                                        // current value
             }
             else {
@@ -263,14 +257,14 @@ int16_t ctag::getvalue(double &rOut) {
             }
         }
       
-//        if( m_name.substr(0,4)=="MV11") \
+/*        if( m_name.substr(0,4)=="MV11") \
             cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
                 <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
                 <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
                 <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr \
-                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<endl;
+                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<endl;*/
 
-        //      save value if it (or quality) was changes
+        //      save value if it (or quality or timestamp) was changes
         if( fabs(rVal-m_rvalue)>=m_deadband || m_quality_old != m_quality || nD>60*_million ) {
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
@@ -292,7 +286,7 @@ int16_t ctag::getvalue(double &rOut) {
 }
 
 int16_t ctag::setvalue( double rin=0 ) {
-    int16_t rc = EXIT_FAILURE;
+    int16_t rc = _exFail;
 //    cmbxchg *mb;
     string  sOff;
     int16_t nOff;
@@ -312,13 +306,14 @@ int16_t ctag::setvalue( double rin=0 ) {
         m_raw = rin;
         m_quality = OPC_QUALITY_GOOD;
         settask( rin, false );
+        rc = _exOK;   
     }
     
     return rc;
 }
 
 int16_t ctag::settask(double rin, bool fgo) {
-    int16_t rc = EXIT_SUCCESS;
+    int16_t rc = _exOK;
     double  rVal = rin;
    
    cout<<endl<<"settask "<<m_name<<" task=="<<rVal; 
@@ -352,178 +347,6 @@ int16_t ctag::settask(double rin, bool fgo) {
     return rc;
 }
 
-//  
-//	Чтение и парсинг конфигурационного файла
-//
-int16_t readCfg() {
-	int16_t     rc = EXIT_FAILURE;
-    int16_t     nI=0, i, j;
-    cmbxchg     *mb = NULL;  
-    upcon       *up = NULL;
-    cunit       *uni= NULL;    
-    
-    pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file("map.xml");    
-    if(result) {                    // если формат файла корректен
-        // парсим модбас порты и команды
-        pugi::xpath_node_set tools = doc.select_nodes("//port[@name='modbusport']");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            mb = new cmbxchg();
-            conn.push_back(mb);
-            mb->m_id = atoi(it->node().attribute("num").value());
-            
-            cout<<"port num="<<mb->m_id<<endl;
-
-            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                if(string(tool.name())=="commands") {
-                    for(pugi::xml_node cmd = tool.first_child(); cmd; cmd = cmd.next_sibling()) {   
-                        std::vector<int32_t> result;
-                        result.clear();
-                        for(pugi::xml_attribute attr = cmd.first_attribute(); attr; attr = attr.next_attribute()) {
-                            result.push_back(atoi(attr.value()));
-                        }
-                        ccmd cmd(result);
-//                      cout<<"parse cmds count = "<<result.size()<<endl;
-                        mb->mbCommandAdd(cmd);
-                    }
-                }
-                else {
-                    mb->setproperty( tool.name(), tool.text().get() );
-                }
-            }
-        }
-        string spar, sval;
-        // парсим тэги
-        tools = doc.select_nodes("//tags/tag");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            ctag  p;
-            string  s = it->node().text().get();
-            cout<<"Tag "<<s;
-            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
-                spar = attr.name();
-                sval = attr.value();
-                p.setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
-            } 
-            cout<<endl;
-            p.setproperty("name", s);
-            
-            tagdir.addtag( s, p );
-        }
-
-        // парсим соединения наверх
-        tools = doc.select_nodes("//uplinks/up");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            up = new upcon();
-            upc.push_back(up);
-            up->m_id = atoi(it->node().attribute("num").value());   
-            
-            cout<<"parse upcon num="<<up->m_id<<endl;
-            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                up->setproperty( tool.name(), tool.text().get() );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
-            }
-            cout<<endl;   
-        }
-
-        // парсим объекты
-        tools = doc.select_nodes("//units/unit[@name='valve']");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            uni = new cunit();
-            units.push_back(uni);
-            
-            cout<<"parse units "<<endl;
-           
-            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
-                spar = attr.name();
-                sval = attr.value();
-                uni->setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
-            } 
-            
-            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                uni->setproperty( tool.name(), tool.text().get() );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
-            }
-            cout<<endl;   
-        }
-       /*/ парсим алгоритмы
-        int16_t cnt=0;
-        tools = doc.select_nodes("//algo/alg");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            alg = new calgo();
-            algos.push_back(alg);
-
-            cout<<"parse alg "<<++cnt<<endl;
-           
-            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
-                spar = attr.name();
-                sval = attr.value();
-                alg->setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
-            } 
-            
-            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                alg->setproperty( tool.name(), tool.text().get() );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
-            }
-            cout<<endl;   
-        }
-       */
-        // парсим описания дисплеев
-        tools = doc.select_nodes("//displays/display[@num]");
-        int16_t ndisp=0;
-        cout<<"parse disp="<<ndisp<<" size="<<tools.size()<<endl;
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) { 
-            for(pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
-                spar = attr.name();
-                sval = attr.value();
-                cout<<" "<<spar<<"="<<sval;
-                dsp.setproperty( ndisp, spar, sval );
-            } 
-            cout<<endl;
-            pugi::xml_node nod = it->node().child("lines");
-            for(pugi::xml_node tool = nod.first_child(); tool; tool = tool.next_sibling()) {        
-               int16_t nrow = atoi(tool.text().get())-1;
-               cout<<"row="<<nrow;
-               for(pugi::xml_attribute attr = tool.first_attribute(); attr; attr = attr.next_attribute()) {
-                    spar = attr.name();
-                    sval = attr.value();
-                    if(nrow>=0) {
-                        dsp.definedspline( ndisp, nrow, spar.c_str(), sval );
-                        cout<<" "<<spar<<"="<<sval;   
-                    }
-                }               
-                cout<<endl;
-           }   
-            ndisp++;
-        }
-        
-        // парсим режимы клапана
-        tools = doc.select_nodes("//valve/mode");
-        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            cproperties prp;
-
-            cout<<"parse valve mode "<<endl;
-           
-            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
-                spar = attr.name();
-                sval = attr.value();
-                prp.setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
-            } 
-            cout<<endl;   
-            vmodes.push_back(prp);
-        }
-       
-        rc = EXIT_SUCCESS;
-    }
-    else {
-        cout << "Cfg load error: " << result.description() << endl;
-    }
-    
-    return rc;
-}
 // 
 // получить текстовое описание по значению
 //

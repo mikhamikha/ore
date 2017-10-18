@@ -10,14 +10,13 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include "main.h"
-#include <algorithm>
 #include <signal.h>
 #include <memory.h>
 
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "tagdirector.h"
 //
 // add paho 
 //

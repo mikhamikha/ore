@@ -8,8 +8,8 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
-#include "main.h"
-#include <pugixml.hpp>
+#include "mbxchg.h"
+#include "utils.h"
 
 #define m_pos       tag1
 
@@ -42,7 +42,7 @@ protected: 				// спецификатор доступа protected
     double      m_minRaw;
     double      m_maxRaw;
     int32_t     m_fltTime;
-    int16_t     m_isBool;
+    int16_t     m_type;
     double      m_hihi;
     double      m_hi;
     double      m_lo;
@@ -151,7 +151,7 @@ public: 				// спецификатор доступа public
     bool    acceptnewvalue() { m_valueupdated = false; }
     int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
     int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }
-    bool    isbool() { return m_isBool; }
+    bool    isbool() { return (m_type>0 && m_type<2); }
 
     int16_t rawValveValueEvaluate();
     int16_t flowEvaluate(); 

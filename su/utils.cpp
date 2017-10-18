@@ -1,4 +1,12 @@
 #include "utils.h"
+#include "upcon.h"
+#include "unitdirector.h"
+#include "tagdirector.h"
+#include "mbxchg.h"
+#include "display.h"
+#include "utils.h"
+#include "algo.h"
+
 
 using namespace std;
 
@@ -141,4 +149,178 @@ int16_t strsplit(string& s, char delim, vector<string>& vec) {
     return count;
 }
 
+//  
+//	Чтение и парсинг конфигурационного файла
+//
+int16_t readCfg() {
+	int16_t     rc = _exFail;
+    int16_t     nI=0, i, j;
+    cmbxchg     *mb = NULL;  
+    upcon       *up = NULL;
+    cunit       *uni= NULL;    
+    
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file("map.xml");    
+    if(result) {                    // если формат файла корректен
+        // парсим модбас порты и команды
+        pugi::xpath_node_set tools = doc.select_nodes("//port[@name='modbusport']");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            mb = new cmbxchg();
+            conn.push_back(mb);
+            mb->m_id = atoi(it->node().attribute("num").value());
+            
+            cout<<"port num="<<mb->m_id<<endl;
+
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                if(string(tool.name())=="commands") {
+                    for(pugi::xml_node cmd = tool.first_child(); cmd; cmd = cmd.next_sibling()) {   
+                        std::vector<int32_t> result;
+                        result.clear();
+                        for(pugi::xml_attribute attr = cmd.first_attribute(); attr; attr = attr.next_attribute()) {
+                            result.push_back(atoi(attr.value()));
+                        }
+                        ccmd cmd(result);
+//                      cout<<"parse cmds count = "<<result.size()<<endl;
+                        mb->mbCommandAdd(cmd);
+                    }
+                }
+                else {
+                    mb->setproperty( tool.name(), tool.text().get() );
+                }
+            }
+        }
+        string spar, sval;
+        // парсим тэги
+        tools = doc.select_nodes("//tags/tag");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            ctag  p;
+            string  s = it->node().text().get();
+            cout<<"Tag "<<s;
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                p.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;
+            p.setproperty("name", s);
+            
+            tagdir.addtag( s, p );
+        }
+
+        // парсим соединения наверх
+        tools = doc.select_nodes("//uplinks/up");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            up = new upcon();
+            upc.push_back(up);
+            up->m_id = atoi(it->node().attribute("num").value());   
+            
+            cout<<"parse upcon num="<<up->m_id<<endl;
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                up->setproperty( tool.name(), tool.text().get() );
+                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+            }
+            cout<<endl;   
+        }
+
+        // парсим объекты
+        tools = doc.select_nodes("//units/unit[@name='valve']");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cunit uni;// = new cunit();
+            //units.push_back(uni);
+            
+            cout<<"parse units "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                uni.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                uni.setproperty( tool.name(), tool.text().get() );
+                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+            }
+            cout<<endl; 
+            string s;
+            if( uni.getproperty( "name", s )==_exOK && !s.empty() ) unitdir.addunit( s, uni );
+        }
+       // парсим алгоритмы
+        int16_t cnt=0;
+        tools = doc.select_nodes("//algo/alg");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            calgo* alg = new calgo();
+            algos.push_back(alg);
+
+            cout<<"parse alg "<<++cnt<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                alg->setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            
+            for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
+                alg->setproperty( tool.name(), tool.text().get() );
+                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+            }
+            cout<<endl;   
+        }
+        //
+        // парсим описания дисплеев
+        tools = doc.select_nodes("//displays/display[@num]");
+        int16_t ndisp=0;
+        cout<<"parse disp="<<ndisp<<" size="<<tools.size()<<endl;
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) { 
+            for(pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                cout<<" "<<spar<<"="<<sval;
+                dsp.setproperty( ndisp, spar, sval );
+            } 
+            cout<<endl;
+            pugi::xml_node nod = it->node().child("lines");
+            for(pugi::xml_node tool = nod.first_child(); tool; tool = tool.next_sibling()) {        
+               int16_t nrow = atoi(tool.text().get())-1;
+               cout<<"row="<<nrow;
+               for(pugi::xml_attribute attr = tool.first_attribute(); attr; attr = attr.next_attribute()) {
+                    spar = attr.name();
+                    sval = attr.value();
+                    if(nrow>=0) {
+                        dsp.definedspline( ndisp, nrow, spar.c_str(), sval );
+                        cout<<" "<<spar<<"="<<sval;   
+                    }
+                }               
+                cout<<endl;
+           }   
+            ndisp++;
+        }
+        
+        // парсим режимы клапана
+        tools = doc.select_nodes("//valve/mode");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cproperties prp;
+
+            cout<<"parse valve mode "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                prp.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;   
+            vmodes.push_back(prp);
+        }
+       
+        rc = _exOK;
+    }
+    else {
+        cout << "Cfg load error: " << result.description() << endl;
+    }
+    
+    return rc;
+}
 

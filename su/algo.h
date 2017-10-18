@@ -11,44 +11,27 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "main.h"
+#include "utils.h"
+#include "tag.h"
+#include "tagdirector.h"
+#include "unit.h"
+#include "unitdirector.h"
 
 #define _loc_data_buffer_size   10
 #define _valve_mode_amount      8 
 
 enum algtype {
-    _valveEval = 1,                 // Расчет положения клапана
-    _valveProcessing = 2,           // Управление клапаном   
-    _valveCalibrate,                // Калибровка клапана
-    _timeValveControl,              // Управление клапаном по времени
-    _pidValveControl,               // Управление клапаном по ПИД
-    _floweval=10,                   // Расчет расхода по перепаду давления на сечении клапана 
-    _summ=11,                       // Суммирование входных аргументов и запись в выходной
-    _sub=12                         // Вычитание входных аргументов и запись в выходной
-};
-
-enum motionstate {
-    _no_motion = 0,                 // клапан бездвижен
-    _open   = 1,                    // команда открытия
-    _close,                         // команда закрытия
-    _opening = 11,                  // идет открытие
-    _closing                        // идет закрытие
-};
-
-enum modecontrol {
-    _not_proc = 0,                  // отключен
-    _manual,                        // ручное управление
-    _auto_pid,                      // ПИД 
-    _auto_time,                     // автоматический по времени
-    _calibrate,                     // режим калибровки
-    _manual_pulse_open,//=11,       // импульс на открытие
-    _manual_pulse_close,            // импульс на закрытие
-};
-
-enum valvenum {
-    _no_valve=0,
-    _first_v,
-    _second_v,
-    _mask_v
+    _unitProcessing = 1,   // Управление механизмом   
+    /*
+    _valveEval = 1,        // Расчет положения клапана
+    _valveProcessing = 2,  // Управление клапаном   
+    _valveCalibrate,       // Калибровка клапана
+    _timeValveControl,     // Управление клапаном по времени
+    _pidValveControl,      // Управление клапаном по ПИД
+    */
+    _floweval=10,          // Расчет расхода по перепаду давления на сечении клапана 
+    _summ=11,              // Суммирование входных аргументов и запись в выходной
+    _sub=12                // Вычитание входных аргументов и запись в выходной
 };
 
 enum state_algo {
@@ -59,29 +42,33 @@ enum state_algo {
 
 typedef std::vector <cproperties> vlvmode;
 //typedef std::vector <cproperties> arglist;
-typedef std::vector<ctag*> tagvector;
+typedef std::vector<cunit*> unitvector;
 
 // объявление класса Алгоритм
 class calgo: public cproperties { 			// имя класса
-    tagvector args;
-    tagvector res;
-    int16_t     nType;
+    tagvector   m_args; // вычислить адреса объектов
+    tagvector   m_res;
+    unitvector  m_units;
+    int16_t     m_nType;
+    int16_t     m_nUnits;   
 //    double      rdata[_loc_data_buffer_size];
-    int16_t     fInit; 
+    int16_t     m_fInit; 
     cton        m_twait;     
     cton        m_tcmd;
     
     public:
-    calgo() { fInit = 0; }  
+    calgo() { m_fInit=0; m_nUnits=0; }  
     int16_t init();
     int16_t solveIt( void );
-    int16_t argsize( void ) { return args.size(); }
-    int16_t ressize( void ) { return res.size(); }
+    int16_t argsize( void ) { return m_args.size(); }
+    int16_t ressize( void ) { return m_res.size(); }
 };
 
 typedef std::vector <calgo*> alglist;
 
 extern alglist algos;
-extern vlvmode vmodes;
+
+uint8_t getqual(ctag* p);// Получить качество тэга
+
 
 #endif

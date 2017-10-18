@@ -10,8 +10,9 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include "main.h"
+#include "thread.h"
 #include <errno.h>
+#include "utils.h"
 
 //#define EXIT_SUCCESS    0
 //#define EXIT_FAILURE    1

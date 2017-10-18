@@ -76,58 +76,61 @@
 </connections>
 
 <tags>
-    <tag topic="/data" readData="0" writeData="" minRaw="-32767" maxRaw="32768" minEng="-100" maxEng="60" fltTime="0" deadband="0.001" hihi="2.0" hi="1.5" lo="0" lolo="0" isBool="0" errPtr="400" pub="1" sub="0" desc="Ток актуатора" eu="A">IT01</tag>
-    <tag topic="/data" readData="1" writeData="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" deadband="1" hihi="0.2" hi="0" lo="0" lolo="0" isBool="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 открыт" eu="">ZV11</tag>
-    <tag topic="/data" readData="2" writeData="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" deadband="1" hihi="0.2" hi="0" lo="0" lolo="0" isBool="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 закрыт" eu="">ZV12</tag>
-    <tag topic="/data" readData="3" writeData="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" deadband="1" hihi="0.2" hi="0" lo="0" lolo="0" isBool="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 открыт" eu="">ZV21</tag>
-    <tag topic="/data" readData="4" writeData="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" deadband="1" hihi="0.2" hi="0" lo="0" lolo="0" isBool="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 закрыт" eu="">ZV22</tag>
-    <tag topic="/data" readData="16" writeData="0" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="401" pub="1" sub="1" desc="valve 1 open command" eu="">CV11</tag>
-    <tag topic="/data" readData="17" writeData="1" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="401" pub="1" sub="1" desc="valve 1 close command" eu="">CV12</tag>
-    <tag topic="/data" readData="55" writeData="3" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="408" pub="1" sub="1" desc="valve 2 open command" eu="">CV21</tag>
-    <tag topic="/data" readData="56" writeData="4" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="408" pub="1" sub="1" desc="valve 2 close command" eu="">CV22</tag>
-    <tag topic="/data" readData="20" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 1 response time" eu="">CT11</tag>
-    <tag topic="/data" readData="21" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.6" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 1" eu="МПа">PT11</tag>
-    <tag topic="/data" readData="23" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 1" eu="oC">TT11</tag>
-    <tag topic="/data" readData="29" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 1" eu="">SN11</tag>
-    <tag topic="/data" readData="30" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 2 response time" eu="">CT21</tag>
-    <tag topic="/data" readData="31" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.5" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление 2" eu="МПа">PT21</tag>
-    <tag topic="/data" readData="33" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 2" eu="oC">TT21</tag>
-    <tag topic="/data" readData="39" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 2" eu="">SN21</tag>
-    <tag topic="/data" readData="40" writeData="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="pressure 3 response time" eu="">CT31</tag>
-    <tag topic="/data" readData="41" writeData="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" deadband="0.001" hihi="0" hi="0" lo="0" lolo="3.4" isBool="0" errPtr="405" pub="1" sub="1" desc="Давление ЭЦН" eu="МПа">PT31</tag>
-    <tag topic="/data" readData="43" writeData="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" deadband="0.1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="0" sub="1" desc="Температура 3" eu="oC">TT31</tag>
-    <tag topic="/data" readData="49" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 3" eu="">SN31</tag>
-    <tag topic="/data" readData="50" writeData="" minRaw="0" maxRaw="1" minEng="0" maxEng="2" fltTime="0" deadband="1" hihi="1" hi="0" lo="0" lolo="0" isBool="1" errPtr="456" pub="1" sub="1" desc="door switch" eu="">GS01</tag>
-    <tag topic="/data" readData="61" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="esc button" eu="">HS01</tag>
-    <tag topic="/data" readData="62" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="left button" eu="">HS02</tag>
-    <tag topic="/data" readData="63" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="right button" eu="">HS03</tag>
-    <tag topic="/data" readData="64" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="enter button" eu="">HS04</tag>
-    <tag topic="/data" readData="65" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="down button" eu="">HS05</tag>
-    <tag topic="/data" readData="66" writeData="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HS06</tag>
-    <tag topic="/data" readData="51" writeData="5" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
-    <tag topic="/data" readData="53" writeData="7" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag>
-    <!--tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="7764" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag-->
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%" kp="1" ki="0.1" kd="0">FV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" deadband="0.1" hihi="100" hi="100" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%" kp="1" ki="0.1" kd="0">FV21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 1 Kv" eu="">KV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-100" maxRaw="100" minEng="-100" maxEng="100" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="0" pub="1" sub="1" desc="valve 2 Kv" eu="">KV21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Расход 1" eu="м3/ч">FT11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Расход 2" eu="м3/ч">FT21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Расход 1+2" eu="м3/ч">FT31</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="2000" minEng="0" maxEng="2000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Плотность 1" eu="кг/м3">DT11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="2000" minEng="0" maxEng="2000" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Плотность 2" eu="кг/м3">DT21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="мм">LV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="мм">LV21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Выбор клапана " eu="">SV01</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" deadband="1" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 1" eu="кПа">PT51</tag>
-    <tag topic="/data" readData="E" writeData="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" deadband="0.001" hihi="0" hi="0" lo="0" lolo="0" isBool="0" errPtr="" pub="1" sub="1" desc="Перепад давления 2" eu="кПа">PT61</tag>
+    <!-- 1 - нижний клапан; 2 - верхний клапан -->
+    <tag topic="/data" rAddr="0" wAddr="" minRaw="-32767" maxRaw="32768" minEng="-100" maxEng="60" fltTime="0" dead="0.001" hihi="2.0" hi="1.5" lo="0" lolo="0" type="0" errPtr="400" pub="1" sub="0" desc="Ток актуатора" eu="A">IT01</tag>
+    <tag topic="/data" rAddr="1" wAddr="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 открыт" eu="">ZV11</tag>
+    <tag topic="/data" rAddr="2" wAddr="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 закрыт" eu="">ZV12</tag>
+    <tag topic="/data" rAddr="3" wAddr="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 открыт" eu="">ZV21</tag>
+    <tag topic="/data" rAddr="4" wAddr="" minRaw="-32767" maxRaw="32768" minEng="-10" maxEng="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 закрыт" eu="">ZV22</tag>
+    <tag topic="/data" rAddr="16" wAddr="0" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 open command" eu="">CV11</tag>
+    <tag topic="/data" rAddr="17" wAddr="1" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 close command" eu="">CV12</tag>
+    <tag topic="/data" rAddr="55" wAddr="3" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="408" pub="1" sub="1" desc="valve 2 open command" eu="">CV21</tag>
+    <tag topic="/data" rAddr="56" wAddr="4" minRaw="0" maxRaw="1" minEng="0" maxEng="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="408" pub="1" sub="1" desc="valve 2 close command" eu="">CV22</tag>
+    <tag topic="/data" rAddr="20" wAddr="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="pressure 1 response time" eu="">CT11</tag>
+    <tag topic="/data" rAddr="21" wAddr="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" dead="0.001" hihi="0" hi="0" lo="0" lolo="3.6" type="0" errPtr="405" pub="1" sub="1" desc="Давление 1" eu="МПа">PT11</tag>
+    <tag topic="/data" rAddr="23" wAddr="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" dead="0.1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="0" sub="1" desc="Температура 1" eu="oC">TT11</tag>
+    <tag topic="/data" rAddr="29" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 1" eu="">SN11</tag>
+    <tag topic="/data" rAddr="30" wAddr="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="pressure 2 response time" eu="">CT21</tag>
+    <tag topic="/data" rAddr="31" wAddr="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" dead="0.001" hihi="0" hi="0" lo="0" lolo="3.5" type="0" errPtr="405" pub="1" sub="1" desc="Давление 2" eu="МПа">PT21</tag>
+    <tag topic="/data" rAddr="33" wAddr="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" dead="0.1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="0" sub="1" desc="Температура 2" eu="oC">TT21</tag>
+    <tag topic="/data" rAddr="39" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 2" eu="">SN21</tag>
+    <tag topic="/data" rAddr="40" wAddr="" minRaw="0" maxRaw="65535" minEng="0" maxEng="65535" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="pressure 3 response time" eu="">CT31</tag>
+    <tag topic="/data" rAddr="41" wAddr="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" dead="0.001" hihi="0" hi="0" lo="0" lolo="3.4" type="0" errPtr="405" pub="1" sub="1" desc="Давление ЭЦН" eu="МПа">PT31</tag>
+    <tag topic="/data" rAddr="43" wAddr="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" dead="0.1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="0" sub="1" desc="Температура 3" eu="oC">TT31</tag>
+    <tag topic="/data" rAddr="49" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 3" eu="">SN31</tag>
+    <tag topic="/data" rAddr="50" wAddr="" minRaw="0" maxRaw="1" minEng="0" maxEng="2" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="456" pub="1" sub="1" desc="door switch" eu="">GS01</tag>
+    <tag topic="/data" rAddr="61" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="esc button" eu="">HS01</tag>
+    <tag topic="/data" rAddr="62" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="left button" eu="">HS02</tag>
+    <tag topic="/data" rAddr="63" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="right button" eu="">HS03</tag>
+    <tag topic="/data" rAddr="64" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="enter button" eu="">HS04</tag>
+    <tag topic="/data" rAddr="65" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="down button" eu="">HS05</tag>
+    <tag topic="/data" rAddr="66" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HS06</tag>
+    <tag topic="/data" rAddr="51" wAddr="5" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
+    <tag topic="/data" rAddr="53" wAddr="7" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag>
+ <!--tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%">FV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="7764" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%">FV21</tag-->
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%">FV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%">FV21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="0" pub="1" sub="1" desc="valve 1 Kv" eu="">KV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="100" minEng="0" maxEng="100" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="0" pub="1" sub="1" desc="valve 2 Kv" eu="">KV21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 1" eu="м3/ч">FT11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 2" eu="м3/ч">FT21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="10000" minEng="0" maxEng="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 1+2" eu="м3/ч">FT31</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="2000" minEng="0" maxEng="2000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Плотность 1" eu="кг/м3">DT11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="2000" minEng="0" maxEng="2000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Плотность 2" eu="кг/м3">DT21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="мм">LV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="72" minEng="0" maxEng="72" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="мм">LV21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Выбор клапана " eu="">SV01</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления Н" eu="кПа">PD11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления В" eu="кПа">PD21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="1000000" minEng="0" maxEng="1000000" default="180" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы Н" eu="сек">KC11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="1000000" minEng="0" maxEng="1000000" default="180" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы В" eu="сек">KC21</tag>   
 </tags>
 
 <units>
-    <unit name="V1" num="1" type="1" desc="Valve 1" kp="1" ki="0.1" kd="0" pulsewidth="2000">
+    <unit name="V01" num="1" type="1" desc="Клапан нижний " pulsewidth="2000" pid_type="1" pid_dead="1" period="10000" kp="1" ki="0.1" kd="0">
         <lso>ZV11</lso>
         <lsc>ZV12</lsc>
         <fc>FC11</fc>
@@ -137,11 +140,29 @@
         <cmd1>CV11</cmd1>
         <cmd2>CV12</cmd2>
         <block1>IT01</block1>
-        <reg>PT51</reg>
+        <reg>PD11</reg>
+    </unit>
+    <unit name="V02" num="2" type="1" desc="Клапан верхний" pulsewidth="2000" pid_type="1" pid_dead="1" period="10000" kp="1" ki="0.1" kd="0">
+        <lso>ZV21</lso>
+        <lsc>ZV22</lsc>
+        <fc>FC21</fc>
+        <pos>FV21</pos>
+        <mode>MV21</mode>
+        <selected>SV01</selected>
+        <cmd1>CV21</cmd1>
+        <cmd2>CV22</cmd2>
+        <block1>IT01</block1>
+        <reg>PD21</reg>
     </unit>
 </units>
 
 <algo>
+    <alg num="1" type="1" desc="Управление работой клапанов" enable="1" number="2">
+        <equipments>V01;V02</equipments>
+        <args>PD11;PD21;KC11;KC21</args>
+        <res>SV01</res>
+    </alg>
+
     <alg num="1" type="1" desc="Расчет положения клапана 1" enable="0">
         <args>MV11;FC11;ZV11;ZV12;CV11;CV12</args>
         <res>FV11</res>
@@ -150,24 +171,6 @@
         <args>MV21;FC21;ZV21;ZV22;CV21;CV22</args>
         <res>FV21</res>
     </alg>   
-    <alg num="3" type="2" desc="Управление клапаном 1" enable="0" pulsewidth="1000" valve="1">
-        <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01;PT51</args>
-        <res>FV11</res>
-    </alg>
-    <alg num="4" type="2" desc="Управление клапаном 2" enable="0" pulsewidth="1000" valve="2">
-        <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01;PT61</args>
-        <res>FV21</res>
-    </alg>
-    
-    <alg num="5" type="3" desc="Калибровка клапана 1" enable="0">
-        <args>MV11;SV01;FC11;ZV11;ZV12;CV11;CV12;IT01</args>
-        <res>FV11</res>
-    </alg>   
-    <alg num="6" type="3" desc="Калибровка клапана 2" enable="0">
-        <args>MV21;SV01;FC21;ZV21;ZV22;CV21;CV22;IT01</args>
-        <res>FV21</res>
-    </alg>   
-   
     <alg num="7" type="10" desc="Расчет расхода по перепаду давления на сечении клапана 1" enable="1">
         <args>LV11;PT11;PT31;DT11;KV11</args>
         <res>FT11</res>
@@ -188,15 +191,7 @@
         <args>PT21;PT31</args>
         <res>PT61</res>
     </alg>
-    <alg num="12" type="4" desc="Работа клапанов в автомате по времени" enable="1" autotime1="180" autotime2="180">
-        <args>MV11;MV21;ZV11;ZV21;ZV12;ZV22</args>
-        <res>SV01;FV11;FV21</res>
-    </alg>
-    <alg num="13" type="5" desc="Работа клапана 1 в автомате по PID" enable="1" period="10000" pidtype="1" piddead="1">
-        <args>MV11;ZV11;ZV12;PT51</args>
-        <res>FV11</res>
-    </alg>
-    <alg num="14" type="5" desc="Работа клапана 2 в автомате по PID" enable="1" period="10000" pidtype="1" piddead="1">
+    <alg num="14" type="5" desc="Работа клапана 2 в автомате по PID" enable="1">
         <args>MV21;ZV21;ZV22;PT61</args>
         <res>FV21</res>
     </alg>
@@ -223,7 +218,6 @@
             <line tag="FV11" format="{desc,18} {value,5.1} {eu}" task="11">2</line>
             <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
             <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PT31" format="{desc,18} {lolo,5.3} {eu}" task="0">5</line>
             <line tag="PT51" format="{desc,18} {value,5.1} {eu}" task="0">6</line>
             <line tag="FT11" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
             <line tag="TT11" format="{desc,18} {value,5.1} {eu}" task="0">8</line>
@@ -236,7 +230,7 @@
             <line tag="FV21" format="{desc,18} {value,5.1} {eu}" task="12">2</line>
             <line tag="PT21" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
             <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PT31" format="{desc,18} {lolo,5.3} {eu}" task="0">5</line>
+            
             <line tag="PT61" format="{desc,18} {value,5.3} {eu}" task="0">6</line>
             <line tag="FT21" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
             <line tag="TT21" format="{desc,18} {value,5.1} {eu}" task="0">8</line>
@@ -269,11 +263,11 @@
 <valve>
     <mode num="0" name="off"        display="ОТКЛ"      visible="1"/>
     <mode num="1" name="manual"     display="РУЧН"      visible="1"/>
-    <mode num="2" name="autopress"  display="ПЕРЕПАД"   visible="1"/>
+    <mode num="2" name="autopress"  display="ПАРАМЕТР"  visible="1"/>
     <mode num="3" name="autotime"   display="ВРЕМЯ"     visible="1"/>
     <mode num="4" name="calibrate"  display="КАЛИБР."   visible="1"/>
-    <mode num="5" name="pulseopen"  display="ПУЛЬС ОТК" visible="0"/>
-    <mode num="6" name="pulseclose" display="ПУЛЬС ЗАК" visible="0"/>
+    <mode num="5" name="pulseopen"  display="ИМПУЛЬС ОТК" visible="0"/>
+    <mode num="6" name="pulseclose" display="ИМПУЛЬС ЗАК" visible="0"/>
 </valve>
 
 </cfg>

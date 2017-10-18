@@ -6,6 +6,13 @@
 #include <pthread.h>
 #include <errno.h>
 #include "main.h"
+#include "utils.h"
+#include "upcon.h"
+#include "unitdirector.h"
+#include "tagdirector.h"
+#include "mbxchg.h"
+#include "display.h"
+#include "algo.h"
 
 using namespace std;
 
@@ -36,6 +43,7 @@ int main(int argc, char* argv[]) {
         for(up=upc.begin(); up != upc.end(); ++up) (*up)->start();
         
         tagdir.start();     
+        unitdir.start();
         dsp.start();
 
 // ----------- terminate block -------------
@@ -100,6 +108,7 @@ int main(int argc, char* argv[]) {
         
         ftagThreadInitialized=0;
         dsp.join();
+        unitdir.join();
         tagdir.join();
 
         cout << "end mqtt thread ";
@@ -115,11 +124,7 @@ int main(int argc, char* argv[]) {
             (*rconi)->join();
             delete *rconi;
         }
-        unitlist::reverse_iterator uni;          
-        for(uni=units.rbegin(); uni != units.rend(); ++uni) { 
-            delete *uni;
-        }
-   
+
         cout<<endl;
         pthread_mutexattr_destroy(&mutex_tag_attr);   // clean up the mutex attribute
         pthread_mutex_destroy(&mutex_tag);            // clean up the mutex itself

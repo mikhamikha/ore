@@ -14,6 +14,7 @@
 #include <vector>
 #include <iterator>
 
+
 #define _billion    1000000000l
 #define _million    1000000l
 
@@ -25,8 +26,18 @@ enum {
     TERMINATE
 };
 
+enum exit_codes {
+    _exOK = 0,
+    _exFail,
+    _exBadParam,
+    _exBadAddr,
+    _exBadDippedHW,
+    _exBadIO
+};
+
 extern int32_t dT;
 
+int16_t readCfg();
 void outtext(std::string tx);
 std::string to_string(int32_t i);
 std::string to_string(double i);
@@ -54,10 +65,12 @@ struct cton {
         clock_gettime(CLOCK_MONOTONIC, &m_start);    
     }
 
-    void start (int32_t pre) {
-        m_preset = pre;
+    int16_t start (int32_t pre=0) {
+        m_preset = (pre ? pre : m_preset);
+        if(m_preset<=0) { return _exBadParam; }
         clock_gettime(CLOCK_MONOTONIC, &m_start);    
         m_tt = true;
+        return _exOK;
     }
 
     bool isDone() {
@@ -177,17 +190,17 @@ class cproperties {
         }
         template <class T>
         int16_t setproperty( std::string na, T va) {       // fill settings
-            int16_t res = EXIT_FAILURE;
+            int16_t res = _exBadParam;
 //            if(na=="ki") cout<<endl<<"setproperty ki="<<va<<endl;
             settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
             
             if (i != m_set.end()) {
                 i->second.setvalue(va);
-                res = EXIT_SUCCESS;
+                res = _exOK;
             }
             else {
                 m_set.push_back(make_pair(na, content(va)));
-                res = EXIT_SUCCESS;
+                res = _exOK;
             }
 //            if(na=="configured") cout<<"\nset property "<<na<<" = "<<va<<endl;
             return res;
@@ -195,34 +208,34 @@ class cproperties {
 
         template <class T>
         int16_t getproperty( std::string na, T& va) {
-            int16_t res = EXIT_FAILURE;
+            int16_t res = _exBadParam;
             settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
             if (i != m_set.end()) {
                 i->second.getvalue(va);
-                res = EXIT_SUCCESS;
+                res = _exOK;
             } 
             return res;
         }
 
         template <class T>
         int16_t getproperty( int16_t i, string& na, T& va) {
-            int16_t res = EXIT_FAILURE;
+            int16_t res = _exBadParam;
 
             if (i >= 0 && i < m_set.size()) {
                 m_set[i].second.getvalue(va);
                 na = m_set[i].first;
-                res = EXIT_SUCCESS;
+                res = _exOK;
             } 
             return res;
         }
         int32_t getpropertysize() { return m_set.size(); }
         
         int16_t property2text(int32_t n, std::string& va) {
-            int16_t res = EXIT_FAILURE;
+            int16_t res = _exBadParam;
             
             if (n < getpropertysize()) {
                 va = m_set[n].first + " = " + m_set[n].second.ToString();
-                res = EXIT_SUCCESS;
+                res = _exOK;
             }
             return res;
         }

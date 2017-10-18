@@ -1,7 +1,7 @@
 #ifndef _tag_director_h
     #define _tag_director_h
 
-#include "main.h"
+#include "tag.h"
 
 typedef std::vector<std::pair<std::string, ctag> > taglist;
 

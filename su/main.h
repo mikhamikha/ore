@@ -7,18 +7,10 @@
 #include <iomanip>
 #include <string>
 #include <ctype.h>
-#include "thread.h"
-#include "utils.h"
-#include "mbxchg.h"
-#include "tag.h"
-#include "tagdirector.h"
-#include "unit.h"
-#include "upcon.h"
-#include "display.h"
-
-using namespace std;
+#include <pugixml.hpp>
 
 #ifndef __OPCDA_Qualities_MODULE_DEFINED__
+
 #define __OPCDA_Qualities_MODULE_DEFINED__
 
 

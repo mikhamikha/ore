@@ -1,4 +1,7 @@
+#include "tagdirector.h"
 #include "main.h"
+#include "algo.h"
+#include "upcon.h"
 
 #define _tag_prc_delay    100000
 #define _ten_thou         10000
@@ -167,7 +170,6 @@ int16_t ctagdirector::tasktag( std::string& na, std::string& va ) {
 //
 void ctagdirector::run() {
     taglist::iterator ih, iend;
-    unitlist::iterator iuh, iuend;   
     alglist::iterator iah, iaend;   
     
     int16_t nRes, nRes1, nVal;
@@ -205,19 +207,10 @@ void ctagdirector::run() {
             ++ih;
         }
 //        cout<<" T3 = "<<tt.getTT();
-        /*
-        iuh   = units.begin();
-        iuend = units.end();
-        while ( iuh != iuend ) {
-            cunit* p = *iuh;
-            if(p) p->solveIt();
-            ++iuh;
-        }
-        */
         
         iah   = algos.begin();
         iaend = algos.end();
-        while ( iah != iuend ) {
+        while ( iah != iaend ) {
             calgo* p = *iah;
             if(p) p->solveIt();
             ++iah;

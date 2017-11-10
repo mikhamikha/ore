@@ -121,8 +121,8 @@
     <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="10" minEng="0" maxEng="10" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Выбор клапана " eu="">SV01</tag>
     <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
     <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="6" minEng="0" maxEng="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag>
-    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления Н" eu="кПа">PD11</tag>
-    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-500" maxRaw="500" minEng="-500" maxEng="500" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления В" eu="кПа">PD21</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-50000" maxRaw="50000" minEng="-50000" maxEng="50000" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления Н" eu="кПа">PD11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minRaw="-50000" maxRaw="50000" minEng="-50000" maxEng="50000" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления В" eu="кПа">PD21</tag>
     <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="1000000" minEng="0" maxEng="1000000" default="60" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы Н" eu="сек">KC11</tag>
     <tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="1000000" minEng="0" maxEng="1000000" default="60" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы В" eu="сек">KC21</tag>   
 </tags>

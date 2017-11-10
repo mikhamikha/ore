@@ -258,9 +258,23 @@ void view::keymanage() {
                 cout << "btn Esc\n";
 //                m_visible = !m_visible;
 //                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();
-                int n = m_curpage; 
-                pagePrev();
-                if( n > m_maxpage ) pages.pop_back();
+                string sn;
+                int16_t nm;
+                ctag* pt;
+                if( pg.getproperty(pg.rowssize()-1,"tag",sn)==_exOK 
+                        && sn.substr(0, 2)=="FV"
+                        && (pt=getaddr(sn))!=NULL
+                        && pt->getproperty("status", nm)==_exOK
+                        && nm>=_vlv_open && nm<=_vlv_closing) {
+                    string srpl="MV", srch="FV";
+                    replaceString( sn, srch, srpl ); 
+                    if((pt=getaddr(sn))!=NULL) pt->setvalue(_not_proc);
+                }
+                else {
+                    int n = m_curpage; 
+                    pagePrev();
+                    if( n > m_maxpage ) pages.pop_back();
+                }
             }
             if(m_btn.left) {                                // 1
                 cout << "btn Left\n";
@@ -337,7 +351,7 @@ void view::keymanage() {
                             if( (r=p->gettask())!=p->getvalue() ) 
                                 p->settask( r );                     // выполним сохраненное задание клапану
                             pthread_mutex_unlock( &mutex_tag );
-//                            m_mode = _view_mode;                      // возврат в режим просмотра
+                            m_mode = _view_mode;                      // возврат в режим просмотра
                         }                    
                     }
                 }
@@ -376,11 +390,11 @@ void view::keymanage() {
                     pthread_mutex_unlock( &mutex_tag );   
                 }
                 else
-                if( sn.substr(0, 2)=="PT" ) {                           // задание уставки давления
+                if( sn.substr(0, 1)=="P" ) {                            // задание уставки давления
                     double r =   p->gettask();
                     double rem = r/10 - floor(r/10);
                     r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
-                    double perc = (maxe-mine)/1000.0;
+                    double perc = 1;//(maxe-mine)/100000.0;
                     double add = 0;
 
                     if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {         
@@ -404,7 +418,7 @@ void view::keymanage() {
                         if( (r=p->gettask())!=p->getvalue() ) 
                             p->settask( r );                         // выполним сохраненное задание 
                         pthread_mutex_unlock( &mutex_tag );
-                        m_mode = _view_mode;                            // возврат в режим просмотра
+                        m_mode = _view_mode;                         // возврат в режим просмотра
                     }                    
                 }
             }  
@@ -429,13 +443,6 @@ void view::gotoDetailPage() {
             if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS ) {    // получим имя тэга
                 ctag* p;
                 if( (p=tagdir.gettag( snam.c_str() )) != NULL) {        // получим ссылку на тэг
-//                    bool fmode = true;
-                    if( snam.substr(0, 2)=="FV" ) {                     // ручное управление клапаном
-//                        string srpl="MV", srch="FV";
-//                        replaceString( snam, srch, srpl );
-//                        ctag *p1 = tagdir.gettag( snam.c_str() );                   
-//                        fmode = ( p1->getvalue()==_manual );
-                    }
                     pg.p = p;
                     p->settask( p->getvalue(), false );
                     m_mode = _task_mode;                                // перейдем в режим ввода значения

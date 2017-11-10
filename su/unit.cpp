@@ -198,6 +198,7 @@ int16_t cunit::getstate() {
 
             int16_t nmode = m_pmod->getvalue();
             if( nmode!=m_mode ) {                               // если смена режима
+                if(!m_mode) m_status = _vlv_ready;              // ввод в работу
                 if( nmode==_auto_time                           // если новый="по времени", у второго меняем тоже                        
                         && m_pother && m_pother->getmode()!=_auto_time) m_pother->changemode( nmode );      
                 if( m_mode==_auto_time                          // если старый="по времени", у второго меняем на ручной
@@ -295,7 +296,7 @@ int16_t cunit::getstate() {
             }
 
             m_ppos->setquality( n_qual_fv );
-            if( m_mode ) {
+            if( m_status<_vlv_fault_1 ) {
                 if( n_qual_fv==OPC_QUALITY_GOOD ) {
                    if(mot == _opening) m_status = _vlv_opening;    
                    else if(mot == _open) m_status = _vlv_open;    

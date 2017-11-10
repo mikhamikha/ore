@@ -94,13 +94,13 @@ enum valvecmdstatus {
 };
 
 enum valvestatus {
-    _vlv_ready,
+    _vlv_ready=0,
     _vlv_opened,    // =1
     _vlv_closed,    // =2
-    _vlv_open,      // =3
-    _vlv_opening,   // =4
-    _vlv_close,     // =5    
-    _vlv_closing,   // =6
+    _vlv_open=3,      // =3
+    _vlv_opening=4,   // =4
+    _vlv_close=5,     // =5    
+    _vlv_closing=6,   // =6
     _vlv_warn,      // =7
     _vlv_fault_1,   // =8
     _vlv_fault_2,   // =9

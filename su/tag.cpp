@@ -1,9 +1,3 @@
-#include "utils.h"
-#include "tag.h"
-#include "tagdirector.h"
-#include "main.h"
-#include "upcon.h"
-#include "unit.h"
 
 #include <fstream>	
 #include <sstream>	
@@ -13,6 +7,11 @@
 #include <string>
 #include <string.h>
 #include <stdlib.h>
+
+#include "tagdirector.h"
+#include "mbxchg.h"
+#include "upcon.h"
+#include "unit.h"
 
 using namespace std;
 
@@ -88,7 +87,6 @@ void ctag::init() {
     
 //    string  she;
 //    int32_t nhe;
-    int16_t bt;
     int rc = \
     getproperty( "minraw",  m_minRaw   ) | \
     getproperty( "maxraw",  m_maxRaw   ) | \
@@ -119,13 +117,14 @@ void ctag::init() {
 
     if( m_readOff == -2 ) {
         m_quality = OPC_QUALITY_GOOD;
+
         if( m_name.find("LV") == 0 ) {              // if tag (valve position mm) must be evaluate from other
             string  s1;
             int16_t num;
             
             num = atoi( m_name.substr(2, 2).c_str() );
             s1 = "FV"+to_string(num);
-            m_pos = tagdir.gettag( s1.c_str() );         // valve position in percent
+            m_pos = getaddr( s1 );                  // valve position in percent
             cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
         }
     }
@@ -133,9 +132,9 @@ void ctag::init() {
     double rval;
     if( getproperty("default", rval)==_exOK ) { setvalue(rval); } 
     // подписка на команды
-    int16_t nu;
+    uint16_t nu;
     if( (nu=getsubcon())>=0 && nu<upc.size() ) {
-        upc[nu]->subscribe( *this );
+        upc[nu]->subscribe( this );
 //      pp.m_sub = nu;
     }
 }
@@ -166,27 +165,12 @@ int16_t ctag::getraw() {
     }
     else 
     if( m_readOff == -2 ) {
-/*
-        if(m_name.find("FV") == 0 ) {
-            rc =rawValveValueEvaluate();
-            setproperty("raw", m_raw);    
-//            rc=EXIT_SUCCESS;
-        }
-        else
-*/
         if(m_name.find("LV") == 0 ) {
             setrawval( m_pos->getvalue() );
             setrawscale( m_pos->m_minEng, m_pos->m_maxEng );
             m_quality = m_pos->m_quality;
 //            rc=EXIT_SUCCESS;
         }
-/*
-        else if(m_name.find("FT") == 0 ) {
-//            rc =flowEvaluate();
-//            setproperty("raw", m_raw);    
-//            rc=EXIT_SUCCESS;
-        }
-*/
     }
 //    cout<<dec<<endl;
     return rc;
@@ -198,8 +182,7 @@ int16_t ctag::getraw() {
 //  анализ изменения значения сравнением с зоной нечувствительности
 //
 int16_t ctag::getvalue(double &rOut) {
-    int16_t     nVal;
-    double      rVal;
+    double      rVal = m_rvalue;
     timespec    tv;
     int32_t     nTime;
     int64_t     nctt;
@@ -218,19 +201,19 @@ int16_t ctag::getvalue(double &rOut) {
     nodt = m_ts.tv_sec*_million + m_ts.tv_nsec/1000;
     nD = abs(nctt-nodt);
 
-//    if( m_name.substr(0,4)=="PT31")  cout<<to_text()<<endl;
-    if( (rc = getproperty("simen", rsim_en) | \
-            getproperty("simva", rsim_v)) == _exOK && rsim_en != 0 ) {   // simulation mode switched ON 
+    if( (rc = getproperty("simenable", rsim_en) | \
+            getproperty("simvalue", rsim_v)) == _exOK && rsim_en != 0 ) {   // simulation mode switched ON 
         m_quality_old = m_quality;
         rVal  = rsim_v;
         rOut  = rsim_v;
         m_quality = OPC_QUALITY_GOOD;
-        rc = _exOK;
     }
     else { 
 //       if( m_name.find("FV") ==std::string::npos ) 
            rc = getraw();
     }
+
+//    if( m_name.substr(0,4)=="IT01")  cout<<to_text()<<endl;
 
     if( rc==_exOK ) {
         if( rsim_en == 0 ) {                                                        // simulation mode switched OFF
@@ -247,8 +230,8 @@ int16_t ctag::getvalue(double &rOut) {
                 
                 nTime = m_fltTime*1000;
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
-                if(m_type==1) rVal = (rVal >= m_hihi);                              // if it is a discret tageter
-                if(m_type==2) rVal = (rVal < m_hihi);                               // if it is a discret tageter & inverse
+                if(m_type==1) rVal = (rVal >= m_hihi);                              // if it is a discret tag
+                if(m_type==2) rVal = (rVal < m_hihi);                               // if it is a discret tag & inverse
                 rOut = rVal;                                                        // current value
             }
             else {
@@ -289,20 +272,9 @@ int16_t ctag::setvalue( double rin=0 ) {
     int16_t rc = _exFail;
 //    cmbxchg *mb;
     string  sOff;
-    int16_t nOff;
     
-    /*
-    if( m_writeOff >= 0 ) {
-//      if( m_name.substr(0,3)=="FC1")
-//            cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;      
-        cmbxchg::m_pWriteData[m_writeOff] = m_task;
-        cmbxchg::m_pLastWriteData[m_writeOff] = m_task-1;
-        m_task_go = false; 
-        rc = EXIT_SUCCESS;
-    }
-    else 
-    */    
     if( m_writeOff == -2 ) {
+        m_rvalue = rin;
         m_raw = rin;
         m_quality = OPC_QUALITY_GOOD;
         settask( rin, false );
@@ -335,11 +307,13 @@ int16_t ctag::settask(double rin, bool fgo) {
     cout<<endl; 
     
     if( m_writeOff >= 0 ) {                                     // если это modbus
-//      if( m_name.substr(0,3)=="FC1") \
+/*      if( m_name.substr(0,3)=="FC1") \
             cout<<"setvalue "<<m_name<<" task "<<m_task<<" off="<<m_writeOff<<" conn="<<int(mb)<<endl;   
+            */
         pthread_mutex_lock( &mutex_tag );
         cmbxchg::m_pWriteData[m_writeOff] = int(m_task)&USHRT_MAX;
-        cmbxchg::m_pLastWriteData[m_writeOff] = cmbxchg::m_pWriteData[m_writeOff]-1;
+        // изменим старое значение, чтобы "железно" записалось
+        cmbxchg::m_pLastWriteData[m_writeOff] = cmbxchg::m_pWriteData[m_writeOff]-1;  
         pthread_mutex_unlock( &mutex_tag );
         m_task_go = false; 
     }
@@ -350,11 +324,83 @@ int16_t ctag::settask(double rin, bool fgo) {
 // 
 // получить текстовое описание по значению
 //
-void ctag::getdescvalue( string& name, string& sval )
+int16_t ctag::getdescvalue( string& name, string& sval )
 {
-    int16_t ival;
-    getproperty( name, ival );
-    if( m_name.substr(0,2)=="MV" && ival < vmodes.size() ) vmodes[ival].getproperty( "display", sval );
+    int16_t rc;
+    int32_t ival;
+    rc=getproperty( name, ival );
+    if( !rc && m_name.substr(0,2)=="MV" && name=="task" && ival < int(vmodes.size()) ) 
+        vmodes[ival].getproperty( "display", sval );
+    if( !rc && m_name.substr(0,2)=="FV" && name=="status" && ival < int(vstatuses.size()) ) 
+        vstatuses[ival].getproperty( "display", sval );  
+    return rc;
 }
 
+double ctag::gettrigger()  {
+//        cmbxchg     *mb = (cmbxchg *)p_conn;
+
+    if( m_trigger && m_readOff >= 0 ) {
+        if( m_readbit >= 0 ) {
+            cmbxchg::m_pReadTrigger[m_readOff] &= (0xFFFF ^ ( 1 << m_readbit ));
+        }   
+    }
+    return m_trigger; 
+}
+
+// Получить значение
+double getval(ctag* p) {
+    double rval=-1;
+    if( p ) rval = p->getvalue();
+
+    return rval;
+}
+
+// Получить качество тэга
+uint8_t getqual(ctag* p) {
+    uint8_t nval=0;
+    if ( p ) nval = p->getquality();
+
+    return nval;
+}
+
+int16_t publish(ctag &tag) {    
+    int16_t         res = EXIT_FAILURE;
+    string          topic;
+    string          ts;
+    string          sf;
+    int16_t         rc;
+//    int32_t         sec, msec;
+   
+    rc = upc[0]->getproperty("pubf", sf) == EXIT_SUCCESS/* && \
+         tag.getproperty("name", name)    == EXIT_SUCCESS;
+         tag.getproperty("topic", topic)  == EXIT_SUCCESS && \
+         tag.getproperty("value", val)    == EXIT_SUCCESS && \
+         tag.getproperty("quality", kval) == EXIT_SUCCESS && \
+         tag.getproperty("sec", sec) == EXIT_SUCCESS && \
+         tag.getproperty("msec", msec) == EXIT_SUCCESS*/;
+         
+    if(rc==0) {
+        cout << "cfg: prop not found" << endl; 
+    }
+    else {
+        timespec* tts;
+        tts = tag.getTS();
+//        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
+        ts = to_string( int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million)) );
+        replaceString(sf, "value", to_string(tag.getvalue()) );
+        replaceString(sf, "quality", to_string(int(tag.getquality())) );
+        replaceString(sf, "timestamp", ts);
+
+        pthread_mutex_lock( &mutex_pub );
+        if(pubs.size()<_pub_buf_max) {
+            tag.getfullname(topic);
+            pubs.push_back(make_pair(topic, sf));
+            res = EXIT_SUCCESS;
+        }
+        pthread_mutex_unlock( &mutex_pub );
+//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
+        tag.acceptnewvalue();
+    }
+    return res;
+}
 

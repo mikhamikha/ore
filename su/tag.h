@@ -1,6 +1,6 @@
 // заголовочный файл tag.h
-#ifndef _TAG_H
-	#define _TAG_H
+#ifndef _TAG_HPP_
+	#define _TAG_HPP_
 
 #include <string>	
 #include <algorithm>
@@ -8,7 +8,6 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
-#include "mbxchg.h"
 #include "utils.h"
 
 #define m_pos       tag1
@@ -21,8 +20,14 @@ protected: 				// спецификатор доступа protected
     
     timespec	m_ts;
     timespec	m_oldts;
-    double		m_rvalue;
-    double		m_rvalue_old;
+    union {
+        double  m_rvalue;
+        int32_t m_nvalue;    
+    };
+    union {
+        double	m_rvalue_old;
+        int32_t m_nvalue_old;
+    };
     double      m_task;             // task to out
     int16_t     m_task_delta;       // task out allowable deviation 
     bool        m_task_go;          // flag 4 task to out
@@ -52,19 +57,9 @@ protected: 				// спецификатор доступа protected
     std::string m_name;
     std::string m_topic;
     bool        m_firstscan;
-
+ 
     // referenses to counter, limit switches (opened & closed), commands (open & close)
-    ctag*     tag1; //m_fc;
-/*    
-    ctag*         tag2;//m_lso;
-    ctag*         tag3;//m_lsc;
-    ctag*         tag4;//m_cmdo;
-    ctag*         tag5;//m_cmdc;
-
-//  int32_t         m_cnt_old;
-    int16_t         m_motion;  
-    int16_t         m_motion_old;  
-*/
+    ctag*     tag1; 
     
 public: 				// спецификатор доступа public
     ctag();			// конструктор класса
@@ -73,18 +68,13 @@ public: 				// спецификатор доступа public
 //    int16_t     m_sub;   
     cton        m_tasktimer;
     void		*p_conn;	
-               
-    timespec* getTS()   { return &m_ts; }
-    double  gettrigger()  {
-//        cmbxchg     *mb = (cmbxchg *)p_conn;
+    enum DataType {
+        _real_type,
+        _int_type,
+    };
 
-        if( m_trigger && m_readOff >= 0 ) {
-            if( m_readbit >= 0 ) {
-                cmbxchg::m_pReadTrigger[m_readOff] &= (0xFFFF ^ ( 1 << m_readbit ));
-            }   
-        }
-        return m_trigger; 
-    }
+    timespec* getTS() { return &m_ts; }
+    double  gettrigger();
     string  getname() { return m_name; }
     void    getlimits(double& emin, double& emax)  { emin=m_minEng; emax=m_maxEng; }
     double  getvalue()  { return m_rvalue; }
@@ -116,14 +106,15 @@ public: 				// спецификатор доступа public
     }
     int16_t settask( double rin, bool fgo=true ); 
 
-    int16_t cleartask() {
+    void cleartask() {
         m_task_go = false;    
     }    
 
     int16_t settaskpulse(double rin, int32_t pre=2000) {
-        settask( rin, true ); 
+        int16_t rc = settask( rin, true ); 
         m_task_go = true;    
         m_tasktimer.start(pre);
+        return rc;
     }
 
     double getrawval() {
@@ -142,27 +133,32 @@ public: 				// спецификатор доступа public
         setproperty( "minraw", minr );
         setproperty( "maxraw", maxr );
     }
+    double  getdead() { return m_deadband; }
+    double  gethi() { return m_hi; }
+    double  gethihi() { return m_hihi; }
+    double  getlo() { return m_lo; }
+    double  getlolo() { return m_lolo; }
     double  getmaxraw() { return m_maxRaw; }
     double  getminraw() { return m_minRaw; }
     double  getmaxeng() { return m_maxEng; }
     double  getmineng() { return m_minEng; }
     bool    taskset() { return m_task_go; }
     bool    hasnewvalue() { return m_valueupdated; }
-    bool    acceptnewvalue() { m_valueupdated = false; }
+    void    acceptnewvalue() { m_valueupdated = false; }
     int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
     int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }
     bool    isbool() { return (m_type>0 && m_type<2); }
 
     int16_t rawValveValueEvaluate();
     int16_t flowEvaluate(); 
-    void    getdescvalue( string& name, string& sval );
+    int16_t getdescvalue( string& name, string& sval );
    
     std::string to_text() {
         std::string s;
         std::stringstream out;
         double rsim_en = 0, rsim_v;
 
-        getproperty("simen", rsim_en);
+        getproperty("simenable", rsim_en);
         getproperty("simvalue", rsim_v);       
         out << " name="<<m_name<<" value="<<m_rvalue<<" quality="<<int16_t(m_quality) \
             << " simen="<<rsim_en<<" simval="<<rsim_v;
@@ -171,8 +167,7 @@ public: 				// спецификатор доступа public
     }
 }; // конец объявления класса ctag
 
-int16_t readCfg();
-//void* tagProcessing(void *args);    // поток обработки параметров 
+typedef std::vector <ctag*> tagvector;
 
 
 extern bool                     ftagThreadInitialized;
@@ -181,6 +176,11 @@ extern pthread_mutexattr_t      mutex_tag_attr;
 //extern pthread_cond_t         data_ready;
 extern pthread_mutex_t          mutex_pub;
 //extern pthread_cond_t         pub_ready;
+
+uint8_t getqual(ctag* p);   // Получить качество тэга
+double getval(ctag* p);     // Получить значение
+
+int16_t publish(ctag &);
 
 #endif // _tag_H
 

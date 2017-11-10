@@ -1,5 +1,7 @@
+#include <typeinfo>
 #include "display.h"
-#include "main.h"
+#include "tagdirector.h"
+#include "unit.h"
 
 #define _dsp_width      256
 #define _dsp_height     128
@@ -34,7 +36,7 @@ void view::definedspline( int16_t nd, int16_t nr, const char* sr, const std::str
 // перевод кодировки русских символов в CP866  
 //
 void to_866(string& sin, string& sout) {
-    uint16_t    n, j;
+    uint16_t    j, n;
     char        ss[2];
     vector<char>buf;
 
@@ -47,8 +49,8 @@ void to_866(string& sin, string& sout) {
         else if(j<sin.length()-1){
             ss[1]=sin.at(j); 
             ss[0]=sin.at(j+1);
-            n = *((uint16_t *)ss);
-    
+            memcpy( &n, ss, sizeof(ss) );
+
             if(n>=53392 && n<=53439) {
                 n = n-53264;
             }
@@ -69,7 +71,7 @@ void to_866(string& sin, string& sout) {
 }
 
 void sympad( string& sin, char cpad, int16_t sizef ) {
-    int16_t len;
+    int16_t len=0;
 //    cout<<"old length "<<sin.length()<<" "<<sin<<" | font "<<sizef<<" "<<_dsp_width<<" "<<_dsp_width/6<<endl;
     switch(sizef) {
         case 1: len = int(_dsp_width/6-0.5) - sin.length(); break;
@@ -104,46 +106,11 @@ void view::println( string& sin, bool setValue=true, bool last=false ) {
 //
 // функция замены тэгов в строках {tag} на их значения
 //
-/*
-int16_t assignValues(string& subject, const string& sop, const string& scl, char* buf, int16_t& len ) {
-    size_t      nbe = 0, nen = 0, oldp = 0;
-    int16_t     rc=EXIT_SUCCESS;
-    bool        fgo = true;
-    int16_t     pos=0;
-
-//    cout<<subject<<" "<<subject.length()<<endl;
-    while(fgo) {
-        nbe = subject.find(sop, nen); 
-        fgo = (nbe != std::string::npos);
-        if( fgo && (nen = subject.find(scl, nbe)) != std::string::npos ) {
-                string na(subject, nbe+1, nen-nbe-1);
-                string va;
-//                cout<<" beg="<<nbe<<" end="<<nen<<" tag="<<na<<" | ";
-                if(gettag( na, va ) == EXIT_SUCCESS) {
-                    memcpy( buf+pos, string(subject, oldp, nbe-oldp).c_str(), nbe-oldp );
-                    oldp = nen;
-                    pos += (nbe-oldp);
-                    memcpy( buf+pos, _bold_on, _cmd_len );
-                    memcpy( buf+pos+_cmd_len, va.c_str(), va.length() );
-                    memcpy( buf+pos+_cmd_len+va.length(), _bold_off, _cmd_len );
-                    pos += (_cmd_len*2+va.length());
-                }
-        }
-        else fgo =false;
-//        cout<<fgo<<" "<<subject<<" "<<subject.length()<<endl;
-    }
-    len = pos;
-//    cout<<endl;
-    return rc;
-}
-*/
-//
-// функция замены тэгов в строках {tag} на их значения
-//
-int16_t assignValues(ctag &p, string& subject, const string& sop, const string& scl) {
+int16_t assignValues(void* vv, string& subject, const string& sop, const string& scl) {
     size_t      nbe = 0, nen = 0, found;
     int16_t     rc=EXIT_SUCCESS;
     bool        fgo = true;
+    ctag*       p = (ctag *)vv; 
 
     while(fgo) {
         nbe = subject.find_first_of(sop, nen);                                  // ищем открывающую скобку
@@ -161,10 +128,10 @@ int16_t assignValues(ctag &p, string& subject, const string& sop, const string& 
             if(na.size()) {                                                     // имя непустое
                 if( na[0]=='@' ) {                                              // нужно вывести описание значения
                     na = na.substr(1);
-                    p.getdescvalue( na, vatmp );
+                    p->getdescvalue( na, vatmp );
                     to_866(vatmp, va);                                          // перекодируем
                 }          
-                else if(p.getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) {  // выводим само значение
+                else if(p->getproperty( na.c_str(), vatmp ) == EXIT_SUCCESS ) { // выводим само значение
                     to_866(vatmp, va);                                          // перекодируем
                     if(vc.size() > 1) {                                         // есть признаки форматирования
                         vector<string> fld;
@@ -211,7 +178,7 @@ void view::outview(int16_t ndisp=-1) {
     string      buf, bufa, son("{<"), soff("}>");
         
     string sfont("fonts");
-    int16_t rc=getproperty( nd, sfont, nfont );
+    /*int16_t rc=*/getproperty( nd, sfont, nfont );
 //    cout<<"page "<<nd<<" "<<sfont<<" "<<nfont;
     
     GU3000_setFontSize( (nfont==2)? _8x16Format: _6x8Format, 1, 1 );
@@ -223,7 +190,7 @@ void view::outview(int16_t ndisp=-1) {
         if( pg.getproperty( nr, "tag", snam )==EXIT_SUCCESS ) {
             ctag *p = tagdir.gettag( snam.c_str() );
             if( p ) {
-                assignValues( *p, buf, son, soff );
+                assignValues((void*)p, buf, son, soff );
             }
         }
         if( nr == pg.rowget() ) { 
@@ -264,9 +231,9 @@ void view::keymanage() {
 //    std::string     stag; 
     static bool     first  = true; 
     int16_t         nval[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    int16_t         nqu;
-    timespec*       tts;
-    static bool     binit = false;
+//    int16_t         nqu;
+//    timespec*       tts;
+//    static bool     binit = false;
     const char*     btns[] = { "HS01", "HS02", "HS03", "HS04", "HS05", "HS06" };
     static bool     olds[] = { false,  false,  false,  false,  false,  false  };      
     uint16_t        bbtn = 0;
@@ -274,7 +241,7 @@ void view::keymanage() {
 
 //    cout << " key size = "<<sizeof(btns)/sizeof(char*)<<" button str size = "<<sizeof(m_btn)<<endl;
 //    cout << " keys ";
-    for(int j=0; j<sizeof(btns)/4; j++) {               // read buttons states on front panel of box
+    for(size_t j=0; j<sizeof(btns)/4; j++) {               // read buttons states on front panel of box
 //      gettag( btns[j], rval, nqu, tts, 1 );
         tagdir.gettagcount( btns[j], nval[j] );              // read number of keystrokes
 //        cout<<nval[j]<<" ";
@@ -326,17 +293,19 @@ void view::keymanage() {
             }
             if( pg.p ) {                                                // параметр не NULL
                 string sn;
-                int16_t mot, mode;
-                double mine = pg.p->getmineng();
-                double maxe = pg.p->getmaxeng();
-                sn = pg.p->getname();
+                ctag* p = (ctag *)(pg.p);
+                int16_t mode;//mot, 
+                double mine = p->getmineng();
+                double maxe = p->getmaxeng();
+                sn = p->getname();
                 if( sn.substr(0, 2)=="FV" ) {                           // ручное управление клапаном
                     string srpl="MV", srch="FV";
                     replaceString( sn, srch, srpl );
                     ctag *p1 = tagdir.gettag( sn.c_str() );
-                    if( pg.p->getproperty("motion", mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                    //if( p->getproperty("motion", mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                    if( p->getquality()==OPC_QUALITY_GOOD ) {
                         if( m_btn.down || m_btn.up ) {                                                      // 4 или 5
-                            cout << (m_btn.down) ? "btn Down\n" : "btn Up\n";
+                            cout << ( (m_btn.down) ? "btn Down\n" : "btn Up\n" );
                             pthread_mutex_lock( &mutex_tag );   
                             if( p1 && (mode=p1->getvalue()) < _manual_pulse_open ) {
                                 p1->setvalue(
@@ -349,15 +318,15 @@ void view::keymanage() {
                         }
                         else
                         if( (m_btn.left || m_btn.right) && p1 && (mode=p1->getvalue()) == _manual ) {       // 1 или 2
-                            cout << ( m_btn.left ) ? "btn Left\n" : "btn Right\n";
-                            double r =   pg.p->gettask();
+                            cout << ( ( m_btn.left ) ? "btn Left\n" : "btn Right\n" );
+                            double r =   p->gettask();
                             double rem = r/10 - floor(r/10);
                             r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
                             r = r + ( ( m_btn.left ) ? -nval[1]*5 : nval[2]*5 );
                             r = max( r, mine );
                             r = min( r, maxe );
                             pthread_mutex_lock( &mutex_tag );   
-                            pg.p->settask( r, false );                  // сохраним задание клапану
+                            p->settask( r, false );                  // сохраним задание клапану
                             pthread_mutex_unlock( &mutex_tag );   
                         }
                         else
@@ -365,8 +334,8 @@ void view::keymanage() {
                             cout << "btn Enter\n";
                             double r;
                             pthread_mutex_lock( &mutex_tag );   
-                            if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
-                                pg.p->settask( r );                     // выполним сохраненное задание клапану
+                            if( (r=p->gettask())!=p->getvalue() ) 
+                                p->settask( r );                     // выполним сохраненное задание клапану
                             pthread_mutex_unlock( &mutex_tag );
 //                            m_mode = _view_mode;                      // возврат в режим просмотра
                         }                    
@@ -374,14 +343,15 @@ void view::keymanage() {
                 }
                 else
                 if( sn.substr(0, 2)=="MV" ) {                           // задание режима клапана
-                    mode = pg.p->gettask();
+                    mode = p->gettask();
                     pthread_mutex_lock( &mutex_tag );   
                     if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {
                         cout<<"valve mode="<<mode<<" vmodes="<<vmodes.size();
                         int16_t add;
                         add = ((m_btn.down || m_btn.left) ? -1 : 1);                        
-                        if( mode < vmodes.size() ) {
-                            int16_t idsp=0, i=0;
+                        if( mode < int(vmodes.size()) ) {
+                            int16_t idsp=0;
+                            size_t i=0;
                             do {
                                 string ss;
                                 mode = (mode+add) % vmodes.size(); 
@@ -391,23 +361,23 @@ void view::keymanage() {
                                 cout<<" askmode="<<mode<<" "<<ss<<" vis="<<idsp<<endl;
                             } while( !idsp && i++<vmodes.size() );
                         }
-                        pg.p->settask( mode, false );
+                        p->settask( mode, false );
                     }
                     else
                     if( m_btn.enter ) {
-                        pg.p->setvalue( mode );
+                        p->setvalue( mode );
                         m_mode = _view_mode;                            // возврат в режим просмотра
                     }
                     else
                     if( m_btn.esc ) {
-                        pg.p->settask( pg.p->getvalue(), false );
+                        p->settask( p->getvalue(), false );
                         m_mode = _view_mode;                            // возврат в режим просмотра
                     }
                     pthread_mutex_unlock( &mutex_tag );   
                 }
                 else
                 if( sn.substr(0, 2)=="PT" ) {                           // задание уставки давления
-                    double r =   pg.p->gettask();
+                    double r =   p->gettask();
                     double rem = r/10 - floor(r/10);
                     r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
                     double perc = (maxe-mine)/1000.0;
@@ -423,7 +393,7 @@ void view::keymanage() {
                         r = max( r, mine );
                         r = min( r, maxe );
                         pthread_mutex_lock( &mutex_tag );   
-                        pg.p->settask( r, false );                      // сохраним задание давления
+                        p->settask( r, false );                      // сохраним задание давления
                         pthread_mutex_unlock( &mutex_tag ); 
                     }
                     else
@@ -431,8 +401,8 @@ void view::keymanage() {
                         cout << "btn Enter\n";
                         double r;
                         pthread_mutex_lock( &mutex_tag );   
-                        if( (r=pg.p->gettask())!=pg.p->getvalue() ) 
-                            pg.p->settask( r );                         // выполним сохраненное задание 
+                        if( (r=p->gettask())!=p->getvalue() ) 
+                            p->settask( r );                         // выполним сохраненное задание 
                         pthread_mutex_unlock( &mutex_tag );
                         m_mode = _view_mode;                            // возврат в режим просмотра
                     }                    
@@ -459,15 +429,15 @@ void view::gotoDetailPage() {
             if( pg.getproperty( row, "tag", snam )==EXIT_SUCCESS ) {    // получим имя тэга
                 ctag* p;
                 if( (p=tagdir.gettag( snam.c_str() )) != NULL) {        // получим ссылку на тэг
-                    bool fmode = true;
+//                    bool fmode = true;
                     if( snam.substr(0, 2)=="FV" ) {                     // ручное управление клапаном
-                        string srpl="MV", srch="FV";
-                        replaceString( snam, srch, srpl );
-                        ctag *p1 = tagdir.gettag( snam.c_str() );                   
-                        fmode = ( p1->getvalue()==_manual );
+//                        string srpl="MV", srch="FV";
+//                        replaceString( snam, srch, srpl );
+//                        ctag *p1 = tagdir.gettag( snam.c_str() );                   
+//                        fmode = ( p1->getvalue()==_manual );
                     }
                     pg.p = p;
-                    pg.p->settask( pg.p->getvalue(), false );
+                    p->settask( p->getvalue(), false );
                     m_mode = _task_mode;                                // перейдем в режим ввода значения
                 }
             }           

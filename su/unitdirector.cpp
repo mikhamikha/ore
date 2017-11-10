@@ -1,6 +1,6 @@
 #include "unitdirector.h"
 
-#define _unit_prc_delay    100000
+#define _unit_prc_delay   100000
 #define _ten_thou         10000
 
 cunitdirector unitdir;
@@ -173,13 +173,13 @@ void cunitdirector::run() {
     unitlist::iterator ih, iend;
     
     cout << "start units processing " << endl;
-    sleep(1);
+    sleep(3);
     
     while ( ftagThreadInitialized ) {
         ih   = units.begin();
         iend = units.end();
         while ( ih != iend ) {
-            cunit&  pun = ih->second;
+            cunit& pun = ih->second;
             
             ++ih;
         }
@@ -190,5 +190,15 @@ void cunitdirector::run() {
     
 //    return EXIT_SUCCESS;
 }
+//
+// получить ссылку на юнит по имени
+// 
+cunit* getaddrunit(string& str) {
+    cunit* p = unitdir.getunit( str.c_str() );
+    cout<<"getunit "<<hex<<long(p);
+    if(p) cout<<" name="<< p->getname();
+    cout<<endl;
 
+    return p;
+}
 

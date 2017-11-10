@@ -1,5 +1,5 @@
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef _THREAD_HPP_
+#define _THREAD_HPP_
 
 //extern "C" {   
 #include <pthread.h>

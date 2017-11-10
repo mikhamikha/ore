@@ -1,6 +1,6 @@
 // заголовочный файл algo.h
-#ifndef _ALGO_H
-	#define _ALGO_H
+#ifndef _ALGO_HPP_
+	#define _ALGO_HPP_
 
 #include <functional>
 #include <numeric>
@@ -10,12 +10,10 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
-#include "main.h"
-#include "utils.h"
-#include "tag.h"
-#include "tagdirector.h"
+
 #include "unit.h"
-#include "unitdirector.h"
+#include "tag.h"
+#include "utils.h"
 
 #define _loc_data_buffer_size   10
 #define _valve_mode_amount      8 
@@ -40,9 +38,6 @@ enum state_algo {
     _done_a
 };
 
-typedef std::vector <cproperties> vlvmode;
-//typedef std::vector <cproperties> arglist;
-typedef std::vector<cunit*> unitvector;
 
 // объявление класса Алгоритм
 class calgo: public cproperties { 			// имя класса
@@ -55,9 +50,11 @@ class calgo: public cproperties { 			// имя класса
     int16_t     m_fInit; 
     cton        m_twait;     
     cton        m_tcmd;
+    int16_t     m_stor;
+    int16_t     m_enable;
     
     public:
-    calgo() { m_fInit=0; m_nUnits=0; }  
+    calgo() { m_fInit=0; m_nUnits=0; m_stor=0; }  
     int16_t init();
     int16_t solveIt( void );
     int16_t argsize( void ) { return m_args.size(); }
@@ -67,8 +64,6 @@ class calgo: public cproperties { 			// имя класса
 typedef std::vector <calgo*> alglist;
 
 extern alglist algos;
-
-uint8_t getqual(ctag* p);// Получить качество тэга
 
 
 #endif

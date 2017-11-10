@@ -1,23 +1,27 @@
 #define MQTTCLIENT_QOS2 1
 
+#include <time.h>
+#include <stdint.h>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <ctype.h>
 #include <termios.h>
 #include <unistd.h>
 #include <modbus.h>
 #include <pthread.h>
 #include <errno.h>
 #include "main.h"
-#include "utils.h"
 #include "upcon.h"
 #include "unitdirector.h"
 #include "tagdirector.h"
+#include "algo.h"
 #include "mbxchg.h"
 #include "display.h"
-#include "algo.h"
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    int nResult;
     
     setDT();
     if (readCfg()==EXIT_SUCCESS) {
@@ -43,12 +47,12 @@ int main(int argc, char* argv[]) {
         for(up=upc.begin(); up != upc.end(); ++up) (*up)->start();
         
         tagdir.start();     
-        unitdir.start();
+//        unitdir.start();
         dsp.start();
 
 // ----------- terminate block -------------
         struct termios oldt, newt;
-        int ch;
+        int ch=0;
         tcgetattr( STDIN_FILENO, &oldt );
         newt = oldt;
         newt.c_lflag &= ~( ICANON | ECHO );
@@ -108,7 +112,7 @@ int main(int argc, char* argv[]) {
         
         ftagThreadInitialized=0;
         dsp.join();
-        unitdir.join();
+//        unitdir.join();
         tagdir.join();
 
         cout << "end mqtt thread ";

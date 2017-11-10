@@ -1,5 +1,5 @@
-#ifndef _utils_h
-    #define _utils_h
+#ifndef _UTILS_HPP_
+    #define _UTILS_HPP_
 
 #include <math.h>
 #include <time.h>
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <vector>
 #include <iterator>
-
+#include "const.h"
 
 #define _billion    1000000000l
 #define _million    1000000l
@@ -24,15 +24,6 @@ enum {
     INITIALIZED,
     INIT_ERR,
     TERMINATE
-};
-
-enum exit_codes {
-    _exOK = 0,
-    _exFail,
-    _exBadParam,
-    _exBadAddr,
-    _exBadDippedHW,
-    _exBadIO
 };
 
 extern int32_t dT;
@@ -55,34 +46,45 @@ int16_t strsplit(string& s, char delim, vector<string>& vec);
 //
 struct cton {
     timespec    m_start;        // timer start
+//    timespec    m_finish;       // timer finish
     int32_t     m_preset;       // timer value msec
     bool        m_tt;
     bool        m_dn;
+    int64_t     m_delta;
 
-    cton() { m_tt = false; m_dn = false; }
+    cton() { m_tt = false; m_dn = false; m_preset = 0; }
 
     cton(int32_t pre):m_preset(pre) {
         clock_gettime(CLOCK_MONOTONIC, &m_start);    
     }
 
     int16_t start (int32_t pre=0) {
+        int16_t rc = _exOK;
         m_preset = (pre ? pre : m_preset);
-        if(m_preset<=0) { return _exBadParam; }
-        clock_gettime(CLOCK_MONOTONIC, &m_start);    
-        m_tt = true;
-        return _exOK;
+        if(m_preset<=0) { rc=_exBadParam; }
+        else {
+            clock_gettime(CLOCK_MONOTONIC, &m_start);    
+            m_tt = true;
+            m_dn = false;
+            m_delta = 0;
+        }
+        return rc;
     }
 
     bool isDone() {
-        timespec    t;
-        int64_t     delta;
-
-        if( m_tt ) {
-            clock_gettime(CLOCK_MONOTONIC, &t);
-            delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
-            m_dn = (m_preset<llabs(delta));
+        timespec    fin;       // timer finish
+        
+        if( m_preset ) {
+            if( m_tt ) {
+                clock_gettime(CLOCK_MONOTONIC, &fin);
+                m_delta += ((fin.tv_sec-m_start.tv_sec)*_million+(fin.tv_nsec-m_start.tv_nsec)/1000)/1000;
+                m_start = fin;
+                if(m_preset<llabs(m_delta)) { 
+                    m_dn = true;
+                    stop();
+                }
+            }
         }
-        else m_dn = false;
         return m_dn;
     }
 
@@ -91,19 +93,22 @@ struct cton {
     }
     
     int32_t getTT() {
-        timespec    t;
-        int64_t     delta=0;
-
-        if( m_tt ) {
-            clock_gettime(CLOCK_MONOTONIC, &t);
-            delta = ((t.tv_sec-m_start.tv_sec)*_million+(t.tv_nsec-m_start.tv_nsec)/1000)/1000;
-            delta = (m_preset<llabs(delta)) ? m_preset : delta;
-        }
-        return int32_t(delta);
+        return int32_t(m_delta);
     }
   
-    bool reset() {
+    void stop() {
         m_tt = false;
+    }
+
+    void resume() {
+        clock_gettime(CLOCK_MONOTONIC, &m_start);    
+        m_tt = true;
+    }
+
+    void reset() {
+        m_delta = 0;
+        m_tt = false;
+        m_dn = false;
     }
     
     int32_t getPreset() {
@@ -154,10 +159,10 @@ struct content {
     int32_t getvalue(int32_t &res) { res = _n; return 0; }
     int32_t getvalue(double &res) { res = _r; return 0; }
     int32_t getvalue(string &res) { res.assign(_s); return 0;}
-    double      _r; 
     int32_t     _n;
-    std::string _s;
     int16_t     _t;
+    double      _r; 
+    std::string _s;
 };
 
 template <class T>
@@ -200,7 +205,7 @@ class cproperties {
             }
             else {
                 m_set.push_back(make_pair(na, content(va)));
-                res = _exOK;
+                res = _exBadParam;
             }
 //            if(na=="configured") cout<<"\nset property "<<na<<" = "<<va<<endl;
             return res;
@@ -242,5 +247,23 @@ class cproperties {
  
 };
 
+int16_t readCfg();
+
+bool testaddr(void* x);   // проверка на NULL
+
+template <class T>
+bool testaddrlist(T& x) {   // проверка списка на NULL
+    bool isgood = (x.size() && find_if( x.begin(), x.end(), testaddr ) == x.end());
+    return isgood;
+}
+
+//template <class T>
+//void printdata(T&);       // вывод на экран
+
+// вывод на экран
+template <class T>
+void printdata(T& in) {
+    cout<<' '<<in;
+}
 
 #endif

@@ -1,4 +1,5 @@
 #include "upcon.h"
+#include "tagdirector.h"
 
 using namespace std;
  
@@ -36,10 +37,10 @@ void onConnectFailure(void* context, MQTTAsync_failureData* response)
 
 void onConnect(void* context, MQTTAsync_successData* response)
 {
-	MQTTAsync client = (MQTTAsync)context;
-	MQTTAsync_responseOptions ropts = MQTTAsync_responseOptions_initializer;
-	MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
-	int rc;
+	//MQTTAsync client = (MQTTAsync)context;
+	//MQTTAsync_responseOptions ropts = MQTTAsync_responseOptions_initializer;
+	//MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+	//int rc;
 /*
 	if (opts.showtopics)
 		printf("Subscribing to topic %s with client %s at QoS %d\n", topic, opts.clientid, opts.qos);
@@ -57,8 +58,8 @@ void onConnect(void* context, MQTTAsync_successData* response)
 
 void connectionLost(void *context, char *cause)
 {
-	MQTTAsync client = (MQTTAsync)context;
-	int rc;
+//	MQTTAsync client = (MQTTAsync)context;
+//	int rc;
 /*
 	printf("connectionLost called\n");
 	if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
@@ -71,7 +72,7 @@ void connectionLost(void *context, char *cause)
 
 int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
 {
-    std::string::size_type  found;
+//    std::string::size_type  found;
     std::string             top(topicName, strlen(topicName));
     std::string             val((char*)message->payload, message->payloadlen);
     upconnections::iterator ib, ie;
@@ -105,7 +106,7 @@ void onPublishFailure(void* context, MQTTAsync_failureData* response)
 
 void onPublish(void* context, MQTTAsync_successData* response)
 {
-	MQTTAsync client = (MQTTAsync)context;
+	//MQTTAsync client = (MQTTAsync)context;
 
 //	published = 1;
 }
@@ -117,9 +118,9 @@ upcon::upcon()
 }
 
 upcon::~upcon() {
-    int16_t rc;
+//    int16_t rc;
 
-    rc = disconnect();
+    /*rc = */disconnect();
 	MQTTAsync_destroy(&m_client);
     delete []conn_opts->password;
     delete []conn_opts->username;
@@ -157,8 +158,8 @@ int16_t upcon::connect() {
           (getproperty("clientid", sc) == EXIT_SUCCESS);
     
     if(rc) {
-//        mqtt_create_options opts = \
-            { sc.c_str(), 1, '\n', nq, su.c_str(), sp.c_str(), si.c_str(), sport.c_str(), 0, 10 };
+//        mqtt_create_options opts = 
+//            { sc.c_str(), 1, '\n', nq, su.c_str(), sp.c_str(), si.c_str(), sport.c_str(), 0, 10 };
         url<<si<<":"<<sport;
         rc = MQTTAsync_create(&m_client, url.str().c_str(), \
                                     sc.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL); 
@@ -193,17 +194,18 @@ int16_t upcon::connect() {
     return rc;
 }
 
-int16_t upcon::subscribe(ctag &tag) {    
+int16_t upcon::subscribe(void* vtag) {    
     int16_t                     rc = EXIT_FAILURE;
 	MQTTAsync_responseOptions   ropts = MQTTAsync_responseOptions_initializer;
-	MQTTAsync_message           pubmsg = MQTTAsync_message_initializer;
+//	MQTTAsync_message           pubmsg = MQTTAsync_message_initializer;
     string                      topic;
     string                      name;
     string                      sf;
+    ctag*                       tag = (ctag*)vtag;
 
-    rc = getproperty("subf", sf) == EXIT_SUCCESS && \
-         tag.getproperty("name", name)    == EXIT_SUCCESS && \
-         tag.getproperty("topic", topic)  == EXIT_SUCCESS;
+    rc = getproperty("subf", sf) == _exOK && \
+         tag->getproperty("name", name)    == _exOK && \
+         tag->getproperty("topic", topic)  == _exOK;
 
     if(rc==0) {
         cout << "cfg: prop not found" << endl; 
@@ -216,26 +218,25 @@ int16_t upcon::subscribe(ctag &tag) {
             sf = subtop.back();
             subtop.pop_back();
             double d;
-            if(tag.getproperty(sf, d)!=EXIT_SUCCESS)
-                tag.setproperty( sf, double(0) );         // add subscribing fields to tag properties
+            if(tag->getproperty(sf, d)==_exOK) {
+//            tag->setproperty( sf, double(0) );         // add subscribing fields to tag properties
 //            if(subtop.size()==1) {                      // subscribe for all fields of tag
 //                sztop = topic+"/"+name+"/#";;
                 sztop = topic+"/"+name+"/"+sf;
                 ropts.onSuccess = onSubscribe;
                 ropts.onFailure = onSubscribeFailure;
                 ropts.context   = m_client;
-                if ((rc = MQTTAsync_subscribe(m_client, sztop.c_str(), 1, &ropts)) != MQTTASYNC_SUCCESS)
-                {
+                if((rc = MQTTAsync_subscribe(m_client, sztop.c_str(), 1, &ropts)) != MQTTASYNC_SUCCESS) {
                     printf("Failed to start subscribe, return code %d\n", rc);
                 }
                 cout<<"Subscribe "<<sztop<<" rc="<<rc<<endl;
-//            }
+            }
         }
     }
     
     return rc;
 }
-
+/*
 int16_t upcon::publish(ctag &tag) {    
     int16_t         res = EXIT_FAILURE;
     string          topic;
@@ -274,50 +275,7 @@ int16_t upcon::publish(ctag &tag) {
     }
     return res;
 }
-
-int16_t publish(ctag &tag) {    
-    int16_t         res = EXIT_FAILURE;
-    string          topic;
-/*   string          name;
-    string          val;
-    string          kval;*/
-    string          ts;
-    string          sf;
-    int16_t         rc;
-//    int32_t         sec, msec;
-   
-    rc = upc[0]->getproperty("pubf", sf) == EXIT_SUCCESS/* && \
-         tag.getproperty("name", name)    == EXIT_SUCCESS;
-         tag.getproperty("topic", topic)  == EXIT_SUCCESS && \
-         tag.getproperty("value", val)    == EXIT_SUCCESS && \
-         tag.getproperty("quality", kval) == EXIT_SUCCESS && \
-         tag.getproperty("sec", sec) == EXIT_SUCCESS && \
-         tag.getproperty("msec", msec) == EXIT_SUCCESS*/;
-         
-    if(rc==0) {
-        cout << "cfg: prop not found" << endl; 
-    }
-    else {
-        timespec* tts;
-        tts = tag.getTS();
-//        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
-        ts = to_string( int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million)) );
-        replaceString(sf, "value", to_string(tag.getvalue()) );
-        replaceString(sf, "quality", to_string(int(tag.getquality())) );
-        replaceString(sf, "timestamp", ts);
-
-        pthread_mutex_lock( &mutex_pub );
-        if(pubs.size()<_pub_buf_max) {
-            tag.getfullname(topic);
-            pubs.push_back(make_pair(topic, sf));
-            res = EXIT_SUCCESS;
-        }
-        pthread_mutex_unlock( &mutex_pub );
-//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
-        tag.acceptnewvalue();
-    }
-    return res;
-}
+*/
 
 //
 // queue of message for pub processing
@@ -348,7 +306,7 @@ int16_t upcon::pubdataproc() {
 //
 void upcon::run() {
     cout << "\nstart up connection " << m_id << endl;
-    int16_t rc = connect();
+    /*int16_t rc =*/ connect();
     if(getstatus() == INITIALIZED) {
         while(getstatus()!=TERMINATE) {
            pthread_mutex_lock( &mutex_pub );

@@ -1,53 +1,10 @@
 #include "algo.h"
+#include "tagdirector.h"
+#include "unitdirector.h"
+#include "utils.h"
 
 alglist algos;
 
-// Получить значение
-double getval(ctag* p) {
-    double rval=-1;
-    if( p ) rval = p->getvalue();
-
-    return rval;
-}
-
-// Получить качество тэга
-uint8_t getqual(ctag* p) {
-    uint8_t nval=0;
-    if ( p ) nval = p->getquality();
-
-    return nval;
-}
-
-// получить ссылку на тэг по имени
-ctag* getaddr(string& str) {
-    ctag* p = tagdir.gettag( str.c_str() );
-    cout<<"gettag "<<hex<<long(p);
-    if(p) cout<<" name="<< p->getname();
-    cout<<endl;
-
-    return p;
-}
-
-// получить ссылку на юнит по имени
-cunit* getaddrunit(string& str) {
-    cunit* p = unitdir.getunit( str.c_str() );
-    cout<<"getunit "<<hex<<long(p);
-    if(p) cout<<" name="<< p->getname();
-    cout<<endl;
-
-    return p;
-}
-
-// проверка на NULL
-bool testaddr(void* x) {
-    return (x==NULL);
-}
-
-// вывод на экран
-template <class T>
-void printdata(T in) {
-    cout<<' '<<in;
-}
 
 // Расчет перепада давлений МПа->кПа
 double dPress( double in1, double in2 ) { 
@@ -59,12 +16,12 @@ int16_t calgo::init() {
     string  sin, sres, seq;
     
     cout<<" calgo init";  
-    if( getproperty( "type", m_nType ) != _exOK || \
-      (  getproperty( "args", sin ) != _exOK  && \
-         getproperty( "res", sres ) != _exOK  && \
-         getproperty( "equipments", seq ) != _exOK ) ) rc = _exBadParam;
+        getproperty( "type", m_nType );
+        getproperty( "args", sin );
+        getproperty( "res", sres );
+        getproperty( "equipments", seq );;
 
-    cout<<" rc="<<rc<<" type="<<m_nType<<" args="<<sin<<" res="<<sres<<endl;
+    cout<<" rc="<<rc<<" type="<<m_nType<<" args="<<sin<<" res="<<sres<<" equip="<<seq<<endl;
     
     if( !rc ) {
         vector<string> arr;
@@ -87,13 +44,10 @@ int16_t calgo::init() {
         strsplit( seq, ';', arr );               
         for_each( arr.begin(), arr.end(), printdata<string> ); cout<<endl;
         m_units.resize(arr.size());
-        transform( arr.begin(), arr.end(), m_units.begin(), getaddrunit );           // получим ссылки на устройства
-        cout<<"res"; for( unitvector::iterator it=m_units.begin(); it!=m_units.end(); ++it ) cout<<' '<<hex<<*it; cout<<endl;
+        transform( arr.begin(), arr.end(), m_units.begin(), getaddrunit );         // получим ссылки на устройства
+        cout<<"equip"; for( unitvector::iterator it=m_units.begin(); it!=m_units.end(); ++it ) cout<<' '<<hex<<*it; cout<<endl;
        
-        if( (!m_args.size() || find_if( m_args.begin(), m_args.end(), testaddr ) != m_args.end()) && \
-            (!m_res.size() || find_if( m_res.begin(), m_res.end(), testaddr ) != m_res.end()) && \
-            (!m_units.size() || find_if( m_units.begin(), m_units.end(), testaddr ) != m_units.end()) )  
-            { rc = _exBadAddr; m_fInit = -1; }
+        if( !testaddrlist(m_args) && !testaddrlist(m_res) && !testaddrlist(m_units) ) { rc = _exBadAddr; m_fInit = -1; }
         else m_fInit = 1;
     }
 //    cout<<" args="<<args.size()<<" res="<<res.size()<<endl;    
@@ -102,159 +56,112 @@ int16_t calgo::init() {
 
 int16_t calgo::solveIt() {
     double raw;
-    uint8_t nqual;
+    uint8_t nqual=OPC_QUALITY_GOOD;
+    vector<double> arr_real;
+    vector<uint8_t> arr_qual;   
     int16_t rc=_exOK;
-
+    
+    getproperty( "enable", m_enable );
+    if( m_enable ) {
     if( m_fInit>0 ) {
+        arr_qual.resize( m_args.size() );
+        transform( m_args.begin(), m_args.end(), arr_qual.begin(), getqual );
+        nqual = accumulate( arr_qual.begin(), arr_qual.end(), 0, bit_or<uint8_t>() );
         switch( algtype(m_nType) ) {                    
             /*
                         ---------- Управление МЕХАНИЗМАМИ  ----------
             */
             case _unitProcessing: {
+//                    cout<<"_unitProcessing"<<endl;
+                                      /*
                     int16_t fEn;
                     getproperty( "enable", fEn );
                     if( !fEn ) break;                                               // если алгоритм запрещен -> выходим 
+                    */
                     if( !m_nUnits ) getproperty("number", m_nUnits);                // считываем количество устройств                      
-                    if( m_nUnits && m_nUnits<=m_units.size()  ) {
-                        for( int16_t j=0; fEn && j<m_nUnits; j++ ) {
-                            cunit* puni = (cunit*)m_units[j];
-                            puni->getstate();                                       // получим состояние
+                    if( m_nUnits && (size_t)m_nUnits<=m_units.size()  ) {
+                        for( int16_t j=0; j<m_nUnits; j++ ) {
+                            cunit* puni = m_units[j];
+                            if( puni->getstate()!=_exOK ) continue;                 // получим состояние
                             switch( puni->getmode() ) {                             // управляем механизмом согласно режима
                                 case _auto_pid:                                     // ПИД
-                                    if( m_args.size() >= m_nUnits ) {
+                                    if( m_args.size() >= (size_t)m_nUnits ) {
                                         puni->pidEval( m_args[j] );
                                     }                                
                                     break;
                                 case _auto_time: 
-                                    if( puni->gettype()==_valve && m_nUnits==2 && m_args.size() >= m_nUnits ) {
+                                    if( puni->gettype()==_valve && m_nUnits==2 && \
+                                            m_args.size() >= (size_t)m_nUnits*2 && m_res.size() ) {
+                                        uint16_t sw = ((ctag*)m_res[0])->getvalue();
                                         int16_t jj = ((j+1) ^ _mask_v);             // вычислим номер второго клапана
                                         if(jj && jj<=m_nUnits) {
                                             jj--;
-                                            cunit* poth = (cunit*)m_args[jj];
-                                            if( poth->getmode()==_auto_time ) {
-                                                 
+                                            cunit* poth = m_units[jj];
+                                            if( poth && poth->getmode()==_auto_time && j<jj && !sw ) {     // если 1й клапан из 2х и нет управления
+                                                const int16_t state = m_twait.isDone() ? _done_a : (m_twait.isTiming() ? _buzy_a : _idle_a);
+                                                if( state == _idle_a ) {                                                        // если режим ожидания
+                                                    if( !m_stor ) {                                                             // если клапан не выбран
+                                                        int16_t lso = ( ( poth->isOpen()*2 + puni->isOpen() ) & _mask_v );      // проверим конеч открытия
+                                                        switch( lso ) {
+                                                            case 0: puni->open(); break;                                        // не открыты - откроем 1
+                                                            case 1: break;                                                      // открыт 1
+                                                            case 2: break;                                                      // открыт 2
+                                                            case 3: lso=1; break;                                               // открыты оба - выбор 1 
+                                                        }
+                                                        m_stor = lso;                                                           // запомним открытый
+                                                    }
+                                                    cout<<"selected valve="<<m_stor<<endl;
+                                                    if( m_stor ) {                                                              // если есть выбранный
+                                                        cunit* pvl;
+                                                        int16_t fLSO = ( m_stor==_first_v  ) ? puni->isOpen() : poth->isOpen();
+                                                        int16_t fLSC = ( m_stor==_first_v  ) ? poth->isClose() : puni->isClose();
+                                                        if( fLSO ) {                                                            // и он открыт
+                                                            pvl = ( m_stor==_first_v  ) ? poth : puni;
+                                                            cout<<endl<<"autotime change "<<pvl->getname()<<" task="<<pvl->gettask();
+                        //                                    if( pvl->gettask()!=pvl->getmineng())
+                                                            if( !fLSC ) pvl->close();                                           // закроем другой                    
+                                                            jj = ( m_stor==_first_v  ) ? j : jj;
+                                                            ctag* pt = m_args[jj+m_nUnits];                                     // вычислим тэг с временем
+                                                            int32_t ntim;   
+                                                            if( pt && (ntim = pt->getvalue())>0 ) {
+                                                                cout<<" timer="<<ntim<<endl;
+                                                                m_twait.start( ntim*1000 );                                     // запустим таймер
+                                                            }
+                                                        }
+                                                        else {
+                                                            cout << "Алг auto_time: Нет конечника!\n";
+                                                        }
+                                                    }
+                                                }
+                                                else if( state == _done_a ) {                                                   // если время первого прошло
+                                                    cunit* pvl = ( m_stor==_first_v  ) ? poth : puni;
+                                                    pvl->open();                                                                // откроем второй                    
+                                                    m_stor ^= _mask_v;                                                          // сделаем основным 
+                                                    m_twait.reset();                                                            // сбросим таймер
+                                                }
                                             }
                                         }
                                     }
                                     break; 
                             }
-                            if( puni->gettype()!=_valve || puni->valveCtrlEnabled() ) puni->control(); // запустим исполнение
-                        }
-                    }
-                }
+                            if( puni->gettype()!=_valve || puni->valveCtrlEnabled() ) puni->control(); // запустим исполнение ;
+                        } 
+                    } 
+                } 
                 break;
-                /*
-            case _timeValveControl:                                             // алгоритм управления клапанами по времени
-                if( args.size() >= 6 && res.size() >= 2 ) {
-                    ctag*   pmode1        = args[0];                            // режим клапана 1
-                    ctag*   pmode2        = args[1];                            // режим клапана 2
-                    ctag*   plso1         = args[2];                            // конечник открыто клапана 1
-                    ctag*   plso2         = args[3];                            // конечник открыто клапана 2
-                    ctag*   plsc1         = args[4];                            // конечник открыто клапана 1
-                    ctag*   plsc2         = args[5];                            // конечник открыто клапана 2
-                   
-                    ctag*   psw           = res[0];                             // ключ выбора клапана 
-                    ctag*   pvl1          = res[1];                             // клапан 1
-                    ctag*   pvl2          = res[2];                             // клапан 2 
-                    int32_t ntim; 
-                    const int16_t rc2     = (args[3]->getquality()!=OPC_QUALITY_GOOD); 
-                    static int16_t selv   = 0;
-                    const int16_t lso1    = plso1->getvalue();
-                    const int16_t lso2    = plso2->getvalue();
-                    const int16_t lsc1    = plsc1->getvalue();
-                    const int16_t lsc2    = plsc2->getvalue();
-                   
-                  
-                    const int16_t sw      = psw->getvalue();                   
-                    const int16_t sw_old  = psw->getoldvalue();                   
-                    // текущий режим - авт по времени
-                    const bool    fMode   = ( pmode1->getvalue()==_auto_time ) && ( pmode2->getvalue()==_auto_time );
-                    // переход в авт режим по времени
-                    const bool    fInMode = ( pmode1->getvalue()==_auto_time && pmode1->getoldvalue()!=_auto_time ) \
-                                            || ( pmode2->getvalue()==_auto_time && pmode2->getoldvalue()!=_auto_time );
-                    // выход из режима
-                    const bool    fOutMode1 = ( pmode1->getvalue()!=_auto_time && pmode1->getoldvalue()==_auto_time );
-                    const bool    fOutMode2 = ( pmode2->getvalue()!=_auto_time && pmode2->getoldvalue()==_auto_time );
-
-                    if( fOutMode1 ) pmode2->setvalue( _manual );
-                    if( fOutMode2 ) pmode1->setvalue( _manual );
-                    if( fOutMode1 || fOutMode2 ) {                   
-                        pmode2->setoldvalue( pmode2->getvalue() );
-                        pmode1->setoldvalue( pmode1->getvalue() );
-                    }
-                    if( fInMode ) {
-                        pmode1->setvalue(_auto_time);
-                        pmode2->setvalue(_auto_time);
-                        pmode1->setoldvalue(_auto_time);
-                        pmode2->setoldvalue(_auto_time);
-                        psw->setvalue(_no_valve);
-                        m_twait.reset();
-                        selv = 0;
-                    }
-                    const int16_t state = m_twait.isDone() ? _done_a : (m_twait.isTiming() ? _buzy_a : _idle_a);
-                    if( fMode ) cout<<"timeValvecontrol"\
-                        <<" mode1="<<pmode1->getoldvalue()<<"|"<<pmode1->getvalue()\
-                        <<" mode2="<<pmode2->getoldvalue()<<"|"<<pmode2->getvalue()\
-                        <<" Mode="<<fMode<<" inMode="<<fInMode<<" outMode="<<fOutMode1<<"|"<<fOutMode2\
-                        <<" SelValve="<<sw<<" state="<<state<<endl;
-                    if( !fMode ) { break; }                                                             // уйдем, если другой режим
-                    if( !sw ) {
-                        if( state == _idle_a ) {                                                        // если режим ожидания
-                            if( !selv ) {                                                               // если клапан не выбран
-                                int16_t lso = ( ( lso2*2 + lso1 ) & _mask_v );                          // проверим конеч открытия
-                                switch( lso ) {
-                                    case 0: 
-//                                        if( pvl1->gettask()!=pvl1->getmaxeng())
-                                            pvl1->settask( pvl1->getmaxeng() ); break;                  // не открыты - откроем 1
-                                    case 1: break;                                                      // открыт 1
-                                    case 2: break;                                                      // открыт 2
-                                    case 3: lso=1; break;                                               // открыты оба - выбор 1 
-                                }
-                                selv = lso;                                                             // выберем открытый
-                            }
-                            cout<<"selv="<<selv;
-                            if( selv ) {                                                                // если есть выбранный
-                                ctag* pvl;
-                                int16_t fLSO = ( selv==_first_v  ) ? lso1 : lso2;
-                                int16_t fLSC = ( selv==_first_v  ) ? lsc2 : lsc1;
-                                if( fLSO ) {                                                            // и он открыт
-                                    pvl = ( selv==_first_v  ) ? pvl2 : pvl1;
-                                    cout<<endl<<"autotime change "<<pvl->getname()<<" task="<<pvl->gettask()<<"|"<<pvl->getmineng();
-//                                    if( pvl->gettask()!=pvl->getmineng())
-                                    if( !fLSC ) pvl->settask( pvl->getmineng() );                       // закроем второй                    
-                                    string s = string("autotime")+to_string( selv );
-                                    getproperty( s.c_str(), ntim );   
-                                    cout<<" timer="<<ntim<<endl;
-                                    m_twait.start( ntim*1000 );                                         // запустим таймер
-                                }
-                                else {
-                                    cout << "Алг auto_time: Нет конечника!\n";
-                                }
-                            }
-                        }
-                        else if( state == _done_a ) {                                                   // если время первого прошло
-                            ctag* pvl = ( selv==_first_v  ) ? pvl2 : pvl1;
-                            pvl->settask( pvl->getmaxeng() );                                           // откроем второй                    
-                            selv ^= _mask_v;                                                            // сделаем основным 
-                            m_twait.reset();                                                            // сбросим таймер
-                        }
-                    }
-                }
-                break;
-                */
             // Расчет расхода по перепаду давления на сечении клапана   
             case _floweval:
-                ctag* pout;   
+//                    cout<<"_floweval"<<endl;
 //                cout<<" eval flow for delta pressure size="<<args.size()<<" | "<<res.size()<<endl;
-                if( m_args.size() >= 5 && m_res.size() >= 1 && nqual==OPC_QUALITY_GOOD ) {
+                if( m_args.size() >= 5 && m_res.size() >= 1 && testaddrlist(m_args) && testaddrlist(m_res) ) {
                     ctag* pfv  = (ctag*)m_args[0];  // valve mm opened
                     ctag* ppt1 = (ctag*)m_args[1];  // давление в пласте
                     ctag* ppt2 = (ctag*)m_args[2];  // давление у насоса
                     ctag* pdt  = (ctag*)m_args[3];  // density 
                     ctag* pkv  = (ctag*)m_args[4];  // Kv factor
-                    pout = (ctag*)m_res[0];
+                    ctag* pout = (ctag*)m_res[0];
 
-                    double sq, r1=1, r11=4, ht1 = pfv->getvalue()-1, _tan = 0.0448210728500398; 
+                    double sq, r1=1, /*r11=4,*/ ht1 = pfv->getvalue()-1, _tan = 0.0448210728500398; 
 /*                    
                     cout<<"fv\tpt1\tpt2\tkv\tdt\tsq\tflow\n";
                     cout<<pfv->getname()<<'\t' <<ppt1->getname() <<'\t'<<ppt2->getname() <<'\t'<<pkv->getname() <<'\t'<<pdt->getname()<<endl;
@@ -281,43 +188,45 @@ int16_t calgo::solveIt() {
                            ((pdt->getvalue() > 100 ) ? pdt->getvalue() : 1000) )*86400;
 //                    cout<<sq<<'\t'<<raw<<endl;
                     pout->setrawval( raw );   
-                    pout->setquality( OPC_QUALITY_GOOD );
+                    pout->setquality( nqual );
                 }
-                else if(m_res.size()) pout->setquality(OPC_QUALITY_BAD);
+                else if(m_res.size()) ((ctag*)m_res[0])->setquality(OPC_QUALITY_BAD);
                 break;
             // Суммирование входных аргументов и запись в выходной
             case _summ:
+//                    cout<<"_summ"<<endl;
 //                cout<<" eval flow summary size="<<args.size()<<" | "<<res.size()<<endl;   
-                if( m_args.size() >= 2 && m_res.size() >= 1 && nqual==OPC_QUALITY_GOOD ) { 
-                    vector<double> arr_real;
+                if( m_args.size() >= 2 && m_res.size() >= 1 && testaddrlist(m_args) && testaddrlist(m_res) ) { 
                     ctag* pout = (ctag*)m_res[0];   
                     arr_real.resize( m_args.size() );
                     transform( m_args.begin(), m_args.end(), arr_real.begin(), getval );
                     raw = accumulate( arr_real.begin(), arr_real.end(), 0.0, plus<double>() );
                     pout->setrawval(raw);
-                    pout->setquality( OPC_QUALITY_GOOD );
+                    pout->setquality( nqual );
                 }
-                else if(m_res.size()) pout->setquality(OPC_QUALITY_BAD);   
+                else if(m_res.size()) ((ctag*)m_res[0])->setquality( OPC_QUALITY_BAD );   
                 break;
             // Вычисление перепада давления: sub входных аргументов, mul 1000 и запись в выходной
             case _sub:
+//                    cout<<"_sub"<<endl;
 //                cout<<" eval deltaP size="<<args.size()<<" | "<<res.size()<<endl;   
-                if( m_args.size() >= 2 && m_res.size() >= 1 && nqual==OPC_QUALITY_GOOD ) { 
-                    vector<double> arr_real; 
+                if( m_args.size() == 2 && m_res.size() >= 1 && testaddrlist(m_args) && testaddrlist(m_res) ) {
                     ctag* pout = (ctag*)m_res[0];    
-                    arr_real.resize( m_args.size() );
-                    transform( m_args.begin(), m_args.end(), arr_real.begin(), getval );
-//                    raw = accumulate( arr_real.begin(), arr_real.end(), 0.0, dPress );
-                    pout->setrawval( dPress( arr_real[0], arr_real[1] ) );
-                    pout->setquality( OPC_QUALITY_GOOD );
+                    if( nqual==OPC_QUALITY_GOOD ) { 
+                        arr_real.resize( m_args.size() );
+                        transform( m_args.begin(), m_args.end(), arr_real.begin(), getval );
+    //                    raw = accumulate( arr_real.begin(), arr_real.end(), 0.0, dPress );
+                        pout->setrawval( dPress( arr_real[0], arr_real[1] ) );
+                    }
+                    pout->setquality( nqual );
                 }
-                else if( m_res.size() ) pout->setquality(OPC_QUALITY_BAD);   
+                else if( m_res.size() ) ((ctag*)m_res[0])->setquality( OPC_QUALITY_BAD );   
                 break;
-            default: rc = _exFail;;
+            default: rc = _exFail;
         }
     }
     else rc = init();
-    
+    } 
     //    cout<<endl;
     return rc;
 }

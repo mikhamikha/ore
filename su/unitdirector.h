@@ -2,10 +2,11 @@
  * Модуль управления списком управляющих механизмов ( задвижки, насосы )
  */
 
-#ifndef _unit_director_h
-    #define _unit_director_h
+#ifndef _UNIT_DIRECTOR_HPP_
+    #define _UNIT_DIRECTOR_HPP_
 
 #include "unit.h"
+#include "thread.h"
 
 #define _unit_prc_delay    100000
 
@@ -29,10 +30,13 @@ class cunitdirector: public cthread {
         int16_t getunitlimits( const char*, double&, double& );
         */
         void run();
-
+        int32_t size() { return units.size(); }
 };
 
 
 extern cunitdirector unitdir;
 
-#endif
+
+cunit* getaddrunit(string& str);    // получить ссылку на юнит по имени
+
+#endif // _UNIT_DIRECTOR_HPP_

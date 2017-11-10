@@ -1,6 +1,6 @@
 // заголовочный файл algo.h
-#ifndef _unit_H
-	#define _unit_H
+#ifndef _UNIT_HPP_
+	#define _UNIT_HPP_
 
 #include <numeric>
 #include <string>	
@@ -9,14 +9,14 @@
 #include <ctime>
 #include <stdint.h>
 #include <stdlib.h>
-#include "main.h"
+
 #include "tag.h"
+#include "utils.h"
 
 #define _loc_data_buffer_size   10
 #define _valve_mode_amount      8 
-#define _lag_start              2000
+#define _lag_start              10000
 #define _waitcomplete           500000
-
 #define _cnt        m_pfc->getvalue()           // текущий счетчик
 #define _cnt_old    m_pfc->getoldvalue()        // предыдущий счетчик
 #define _lso        m_plso->getvalue()          // конечный открытия
@@ -28,13 +28,13 @@
 #define _cmd_val    m_pcmdopen->getvalue()      // подтв. команда движения
 #define _dir_val    m_pcmdclose->getvalue()     // подтв. команда обратного движения
 #define _raw        m_ppos->getrawval()         // текущее "сырое" значение положения
-#define _task       m_ppos->gettask()
-#define _value      m_ppos->getvalue()
+//#define _task       m_ppos->gettask()
+//#define _value      m_ppos->getvalue()
 #define _maxOpen    m_ppos->getmaxeng()
 #define _minOpen    m_ppos->getmineng()
 #define _sw         m_psel->getvalue()                   
-#define _mode       m_pmod->getvalue()
-#define _mode_old   m_pmod->getoldvalue()
+//#define _mode       m_pmod->getvalue()
+//#define _mode_old   m_pmod->getoldvalue()
 //#define _pt         m_preg->getvalue();
 //#define _pttask     m_preg->gettask();   
 
@@ -43,9 +43,9 @@ enum motionstate {
     _open       = 1,        // дана команда открытия
     _close,                 // дана команда закрытия
     _closeAck,              // есть подтверждение готовности закрытия
-    _stopping,              // процесс останова
     _opening    = 11,       // идет открытие
-    _closing                // идет закрытие
+    _closing,               // идет закрытие
+    _stopping               // процесс останова
 };
 
 enum modecontrol {
@@ -55,7 +55,7 @@ enum modecontrol {
     _auto_time,             // автоматический по времени
     _calibrate,             // режим калибровки
     _manual_pulse_open,     // импульс на открытие
-    _manual_pulse_close,    // импульс на закрытие
+    _manual_pulse_close     // импульс на закрытие
 };
 
 enum valvenum {
@@ -78,24 +78,40 @@ enum valve_error_codes {
 };
 
 enum valvecmd {
-    _cmd_none,
-    _cmd_open,
-    _cmd_close,
-    _cmd_position,
-    _cmd_stop
+    _cmd_none = 0,
+    _cmd_open,      // =1
+    _cmd_close,     // =2
+    _cmd_position,  // =3
+    _cmd_stop       // =4
 };
 
 enum valvecmdstatus {
-    _cmd_clear,
-    _cmd_accepted,
-    _cmd_completed,
-    _cmd_failed
+    _cmd_clear = 0,
+    _cmd_requested, // =1
+    _cmd_accepted,  // =2
+    _cmd_completed, // =3
+    _cmd_failed     // =4
+};
+
+enum valvestatus {
+    _vlv_ready,
+    _vlv_opened,    // =1
+    _vlv_closed,    // =2
+    _vlv_open,      // =3
+    _vlv_opening,   // =4
+    _vlv_close,     // =5    
+    _vlv_closing,   // =6
+    _vlv_warn,      // =7
+    _vlv_fault_1,   // =8
+    _vlv_fault_2,   // =9
+    _vlv_fault_3,   // =10
+    _vlv_fault_4,   // =11
+    _vlv_override   // =12
 };
 
 typedef std::vector <cproperties> vlvmode;
-typedef std::vector<ctag*> tagvector;
 
-;// объявление класса Алгоритм
+// объявление класса исполнительного механизма 
 class cunit: public cproperties { 			// имя класса
     tagvector   args;
     int16_t     m_nType;
@@ -108,9 +124,14 @@ class cunit: public cproperties { 			// имя класса
     int16_t     m_direction;
     int32_t     m_pulsew;
     double      m_task;
+    bool        m_task_go;
+    double      m_position;
     int16_t     m_cmd;
-    int16_t     m_lastcmd;
+    int16_t     m_mode;
+    int16_t     m_mode_old;
     int16_t     m_cmdstatus;
+    double      m_minAuto;
+    double      m_maxAuto;
 
     union {
         struct {            // valve
@@ -128,6 +149,7 @@ class cunit: public cproperties { 			// имя класса
             double  m_delta;            // дельта для остановки клапана
             double  m_maxdelta;         // максимальная дельта
             int16_t m_error;            // ошибка клапана valve_error_codes
+            cunit*  m_pother;            // парный клапан
         };
         struct {            // pump
         };
@@ -156,7 +178,7 @@ class cunit: public cproperties { 			// имя класса
     int16_t control( void );
     int16_t argsize( void ) { return args.size(); }
     int16_t gettype() { return m_nType; }
-    int16_t getmode() { return m_pmod->getvalue(); }
+    int16_t getmode() { return m_mode; }
     int16_t getmotion() { return m_motion; }
 //    int16_t task(double rval) { n_task = rval; }
 //    double  taskget() { return n_task; } 
@@ -165,10 +187,20 @@ class cunit: public cproperties { 			// имя класса
     bool    valveCtrlEnabled() {
         return (_sw==_no_valve || _sw==m_num);
     }
-    bool isOpened() { return _lso; }
-    bool isClosed() { return _lsc; }
+    int16_t changemode(int16_t nv);
+    int16_t revertmode();
+    bool isOpen() { return _lso; }
+    bool isClose() { return _lsc; }
+    void open(); 
+    void close(); 
+    void settask( double, bool );
+    double gettask() { return m_task; }
+    int16_t getnum() { return m_num; }
+    bool    isReady() { return (m_fInit>0); }
 };
 
 extern vlvmode vmodes;
+extern vlvmode vstatuses;
+typedef std::vector <cunit *> unitvector;
 
-#endif
+#endif  // _UNIT_HPP_

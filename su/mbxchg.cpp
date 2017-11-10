@@ -91,7 +91,7 @@ int16_t cmbxchg::init()
     int16_t rc = getproperty("protocol", proto);
     std::string path;
     int16_t     parity, data, stop;
-    int32_t     baud;
+    int32_t     baud=0;
 
     m_ctx = NULL;
     if(rc==EXIT_SUCCESS) {
@@ -112,6 +112,7 @@ int16_t cmbxchg::init()
                      getproperty("stopbits", stop);
                 if(rc == 0) {
                     m_ctx = modbus_new_rtu( path.c_str(), baud, _parities[parity], data, stop );
+                    cout << "init serial | "<<path<<" | "<<baud<<" | "<< parity<<" | "<<data<<" | "<< stop;
                 }
             }
         }
@@ -123,7 +124,7 @@ int16_t cmbxchg::init()
     } 
     else {
         m_status = INITIALIZED;
-        cout << "init serial | "<<path<<" | "<<baud<<" | "<< parity<<" | "<<data<<" | "<< stop<< endl;
+        cout <<" m_ctx= "<<m_ctx<<endl;
 //        modbus_set_debug(m_ctx, TRUE);
 //      modbus_set_error_recovery(m_ctx, MODBUS_ERROR_RECOVERY_LINK | MODBUS_ERROR_RECOVERY_PROTOCOL);
     }
@@ -194,24 +195,24 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     int16_t                 resp, proto, erroff, mincmddel, errdel;
     bool                    fConnected = false;
 //----- cycle time measure-------------------------------------
-    timespec    tvs, tve;
-    int32_t     nTime;
-    int64_t     nsta, nfin;
-    int64_t     nD;
+//    timespec    tvs, tve;
+//    int32_t     nTime;
+//    int64_t     nsta, nfin;
+//    int64_t     nD;
 
-    clock_gettime(CLOCK_MONOTONIC,&tvs);
-    nsta = tvs.tv_sec*_million + tvs.tv_nsec/1000;
+//    clock_gettime(CLOCK_MONOTONIC,&tvs);
+//    nsta = tvs.tv_sec*_million + tvs.tv_nsec/1000;
 
 //---------------------------------------------------------------    
     cmdi = cmds.begin(); i=0;
     rc = getproperty( "protocol", proto )               | \
          getproperty( "responseto", resp )             | \
-         getproperty( "minimumcmddel", mincmddel )  | \
+         getproperty( "minimumCmdDelay", mincmddel )  | \
          getproperty( "errordelay", errdel )         | \
          getproperty( "cmderroffs", erroff );
     
-//    cout<<"rc="<<rc<<" proto="<<proto<<" response="<<resp<<" minimumcommand="<<mincmddel \
-        <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;
+//    cout<<"rc="<<rc<<" proto="<<proto<<" response="<<resp<<" minimumcommand="<<mincmddel 
+//        <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;
 
     if(!fConnected) {
         rc = modbus_connect(m_ctx);
@@ -230,9 +231,9 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
             cout<<"cmd="<<i<<" n="<<(*cmdi).m_node<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<endl;
             outtext(cmdi->ToString());
         }
+        fTook = true; 
         if( cmdi->m_enable && ( cmdi->m_first || cmdi->m_time.isDone() ) ) {
-   
-            fTook = true; rc = 0;
+            rc = 0;
             if(proto == RTU) {
                 rc = modbus_set_slave(m_ctx, cmdi->m_node);
             }   
@@ -261,8 +262,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                 cmdi->m_count,     \
                                 (uint16_t *)m_pReadData+cmdi->m_intAddress    \
                                 ); 
-//                      for( int j=0; i==7 && j<cmdi->m_count; j++ ) \
-                                cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
+//                      for( int j=0; i==7 && j<cmdi->m_count; j++ ) 
+//                                cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
                         if( cmdi->m_func==103 && rc!=-1 ) {     // сохраним защелки и сбросим их в модуле ВВ
                             for(int j=0; j<cmdi->m_count; j++ ) 
                                 m_pReadTrigger[j+cmdi->m_intAddress] |= m_pReadData[j+cmdi->m_intAddress];
@@ -290,8 +291,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                     cmdi->m_devAddr,  \
                                     (fLast)? 0: m_pWriteData[cmdi->m_intAddress]   \
                                     );
-//                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr<< \
-                                " val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
+//                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr<< 
+//                                " val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
                             if(rc!=-1)
                                 m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 
@@ -363,7 +364,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                 outtext(cmdi->ToString());
 //                modbus_flush( m_ctx );
             }
-            else {
+            else if(fTook) {
 //              if(i==9) cout<<"command OK\n";
                 if( cmdi->decErr() <= 0 ) {
                     m_pReadData[erroff+cmdi->m_num] = 0;
@@ -385,9 +386,9 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     }
 
 //----------- cycle time measure --------------------------------
-    clock_gettime(CLOCK_MONOTONIC,&tve);
-    nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
-    nD = abs(nfin-nsta);
+//    clock_gettime(CLOCK_MONOTONIC,&tve);
+//    nfin = tve.tv_sec*_million + tve.tv_nsec/1000;
+//    nD = abs(nfin-nsta);
 //    if( m_id==2 )
 //        cout<<"\nxchange "<<m_id<<" cycle time "<<nD/1000.0<<" ms"<<endl;
 //---------------------------------------------------------------    

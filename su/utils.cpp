@@ -1,12 +1,11 @@
+#include <pugixml.hpp>
 #include "utils.h"
 #include "upcon.h"
 #include "unitdirector.h"
 #include "tagdirector.h"
 #include "mbxchg.h"
 #include "display.h"
-#include "utils.h"
 #include "algo.h"
-
 
 using namespace std;
 
@@ -23,7 +22,7 @@ int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
 
 void setDT() {
     timespec    rawtime;
-    struct tm   *ptm1;
+//    struct tm   *ptm1;
     time_t      gt;
 
     clock_gettime(CLOCK_MONOTONIC, &rawtime);
@@ -66,11 +65,11 @@ char easytoupper(char in){
 std::string trim(const std::string& str,
                          const std::string& whitespace = " \t") {
 
-    const int strBegin = str.find_first_not_of(whitespace);
+    std::size_t strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos) return ""; // no content
 
-    const int strEnd = str.find_last_not_of(whitespace);
-    const int strRange = strEnd - strBegin + 1;
+    std::size_t strEnd = str.find_last_not_of(whitespace);
+    std::size_t strRange = strEnd - strBegin + 1;
 
     return str.substr(strBegin, strRange);
 }
@@ -95,9 +94,10 @@ void outtext(std::string tx) {
 //    clock_gettime(CLOCK_MONOTONIC, &rawtime);
 //    ptm = localtime(&(rawtime.tv_sec));
     ptm = localtime(&rawtime);
-    cout<<setfill('0')<<setw(2)<<ptm->tm_hour<<":"<<\
-          setfill('0')<<setw(2)<<ptm->tm_min<<":"<< \
-          setfill('0')<<setw(2)<<ptm->tm_sec<<"  "<<tx<<endl;
+    cout<<dec<<
+        setfill('0')<<setw(2)<<ptm->tm_hour<<":"<<
+        setfill('0')<<setw(2)<<ptm->tm_min<<":"<< 
+        setfill('0')<<setw(2)<<ptm->tm_sec<<"  "<<tx<<endl;
 }
 
 string time2string(time_t rawtime) {
@@ -154,10 +154,8 @@ int16_t strsplit(string& s, char delim, vector<string>& vec) {
 //
 int16_t readCfg() {
 	int16_t     rc = _exFail;
-    int16_t     nI=0, i, j;
     cmbxchg     *mb = NULL;  
     upcon       *up = NULL;
-    cunit       *uni= NULL;    
     
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file("map.xml");    
@@ -224,7 +222,7 @@ int16_t readCfg() {
         }
 
         // парсим объекты
-        tools = doc.select_nodes("//units/unit[@name='valve']");
+        tools = doc.select_nodes("//units/unit");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
             cunit uni;// = new cunit();
             //units.push_back(uni);
@@ -242,16 +240,15 @@ int16_t readCfg() {
                 uni.setproperty( tool.name(), tool.text().get() );
                 cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
-            cout<<endl; 
             string s;
             if( uni.getproperty( "name", s )==_exOK && !s.empty() ) unitdir.addunit( s, uni );
+            cout<<"\nuni name="<<s<<" size="<<unitdir.size()<<endl; 
         }
        // парсим алгоритмы
         int16_t cnt=0;
         tools = doc.select_nodes("//algo/alg");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
             calgo* alg = new calgo();
-            algos.push_back(alg);
 
             cout<<"parse alg "<<++cnt<<endl;
            
@@ -259,14 +256,15 @@ int16_t readCfg() {
                 spar = attr.name();
                 sval = attr.value();
                 alg->setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
+                cout<<" "<<spar<<"="<<sval<<" size="<<alg->getpropertysize();
             } 
             
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
                 alg->setproperty( tool.name(), tool.text().get() );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+                cout<<" "<<tool.name()<<"="<<tool.text().get()<<" size="<<alg->getpropertysize();   
             }
             cout<<endl;   
+            algos.push_back(alg);
         }
         //
         // парсим описания дисплеев
@@ -314,7 +312,23 @@ int16_t readCfg() {
             cout<<endl;   
             vmodes.push_back(prp);
         }
-       
+         // парсим статусы клапана
+        tools = doc.select_nodes("//valve/status");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cproperties prp;
+
+            cout<<"parse status mode "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                prp.setproperty( spar, sval );
+                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;   
+            vstatuses.push_back(prp);
+        }
+      
         rc = _exOK;
     }
     else {
@@ -323,4 +337,11 @@ int16_t readCfg() {
     
     return rc;
 }
+
+// проверка на NULL
+bool testaddr(void* x) {
+    return (x==NULL);
+}
+
+
 

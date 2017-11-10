@@ -2,6 +2,7 @@
     #define _tag_director_h
 
 #include "tag.h"
+#include "thread.h"
 
 typedef std::vector<std::pair<std::string, ctag> > taglist;
 
@@ -26,6 +27,7 @@ class ctagdirector: public cthread {
         void run();
 };
 
+ctag* getaddr(string& str);
 
 extern ctagdirector tagdir;
 

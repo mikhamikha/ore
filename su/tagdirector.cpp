@@ -34,7 +34,7 @@ ctag* ctagdirector::gettag( const char*  na ) {
 // ask value tag by it name
 //
 int16_t ctagdirector::gettag( const char* na, double& va, int16_t& qual, timespec* ts, int16_t trigger=0 ) {
-    int16_t     rc=EXIT_FAILURE;
+    int16_t rc=EXIT_FAILURE;
 
     pthread_mutex_lock( &mutex_tag );
     ctag* pp = gettag( na );
@@ -90,7 +90,6 @@ int16_t ctagdirector::gettagcount( const char* na, int16_t& val ) {
 
 int16_t ctagdirector::gettaglimits( const char* na, double& emin, double& emax) {
     int16_t     rc=EXIT_FAILURE;
-    double      rvc, rvo;
 
     pthread_mutex_lock( &mutex_tag );
     ctag* pp = gettag( na );
@@ -144,8 +143,8 @@ int16_t ctagdirector::tasktag( std::string& na, std::string& va ) {
     std::vector<string> vc;
     std::string stag, sf;
     strsplit( na, '/', vc);
-    if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1]))  
-            && vc.size() > 3 ) {
+    if( ( (val.length() && isdigit(val[0])) || \
+        (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) && vc.size() > 3 ) {
         sf   = vc.back(); vc.pop_back();
         stag = vc.back(); vc.pop_back();
         cout<<" name "<<stag<<" field "<<sf<< " value "<<val<<" size "<<vc.size()<<endl;
@@ -172,10 +171,7 @@ void ctagdirector::run() {
     taglist::iterator ih, iend;
     alglist::iterator iah, iaend;   
     
-    int16_t nRes, nRes1, nVal;
-    uint8_t nQ;
     double  rVal;
-    int32_t nCnt=0;
 
     cout << "start tags processing " << endl;
     sleep(1);
@@ -188,10 +184,10 @@ void ctagdirector::run() {
             int16_t nu;
             ctag&   pp = ih->second;
             
-            nRes1 = pp.getvalue( rVal );                        // вычислим значение параметра
+            int16_t rc = pp.getvalue( rVal );                        // вычислим значение параметра
 
             // публикация свежих данных
-            if( pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<upc.size() ) {
+            if( rc==_exOK && pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<int(upc.size()) ) {
                 publish(pp);                        
             }
 
@@ -225,4 +221,14 @@ void ctagdirector::run() {
 //    return EXIT_SUCCESS;
 }
 
+
+// получить ссылку на тэг по имени
+ctag* getaddr(string& str) {
+    ctag* p = tagdir.gettag( str.c_str() );
+    cout<<"gettag "<<hex<<long(p);
+    if(p) cout<<" name="<< p->getname();
+    cout<<endl;
+
+    return p;
+}
 

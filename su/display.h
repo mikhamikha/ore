@@ -1,17 +1,14 @@
-#ifndef _display_h
-    #define _display_h
+#ifndef _DISPLAY_HPP_ 
+    #define _DISPLAY_HPP_
 
 #include <config.h>
 #include <Noritake_VFD_GU3000.h>
 #include <string>
 #include <vector>
-#include "main.h"
-#include "utils.h"
-#include "tag.h"
-#include "tagdirector.h"
-#include "unitdirector.h"
-#include "unit.h"
 #include <cwchar>
+//#include "tag.h"
+#include "utils.h"
+#include "thread.h"
 
 const char      _invert_on  = '\x11';
 const char      _invert_off = '\x10';
@@ -20,7 +17,7 @@ const char      _bold_off[] = { 0x1F, 0x28, 'g', 0x41, 0x01 };
 const int16_t   _cmd_len = 5;
 
 typedef std::vector <cproperties> rowsarray;
-int16_t assignValues( ctag &p, string& subject, const string& sop, const string& scl );
+int16_t assignValues( void*, string&, const string&, const string& );
 //int16_t assignValues( string&, const string&, const string&, char*, int16_t& );   
 void to_866( string&, string& );
 
@@ -29,10 +26,16 @@ enum {
     _task_mode
 };
 
+enum _type_dsp_obj {
+    _tag,
+    _unit
+};
+
 class pagestruct: public cproperties {
    int16_t     m_currow;
    int16_t     m_prevpage;
    double      m_task;
+     
    rowsarray   rows; 
 
     public:
@@ -42,18 +45,21 @@ class pagestruct: public cproperties {
             m_task = 0;
         }
         
-    string      m_tag;
-    ctag      *p; 
-
+    string    m_tag;
+    void      *p; 
+    
     void setprev(int16_t n) { m_prevpage = n; }
     int16_t getprev() { return m_prevpage; }
     void rownext(int16_t n=1) { 
+        int16_t _tmp1;
 //        cout<<" old row "<<m_currow;
         m_currow = (m_currow+n)%rows.size(); 
 //        cout<<" new row "<<m_currow<<endl;
+        if(getproperty(m_currow, "tag", _tmp1)) rownext();
     }    
+
     void rowprev(int16_t n=1) { 
-        int16_t _tmp;
+        int16_t _tmp, _tmp1;
         int16_t _size = rows.size();
         cout<<" old row "<<m_currow<<" rows="<<_size<<" n="<<n;
         _tmp = (m_currow-n);
@@ -63,13 +69,15 @@ class pagestruct: public cproperties {
         if(_tmp<0) _tmp = _size-abs(_tmp);
         m_currow = _tmp;
         cout<<" new row "<<m_currow<<endl;
+        if(getproperty(_tmp, "tag", _tmp1)) rowprev();
     }
+
     int16_t rowget() { return m_currow; }
     int16_t rowssize() { return rows.size(); }
    
     int16_t rowset(int16_t _r) { 
         int16_t rc = EXIT_FAILURE;
-        if(_r>=0 && _r<=rows.size()-1) { m_currow = _r; rc=EXIT_SUCCESS; }
+        if(_r>=0 && _r<=int(rows.size())-1) { m_currow = _r; rc=EXIT_SUCCESS; }
         return rc;
     }
         
@@ -86,10 +94,11 @@ class pagestruct: public cproperties {
     template <class T>
     void setproperty( int16_t nr, const char* prop, T& svl ) {
         std::string spr = prop;
-        if( rows.size() <= nr ) {
+        if( int(rows.size()) <= nr ) {
             cproperties s;
             s.setproperty("format","");
-            while( rows.size() <= nr ) rows.push_back(s);  
+//            s.setproperty("visible", 0);
+            while( int(rows.size()) <= nr ) rows.push_back(s);  
         }       
         rows.at(nr).setproperty( spr, svl );
     }       
@@ -98,7 +107,7 @@ class pagestruct: public cproperties {
         int16_t rc;
         std::string spr = prop;
 
-        if(nr<rows.size())
+        if(nr>=0 && (size_t)nr<rows.size())
             rc = rows.at(nr).getproperty(spr, svl);
         else rc = EXIT_FAILURE;
 
@@ -118,7 +127,6 @@ struct cbtn {
     bool nc1:1;
     bool nc2:1;
 };
-
 
 class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
     pagearray   pages; 
@@ -143,7 +151,7 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
         void outview( int16_t );
 //      int16_t curview() { return m_curpage; }
         pagestruct* curpage() { 
-            return ((m_curpage>=0 && m_curpage<pages.size())?&pages[m_curpage]:NULL); 
+            return ((m_curpage>=0 && m_curpage<(int(pages.size()))) ? &pages[m_curpage] : NULL); 
         }
         void setcurview(int16_t n) { m_curpage = n; }
         void println( string& sin, bool, bool );
@@ -160,9 +168,9 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
         }       
         
         void addpages( int16_t nd ) {
-            if( pages.size() <= nd ) {
+            if( int(pages.size()) <= nd ) {
                 pagestruct  page;
-                while( pages.size() <= nd ) pages.push_back(page);
+                while( int(pages.size()) <= nd ) pages.push_back(page);
             }   
         }
         
@@ -174,13 +182,14 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
 
         int16_t getproperty( int16_t npg, std::string& spr, int16_t& res ) {
             int16_t rc = EXIT_FAILURE;
-            if(npg<pages.size())
+            if(npg>=0 && npg<int(pages.size()))
                 rc =  pages.at(npg).getproperty( spr, res );
             return rc;
         }
         
         void pageDisplay( int16_t npg ) {     
-            int16_t n, num=-1;
+            uint16_t n;
+            int16_t num=-1;
             for( n=0; n<pages.size(); n++ ) {
                 string s = "num";
                 if( getproperty( n, s, num )==EXIT_SUCCESS && num==npg ) {
@@ -211,7 +220,7 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
         void pagePrev() {
             GU3000_clearScreen();
             m_curpage = pages.at(m_curpage).getprev();
-            if(m_curpage<0 || m_curpage>=pages.size()) m_curpage = 0;
+            if(m_curpage<0 || m_curpage>=int(pages.size())) m_curpage = 0;
         }
         void run();
         void setMaxPage(int16_t n) { m_maxpage = n; }

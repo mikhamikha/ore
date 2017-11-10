@@ -1,5 +1,5 @@
-#ifndef _mbxchg
-    #define _mbxchg
+#ifndef _MBXCHG_HPP_ 
+    #define _MBXCHG_HPP_
 
 #include <iostream>
 #include <sstream>
@@ -13,6 +13,7 @@
 #include "thread.h"
 #include <errno.h>
 #include "utils.h"
+#include "thread.h"
 
 //#define EXIT_SUCCESS    0
 //#define EXIT_FAILURE    1

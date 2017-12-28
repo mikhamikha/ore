@@ -79,6 +79,7 @@ cmbxchg::cmbxchg()
     setproperty( "minimumcommanddelay", int16_t(10) );
     setproperty( "commanderrorpointer", int16_t(500) );
     setproperty( "responsetimeout",     int16_t(1000) );
+    setproperty( "charTO",              int16_t(20) );
     setproperty( "retrycnt",            int16_t(0) );
     setproperty( "errordelaycntr",      int16_t(0) );
 }
@@ -185,14 +186,15 @@ void cmbxchg::run(){
 int16_t cmbxchg::runCmdCycle(bool fLast=false) 
 {
     int32_t                 res=0;
-    int16_t                 rc=EXIT_FAILURE, i;
+    int16_t                 rc=_exFail, i;
     mbcommands::iterator    cmdi;
     uint32_t                old_resp_to_sec;
     uint32_t                old_resp_to_usec;
     uint32_t                to_sec;
     uint32_t                to_usec;
     bool                    fTook;              // delay must be
-    int16_t                 resp, proto, erroff, mincmddel, errdel;
+    int16_t                 proto, erroff;
+    int32_t                 resp, charto, mincmddel, errdel;
     bool                    fConnected = false;
 //----- cycle time measure-------------------------------------
 //    timespec    tvs, tve;
@@ -208,23 +210,26 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
     rc = getproperty( "protocol", proto )               | \
          getproperty( "responseto", resp )             | \
          getproperty( "minimumCmdDelay", mincmddel )  | \
+         getproperty( "charTO", charto )  | \
          getproperty( "errordelay", errdel )         | \
          getproperty( "cmderroffs", erroff );
     
-//    cout<<"rc="<<rc<<" proto="<<proto<<" response="<<resp<<" minimumcommand="<<mincmddel 
-//        <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;
 
-    if(!fConnected) {
+    if(rc==_exOK) {
         rc = modbus_connect(m_ctx);
         if(!rc) {
             modbus_get_response_timeout( m_ctx, &old_resp_to_sec, &old_resp_to_usec );
             modbus_get_byte_timeout( m_ctx, &to_sec, &to_usec );
-            rc = modbus_set_response_timeout( m_ctx, 0, 1000*resp );
-            rc = modbus_set_byte_timeout( m_ctx, 0, 1000);
+            rc = modbus_set_response_timeout( m_ctx, floor(resp/1000), 1000*(resp%1000) );
+            rc = modbus_set_byte_timeout( m_ctx, floor(charto/1000), 1000*(charto%1000));
             if(!rc) fConnected = true;
         }
     }
-
+/*    
+    cout<<dec<<"xchgId="<<pthread_self()<<" proto="<<proto<<" response="<<floor(resp/1000)<<","<<1000*(resp%1000)
+        <<" charTO="<<floor(charto/1000)<<","<<1000*(charto%1000)<<" minCmdDelay="<<mincmddel 
+        <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;
+*/    
     if( rc == 0)
     while(cmdi!=cmds.end()) {
         if(i==900) {

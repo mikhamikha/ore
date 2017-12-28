@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
         tcsetattr( STDIN_FILENO, TCSANOW, &newt );
         while (ch!='q' && ch!='Q') {
             ch = getchar();
-            cout << "Pressed " << ch<<" conn="<<int(conn[0])<<endl;
+            cout << dec<<"Pressed " << ch<<" conn="<<int(conn[0])<<endl;
             if(isdigit(ch) && ch<522) {
                 conn[0]->m_pWriteData[ch-48]=(conn[0]->m_pWriteData[ch-48]==0);
                 cout << " == " << ch-48 << " | " << conn[0]->m_pWriteData[ch-48];

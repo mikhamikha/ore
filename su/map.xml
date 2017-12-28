@@ -8,13 +8,14 @@
             <path>/dev/ttyS2</path>                   <!-- port or IP-address:port -->
             <enabled>1</enabled>                      <!-- 1 - enabled, 0 - disabled -->
             <protocol>2</protocol>                    <!-- 0 - TCP, 1 - TCP_PI(protocol independet), 2 - RTU -->
-            <baudrate>19200</baudrate>                <!-- 19200 bit/s -->
+            <baudrate>115200</baudrate>                <!-- 19200 bit/s -->
             <parity>0</parity>                        <!-- 0 = None, 1 = Odd, 2 = Even -->               
             <databits>8</databits>                    <!-- 8 -->         
             <stopbits>1</stopbits>                    <!-- 1 -->         
             <minimumCmdDelay>10</minimumCmdDelay>     <!-- time interval between commands -->
             <cmdErrOffset>400</cmdErrOffset>          <!-- offset of zone errors -->
-            <responseTO>1000</responseTO>             <!-- wait response -->
+            <responseTO>2000</responseTO>             <!-- wait response, ms -->
+            <charTO>100</charTO>                      <!-- character delay, ms -->
             <retryCount>0</retryCount>                <!-- request retry count -->
             <errorDelayCntr>10000</errorDelayCntr>    <!-- timeout for device if error comm -->
             <commands>
@@ -48,6 +49,7 @@
             <minimumCmdDelay>10</minimumCmdDelay>     <!-- time interval between commands -->
             <cmdErrOffset>450</cmdErrOffset>          <!-- offset of zone errors -->
             <responseTO>1000</responseTO>             <!-- wait response -->
+            <charTO>100</charTO>                      <!-- character delay, ms -->
             <retryCount>0</retryCount>                <!-- request retry count -->
             <errorDelayCntr>10000</errorDelayCntr>    <!-- timeout for device if error comm -->
             <commands>

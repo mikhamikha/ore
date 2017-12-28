@@ -37,4 +37,4 @@ enum exit_codes {
     _exBadIO        // =5
 };                  
 
-#endif // _CONST_H_ORE_
+#endif // CONST_H_ORE_

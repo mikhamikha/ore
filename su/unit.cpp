@@ -104,7 +104,7 @@ int16_t cunit::init() {
                     m_ppos->setrawval( m_ppos->getmaxraw() );                           // полностью открыт
                 else if( !_lso && _lsc )
                     m_ppos->setrawval( m_ppos->getminraw() );                           // полностью закрыт  
-                else m_error = _2_ls;                                                   // сработаны 2 конечника
+                else m_error = _2_ls;                                                   // разомкнуто 2 конечника
                 
                 if( m_error ) { rc=_exBadDippedHW; cout<<" bad dipped HW\n"; break; }
                     
@@ -185,7 +185,7 @@ int16_t cunit::getstate() {
 //
 // -------- вычислим текущее состояние
 //
-            if( m_ppos->getname()=="FV11" && 1 ) 
+            if( m_ppos->getname()=="FV11" && 0 ) 
                 cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_pmod->getoldvalue()<<"|"<<m_pmod->getvalue()<<"|"<<m_mode_old<<"|"<<m_mode
                     <<" ucmd="<<m_cmd<<" ucmdst="<<m_cmdstatus
                     <<" mot= "<<m_motion<<" cmd= "<<_cmd_val<<"|"<<_dir_val<<" cnt= "<<_cnt_old<<"|"<<_cnt

@@ -224,9 +224,8 @@ int16_t readCfg() {
         // парсим объекты
         tools = doc.select_nodes("//units/unit");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            cunit uni;// = new cunit();
-            //units.push_back(uni);
-            
+            cunit uni;
+
             cout<<"parse units "<<endl;
            
             for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
@@ -268,6 +267,16 @@ int16_t readCfg() {
         }
         //
         // парсим описания дисплеев
+        pugi::xpath_node tool = doc.select_node("//displays[@sleep]");
+        cout<<"parse disp settings"<<endl;
+        if(tool) {
+            int32_t t=atoi(tool.node().attribute("sleep").value());
+            if(t) dsp.setSleepWait(t*1000);
+            string s=tool.node().attribute("unlock").value();
+            if(s.length()>0) dsp.setUnlockCode(s);
+            cout<<"sleep = "<<t<<" sec. unlock key = "<<s<<endl;
+        }
+        
         tools = doc.select_nodes("//displays/display[@num]");
         int16_t ndisp=0;
         cout<<"parse disp="<<ndisp<<" size="<<tools.size()<<endl;
@@ -292,7 +301,7 @@ int16_t readCfg() {
                     }
                 }               
                 cout<<endl;
-           }   
+            }   
             ndisp++;
         }
         

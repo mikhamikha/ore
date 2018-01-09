@@ -8,7 +8,7 @@
             <path>/dev/ttyS2</path>                   <!-- port or IP-address:port -->
             <enabled>1</enabled>                      <!-- 1 - enabled, 0 - disabled -->
             <protocol>2</protocol>                    <!-- 0 - TCP, 1 - TCP_PI(protocol independet), 2 - RTU -->
-            <baudrate>115200</baudrate>                <!-- 19200 bit/s -->
+            <baudrate>19200</baudrate>                <!-- 19200 bit/s -->
             <parity>0</parity>                        <!-- 0 = None, 1 = Odd, 2 = Even -->               
             <databits>8</databits>                    <!-- 8 -->         
             <stopbits>1</stopbits>                    <!-- 1 -->         
@@ -42,7 +42,7 @@
             <path>/dev/ttyS3</path>                   <!-- port or IP-address:port -->
             <enabled>1</enabled>                      <!-- 1 - enabled, 0 - disabled -->
             <protocol>2</protocol>                    <!-- 0 - TCP, 1 - TCP_PI(protocol independet), 2 - RTU -->
-            <baudrate>115200</baudrate>                <!-- 115200 -->
+            <baudrate>115200</baudrate>               <!-- 115200 -->
             <parity>0</parity>                        <!-- 0 = None, 1 = Odd, 2 = Even -->               
             <databits>8</databits>                    <!-- 8 -->         
             <stopbits>1</stopbits>                    <!-- 1 -->         
@@ -98,13 +98,19 @@
     <tag topic="/data" rAddr="41" wAddr="" minRaw="0" maxRaw="65535" minEng="-0.100" maxEng="65.435" fltTime="1000" dead="0.001" hihi="0" hi="0" lo="0" lolo="3.4" type="0" errPtr="405" pub="1" sub="1" desc="Давление ЭЦН" eu="МПа">PT31</tag>
     <tag topic="/data" rAddr="43" wAddr="" minRaw="0" maxRaw="50000" minEng="-67" maxEng="100" fltTime="0" dead="0.1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="0" sub="1" desc="Температура 3" eu="oC">TT31</tag>
     <tag topic="/data" rAddr="49" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="405" pub="1" sub="0" desc="Серийный номер 3" eu="">SN31</tag>
-    <tag topic="/data" rAddr="50" wAddr="" minRaw="0" maxRaw="1" minEng="0" maxEng="2" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="456" pub="1" sub="1" desc="door switch" eu="">GS01</tag>
-    <tag topic="/data" rAddr="61" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="esc button" eu="">HS01</tag>
-    <tag topic="/data" rAddr="62" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="left button" eu="">HS02</tag>
-    <tag topic="/data" rAddr="63" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="right button" eu="">HS03</tag>
-    <tag topic="/data" rAddr="64" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="enter button" eu="">HS04</tag>
-    <tag topic="/data" rAddr="65" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="down button" eu="">HS05</tag>
-    <tag topic="/data" rAddr="66" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HS06</tag>
+    <tag topic="/data" rAddr="50.0" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="door switch" eu="">GS01</tag>
+    <tag topic="/data" rAddr="50.1" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="esc button" eu="">HS01</tag>
+    <tag topic="/data" rAddr="50.2" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="left button" eu="">HS02</tag>
+    <tag topic="/data" rAddr="50.3" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="right button" eu="">HS03</tag>
+    <tag topic="/data" rAddr="50.4" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="enter button" eu="">HS04</tag>
+    <tag topic="/data" rAddr="50.5" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="down button" eu="">HS05</tag>
+    <tag topic="/data" rAddr="50.6" wAddr="" minraw="0" maxraw="1" mineng="0" maxeng="2" flttime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errptr="456" pub="1" sub="1" desc="up button" eu="">HS06</tag>
+    <tag topic="/data" rAddr="61" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="esc button" eu="">HC01</tag>
+    <tag topic="/data" rAddr="62" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="left button" eu="">HC02</tag>
+    <tag topic="/data" rAddr="63" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="right button" eu="">HC03</tag>
+    <tag topic="/data" rAddr="64" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="enter button" eu="">HC04</tag>
+    <tag topic="/data" rAddr="65" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="down button" eu="">HC05</tag>
+    <tag topic="/data" rAddr="66" wAddr="" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HC06</tag>
     <tag topic="/data" rAddr="51" wAddr="5" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
     <tag topic="/data" rAddr="53" wAddr="7" minRaw="-32768" maxRaw="32767" minEng="-32768" maxEng="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag>
  <!--tag topic="/data" rAddr="E" wAddr="E" minRaw="0" maxRaw="7703" minEng="0" maxEng="100" minDev="16" maxDev="76" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%">FV11</tag>
@@ -186,7 +192,7 @@
     </alg>
     </algo>
 
-<displays>
+<displays sleep="120" unlock="1;3;5">
     <display num="1" fontsize="2">
         1
         <lines>

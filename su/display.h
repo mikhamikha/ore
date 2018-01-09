@@ -23,7 +23,8 @@ void to_866( string&, string& );
 
 enum {
     _view_mode,
-    _task_mode
+    _task_mode,
+    _sleep_mode
 };
 
 enum _type_dsp_obj {
@@ -35,7 +36,7 @@ class pagestruct: public cproperties {
    int16_t     m_currow;
    int16_t     m_prevpage;
    double      m_task;
-     
+    
    rowsarray   rows; 
 
     public:
@@ -135,7 +136,9 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
     cbtn        m_btn;
     int16_t     m_mode;
     bool        m_visible;
-
+    cton        m_tsleeper;
+    uint16_t    m_unlockkey;
+     
     public:
         view() {
             GU3000_init();
@@ -227,6 +230,17 @@ class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
         void keymanage();
         void gotoDetailPage();
         int16_t pagessize() { return pages.size(); }
+        void setSleepWait(int32_t n) { m_tsleeper.setPreset(n); }
+        void setUnlockCode(string &scode) {
+            m_unlockkey=0;   
+            vector<string> keys;
+            strsplit(scode, ';', keys);       
+            for( uint16_t i=0; i<keys.size(); i++ ) {
+                int num = atoi(keys[i].c_str());
+                if(num--) m_unlockkey |= (1<<num);
+            }
+            cout<<"unlock Code = "<<hex<<m_unlockkey<<dec<<endl;
+        }
 };
 
 extern view dsp;

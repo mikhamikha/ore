@@ -234,16 +234,22 @@ void view::keymanage() {
 //    int16_t         nqu;
 //    timespec*       tts;
 //    static bool     binit = false;
-    const char*     btns[] = { "HS01", "HS02", "HS03", "HS04", "HS05", "HS06" };
+    const char*     btns[] = { "HS01", "HS02", "HS03", "HS04", "HS05", "HS06" };    // кнопки
+    const char*     btns_cnt[] = { "HC01", "HC02", "HC03", "HC04", "HC05", "HC06" };// и счетчики нажатий
     static bool     olds[] = { false,  false,  false,  false,  false,  false  };      
-    uint16_t        bbtn = 0;
+    uint16_t        bbtn = 0;   // отслеживание новых нажатых кнопок
+    uint16_t        bbtn1 = 0;  // отслеживание нажатых кнопок
     pagestruct      &pg = pages.at(m_curpage);
+    ctag            *ptag;
 
 //    cout << " key size = "<<sizeof(btns)/sizeof(char*)<<" button str size = "<<sizeof(m_btn)<<endl;
 //    cout << " keys ";
-    for(size_t j=0; j<sizeof(btns)/4; j++) {               // read buttons states on front panel of box
-//      gettag( btns[j], rval, nqu, tts, 1 );
-        tagdir.gettagcount( btns[j], nval[j] );              // read number of keystrokes
+    for(size_t j=0; j<sizeof(btns)/4; j++) {            // read buttons states on front panel of box
+        ptag = tagdir.gettag(btns[j]);
+        if(ptag) nval[j] = ptag->getvalue();
+        bbtn1 |= ( (nval[j] != 0) << j );    // 
+//        cout<<nval[j]<<" ";
+        tagdir.gettagcount( btns_cnt[j], nval[j] );     // read number of keystrokes
 //        cout<<nval[j]<<" ";
         bbtn |= ( (nval[j] != 0 && !olds[j]) << j );    // 
         olds[j] = ( (nval[j] != 0) && !first );
@@ -251,10 +257,26 @@ void view::keymanage() {
 //    cout<<endl;
     if(first) { first = false; return; }
     memcpy( (void*)&m_btn, &bbtn, sizeof(cbtn) );
+    if( bbtn && m_mode != _sleep_mode ) {               // если жались кнопки, то перезапустим таймер сна
+        m_tsleeper.reset(); 
+        m_tsleeper.start(); 
+    } 
+    if( m_tsleeper.isDone() ) {
+        m_mode = _sleep_mode;                           // уснем, если никому не нужен
+        m_tsleeper.reset();
+        GU3000_displayOff();
+        cout<<"I went to sleep..\n";
+    }
+    if( (bbtn1^m_unlockkey)==0 && m_mode == _sleep_mode ) {    // если ключ совпал,
+        m_tsleeper.start();                                     // выходим из спящего режима
+        GU3000_displayOn();    
+        m_mode = _view_mode;   
+        cout<<"I woke up!\n";
+    }
     // processing buttons according to the display mode
     switch(m_mode) {
         case _view_mode:
-            if(m_btn.esc) {                                 // 0
+            if(m_btn.esc) {                             // 0
                 cout << "btn Esc\n";
 //                m_visible = !m_visible;
 //                (m_visible) ? GU3000_displayOn() : GU3000_displayOff();

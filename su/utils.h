@@ -114,6 +114,10 @@ struct cton {
     int32_t getPreset() {
         return m_preset;
     }
+    
+    void setPreset(int32_t n) {
+        if( n>=0 ) m_preset = n;
+    }
 };
 
 struct content {

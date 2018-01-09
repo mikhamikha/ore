@@ -179,9 +179,9 @@ void cunitdirector::run() {
         ih   = units.begin();
         iend = units.end();
         while ( ih != iend ) {
-            cunit& pun = ih->second;
+//            cunit& pun = ih->second;
             
-            ++ih;
+//            ++ih;
         }
         usleep(_unit_prc_delay);
     }     

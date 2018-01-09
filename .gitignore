@@ -1,11 +1,12 @@
 bu
 *.o
-hello.cpp
-paho.mqtt.c/*
-mqtt/MQTTClient/*
-mqtt/MQTTPacket/*
-valgrind-3.12.0*
-testXML*
+/pugixml/*
+!/pugixml/src
+/libmodbus/*
+!/libmodbus/src/
+!/libmodbus/doc/
+/noritake/*
+!/noritake/src/*
 
 
 

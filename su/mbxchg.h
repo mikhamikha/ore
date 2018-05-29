@@ -76,7 +76,7 @@ typedef std::vector<ccmd> mbcommands;
 //
 // Connection class
 //
-class cmbxchg: public cproperties, public cthread {
+class cmbxchg: public cproperties<content>, public cthread {
         int16_t             m_status;
         modbus_t            *m_ctx;
         mbcommands          cmds;                 // command list

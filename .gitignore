@@ -7,6 +7,6 @@ bu
 !/libmodbus/doc/
 /noritake/*
 !/noritake/src/*
-
+/sqlite/*
 
 

@@ -16,7 +16,7 @@ const char      _bold_on[]  = { 0x1F, 0x28, 'g', 0x41, 0x01 };
 const char      _bold_off[] = { 0x1F, 0x28, 'g', 0x41, 0x01 };
 const int16_t   _cmd_len = 5;
 
-typedef std::vector <cproperties> rowsarray;
+typedef std::vector <cproperties<content> > rowsarray;
 int16_t assignValues( void*, string&, const string&, const string& );
 //int16_t assignValues( string&, const string&, const string&, char*, int16_t& );   
 void to_866( string&, string& );
@@ -32,7 +32,7 @@ enum _type_dsp_obj {
     _unit
 };
 
-class pagestruct: public cproperties {
+class pagestruct: public cproperties<content> {
    int16_t     m_currow;
    int16_t     m_prevpage;
    double      m_task;
@@ -129,7 +129,7 @@ struct cbtn {
     bool nc2:1;
 };
 
-class view : public Noritake_VFD_GU3000, public cproperties, public cthread {
+class view : public Noritake_VFD_GU3000, public cproperties<content>, public cthread {
     pagearray   pages; 
     int16_t     m_curpage;
     int16_t     m_maxpage;

@@ -12,6 +12,8 @@
 #include "mbxchg.h"
 #include "upcon.h"
 #include "unit.h"
+#include "hist.h"
+#include "const.h"
 
 using namespace std;
 
@@ -25,20 +27,21 @@ pthread_mutexattr_t     mutex_tag_attr;
 bool ftagThreadInitialized;
 
 ctag::ctag() {
-    setproperty( string("raw"),         double(0)  );
-    setproperty( string("value"),       double(0)  );
-    setproperty( string("task"),        double(0)  );
-    setproperty( string("quality"),     int32_t(0) );
-    setproperty( string("timestamp"),   string("") );  
-    setproperty( string("dead"),        double(0)  );
-    setproperty( string("sec"),         int32_t(0) );
-    setproperty( string("msec"),        int32_t(0) );
-    setproperty( string("mineng"),      double(0)  );   
-    setproperty( string("name"),        string("") );
-    setproperty( string("simenable"),   int(0)     );    
-    setproperty( string("simvalue"),    double(0)  );    
-    setproperty( string("mindev"),      double(0)  );   
-    setproperty( string("maxdev"),      double(0)  );   
+
+    setproperty( string("raw"),         _fZero );
+    setproperty( string("value"),       _fZero );
+    setproperty( string("task"),        _fZero );
+    setproperty( string("quality"),     _nZero );
+    setproperty( string("timestamp"),   _sZero );  
+    setproperty( string("dead"),        _fZero );
+    setproperty( string("sec"),         _nZero );
+    setproperty( string("msec"),        _nZero );
+    setproperty( string("mineng"),      _fZero );   
+    setproperty( string("name"),        _sZero );
+    setproperty( string("simenable"),   _nZero );    
+    setproperty( string("simvalue"),    _fZero );    
+    setproperty( string("mindev"),      _fZero );   
+    setproperty( string("maxdev"),      _fZero );   
     
     m_task = 0;
     m_task_go = false;
@@ -58,6 +61,7 @@ ctag::ctag() {
     m_name.assign("");
     m_minDev = 0;
     m_maxDev = 0;
+    m_pup = 0l;
 //    m_motion    = 0;
 }
 
@@ -136,6 +140,9 @@ void ctag::init() {
     if( (nu=getsubcon())>=0 && nu<upc.size() ) {
         upc[nu]->subscribe( this );
 //      pp.m_sub = nu;
+    }
+    if( (nu=getpubcon())>=0 && nu<upc.size() ) {
+        m_pup = upc[nu];
     }
 }
 
@@ -249,13 +256,15 @@ int16_t ctag::getvalue(double &rOut) {
 
         //      save value if it (or quality or timestamp) was changes
         if( fabs(rVal-m_rvalue)>=m_deadband || m_quality_old != m_quality || nD>60*_million ) {
+            int32_t nsec = int32_t(tv.tv_sec);
+            int32_t nmsec= int32_t(tv.tv_nsec/_million);
             m_ts.tv_sec = tv.tv_sec;
             m_ts.tv_nsec = tv.tv_nsec;
-            m_valueupdated = true;
             setproperty("value", rVal);
             setproperty("quality", m_quality);
-            setproperty("sec",  int32_t(tv.tv_sec));
-            setproperty("msec", int32_t(tv.tv_nsec/_million));
+            setproperty("sec",  nsec);
+            setproperty("msec", nmsec);
+            if( m_pup ) ((upcon*)m_pup)->valueChanged( *this );
 /*          if( m_name.substr(0,3)=="MV1") cout<<endl;
                 cout <<" |v "<< rVal<<" |vold "<<m_rvalue<< \
                 " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
@@ -346,61 +355,30 @@ double ctag::gettrigger()  {
     }
     return m_trigger; 
 }
+// 
+// получить отметку времени в милисекундах
+// 
+int32_t ctag::getmsec() {
+    timespec* tts = getTS();
+    return  int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million));
+}
 
+//
 // Получить значение
+//
 double getval(ctag* p) {
     double rval=-1;
     if( p ) rval = p->getvalue();
 
     return rval;
 }
-
+//
 // Получить качество тэга
+//
 uint8_t getqual(ctag* p) {
     uint8_t nval=0;
     if ( p ) nval = p->getquality();
 
     return nval;
-}
-
-int16_t publish(ctag &tag) {    
-    int16_t         res = EXIT_FAILURE;
-    string          topic;
-    string          ts;
-    string          sf;
-    int16_t         rc;
-//    int32_t         sec, msec;
-   
-    rc = upc[0]->getproperty("pubf", sf) == EXIT_SUCCESS/* && \
-         tag.getproperty("name", name)    == EXIT_SUCCESS;
-         tag.getproperty("topic", topic)  == EXIT_SUCCESS && \
-         tag.getproperty("value", val)    == EXIT_SUCCESS && \
-         tag.getproperty("quality", kval) == EXIT_SUCCESS && \
-         tag.getproperty("sec", sec) == EXIT_SUCCESS && \
-         tag.getproperty("msec", msec) == EXIT_SUCCESS*/;
-         
-    if(rc==0) {
-        cout << "cfg: prop not found" << endl; 
-    }
-    else {
-        timespec* tts;
-        tts = tag.getTS();
-//        ts = time2string(tts->tv_sec)+"."+to_string(int(tts->tv_nsec/_million));        
-        ts = to_string( int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million)) );
-        replaceString(sf, "value", to_string(tag.getvalue()) );
-        replaceString(sf, "quality", to_string(int(tag.getquality())) );
-        replaceString(sf, "timestamp", ts);
-
-        pthread_mutex_lock( &mutex_pub );
-        if(pubs.size()<_pub_buf_max) {
-            tag.getfullname(topic);
-            pubs.push_back(make_pair(topic, sf));
-            res = EXIT_SUCCESS;
-        }
-        pthread_mutex_unlock( &mutex_pub );
-//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
-        tag.acceptnewvalue();
-    }
-    return res;
 }
 

@@ -3,7 +3,9 @@
 #include "unitdirector.h"
 
 vlvmode vmodes;
-vlvmode vstatuses;cunit::cunit() { 
+vlvmode vstatuses;
+
+cunit::cunit() { 
     m_fInit = 0; 
     m_motion = _no_motion;
     m_cmd = _cmd_none;

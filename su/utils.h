@@ -9,7 +9,6 @@
 #include <sstream>
 #include <string>
 #include <string.h>
-#include <sstream>
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -186,11 +185,22 @@ struct compareP
     }
 };
 
-typedef std::vector<std::pair<std::string, content> > settings;
+//template <class T>
+//typedef std::vector<std::pair<std::string, T> > settings;
 
+template<class U>
+class settings : public std::vector< std::pair<std::string, U>/*, MyCustomAllocator<T>*/ > {};
 
+//template<class T>
+//class set_iterator : public std::vector< std::pair<std::string, T>/*, MyCustomAllocator<T>*/ >::iterator {};
+
+//typedef settings
+//template <class T>
+//using cont = std::list<T>;
+
+template <class U>
 class cproperties {
-    settings    m_set;
+    settings<U> m_set;
 
     public:
         cproperties() { }
@@ -198,18 +208,24 @@ class cproperties {
             m_set.assign(pcp.m_set.begin(), pcp.m_set.end());
         }
         template <class T>
-        int16_t setproperty( std::string na, T va) {       // fill settings
+        int16_t setproperty( std::string na, T& va ) {       // fill settings
             int16_t res = _exBadParam;
 //            if(na=="ki") cout<<endl<<"setproperty ki="<<va<<endl;
-            settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
-            
+//            set_iterator<U> i = std::find_if(m_set.begin(), m_set.end(), compareP<U>(na));
+            typename settings<U>::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<U>(na));
+//            cout<<"setproperty "<<na<<" = "<<va.to_string()<<" ";
+
             if (i != m_set.end()) {
-                i->second.setvalue(va);
+//                cout<<"found ";
+                i->second.setvalue( va );
+//                cout<<"set\n";
                 res = _exOK;
             }
             else {
-                m_set.push_back(make_pair(na, content(va)));
+//                cout<<"not found ";
+                m_set.push_back( make_pair(na, U(va)) );
                 res = _exBadParam;
+//                cout<<"set\n";
             }
 //            if(na=="configured") cout<<"\nset property "<<na<<" = "<<va<<endl;
             return res;
@@ -218,7 +234,8 @@ class cproperties {
         template <class T>
         int16_t getproperty( std::string na, T& va) {
             int16_t res = _exBadParam;
-            settings::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<content>(na));
+            typename settings<U>::iterator i = std::find_if(m_set.begin(), m_set.end(), compareP<U>(na));
+//            set_iterator<U> i = std::find_if(m_set.begin(), m_set.end(), compareP<U>(na));
             if (i != m_set.end()) {
                 i->second.getvalue(va);
                 res = _exOK;
@@ -230,15 +247,15 @@ class cproperties {
         int16_t getproperty( int16_t i, string& na, T& va) {
             int16_t res = _exBadParam;
 
-            if (i >= 0 && i < m_set.size()) {
+            if (i >= 0 && i < int16_t(m_set.size())) {
                 m_set[i].second.getvalue(va);
                 na = m_set[i].first;
                 res = _exOK;
             } 
             return res;
         }
-        int32_t getpropertysize() { return m_set.size(); }
-        
+        int32_t getpropertysize() { return int16_t(m_set.size()); }
+        void clearPropertyList() { m_set.clear(); } 
         int16_t property2text(int32_t n, std::string& va) {
             int16_t res = _exBadParam;
             
@@ -269,5 +286,67 @@ template <class T>
 void printdata(T& in) {
     cout<<' '<<in;
 }
+
+template <class T>
+class iObserver {
+    public:
+        virtual ~iObserver() {}
+        virtual void valueChanged( T& value ) = 0;
+};
+
+/*
+class crc16 {
+    static uint8_t TABLE1[256], TABLE2[256]; 
+
+  public:
+
+   // ************************************************************************
+   // * Procedure   : sys_init_crc
+   // * Description : Crc table init
+   // ************************************************************************
+    static void init() {
+       uint8_t i;
+       uint16_t mask, crc, mem;
+       uint16_t const CRC16 = 0xA001;
+       
+       for(mask=0; mask<sizeof(TABLE1); mask++) {
+          crc = mask;
+          for(i=0; i<8; i++) {
+             mem = (uint16_t)(crc & 0x0001) ;
+             crc /=  2;
+             if (mem) crc ^= CRC16 ;
+          }
+          TABLE2[mask] = (uint8_t)(crc & 0xff); // lobyte 
+          TABLE1[mask] = (uint8_t)(crc >> 8);   // hibyte 
+       }
+    }
+
+    // ***************************************************************
+    // * Procedure   : sys_get_crc
+    // * Description : Calculate crc
+    // ***************************************************************
+    static uint16_t doIt(uint8_t *buf, uint16_t size) {
+        uint16_t check;
+        uint8_t car, i;
+        uint8_t crc0, crc1;
+
+        crc0 = 0xff;
+        crc1 = 0xff;
+
+        for(i=0; i<size; i++) {  
+         car = buf[i];
+         car ^= crc0;
+         crc0 = (uint8_t)(crc1 ^ TABLE2[car]);
+         crc1 = TABLE1[car];
+        }
+        check = crc1;
+        check <<= 8;
+        check += crc0;
+
+        return check;
+    }
+};
+*/
+
 
 #endif

@@ -18,6 +18,7 @@
 
 #include "utils.h"
 #include "thread.h"
+#include "tag.h"
 //
 // add paho 
 //
@@ -50,13 +51,14 @@ typedef struct
 
 typedef std::vector<std::pair<std::string, std::string> > pubdata;
 
-class upcon: public cproperties, public cthread {
+class upcon: public cproperties<content>, public cthread, public iObserver<ctag> {
 
 //    pubdata                     pubs;
     int                         m_status;
     MQTTAsync                   m_client;
     mqtt_create_options         m_opts;
-    MQTTAsync_connectOptions    *conn_opts;   
+//    MQTTAsync_connectOptions    *conn_opts; 
+    bool                        m_connected;
         
     public:
         int32_t m_id; 
@@ -70,17 +72,20 @@ class upcon: public cproperties, public cthread {
         int16_t getstatus() { return m_status; };
         int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
         uint32_t handle() { return uint32_t(m_client); } 
-        void    run();
+        void run();
+        bool connected() { return m_connected; }
+        void connected(bool v) { m_connected = v; }
+        virtual void valueChanged( ctag& value );   
 };
 
 typedef std::vector< upcon * >  upconnections;
-extern upconnections upc;
-extern MQTTAsync_connectOptions _conn_opts;
+extern upconnections            upc;
+//extern MQTTAsync_connectOptions g_conn_opts;
 extern pubdata                  pubs;
   
 int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message);
 void connectionLost(void *context, char *cause);
-//void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
+void* upProcessing(void *args); // поток обработки обмена с верхним уровнем
 
 
 #endif

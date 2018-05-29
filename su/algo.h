@@ -40,7 +40,7 @@ enum state_algo {
 
 
 // объявление класса Алгоритм
-class calgo: public cproperties { 			// имя класса
+class calgo: public cproperties<content> { 			// имя класса
     tagvector   m_args; // вычислить адреса объектов
     tagvector   m_res;
     unitvector  m_units;

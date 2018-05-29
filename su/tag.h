@@ -13,7 +13,7 @@
 #define m_pos       tag1
 
 // объявление класса Параметр
-class ctag: public cproperties { 			// имя класса
+class ctag: public cproperties<content> { 			// имя класса
 
 private: 				// спецификатор доступа private
 protected: 				// спецификатор доступа protected
@@ -60,7 +60,7 @@ protected: 				// спецификатор доступа protected
  
     // referenses to counter, limit switches (opened & closed), commands (open & close)
     ctag*     tag1; 
-    
+    void*       m_pup;          // указатель на исходящее соединения  
 public: 				// спецификатор доступа public
     ctag();			// конструктор класса
 //    ctag(const ctag&) {}		// конструктор класса
@@ -74,6 +74,7 @@ public: 				// спецификатор доступа public
     };
 
     timespec* getTS() { return &m_ts; }
+    int32_t getmsec();
     double  gettrigger();
     string  getname() { return m_name; }
     void    getlimits(double& emin, double& emax)  { emin=m_minEng; emax=m_maxEng; }
@@ -143,8 +144,9 @@ public: 				// спецификатор доступа public
     double  getmaxeng() { return m_maxEng; }
     double  getmineng() { return m_minEng; }
     bool    taskset() { return m_task_go; }
-    bool    hasnewvalue() { return m_valueupdated; }
-    void    acceptnewvalue() { m_valueupdated = false; }
+//    bool    hasnewvalue() { return m_valueupdated; }
+//    void    acceptnewvalue() { m_valueupdated = false; }
+    //  получить номер внешнего соединения
     int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
     int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }
     bool    isbool() { return (m_type>0 && m_type<2); }
@@ -180,7 +182,6 @@ extern pthread_mutex_t          mutex_pub;
 uint8_t getqual(ctag* p);   // Получить качество тэга
 double getval(ctag* p);     // Получить значение
 
-int16_t publish(ctag &);
 
 #endif // _tag_H
 

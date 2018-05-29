@@ -24,7 +24,7 @@
                 <cmd enable="2" internal="0"  regcount="1"  pollint="0"    node="2" func="5"   address="0"   swap="0" num="2" /> <!-- write DO0 NL-8AI -->
                 <cmd enable="2" internal="1"  regcount="1"  pollint="0"    node="2" func="5"   address="1"   swap="0" num="3" /> <!-- write DO1 NL-8AI -->
                 <cmd enable="2" internal="2"  regcount="1"  pollint="0"    node="2" func="5"   address="2"   swap="0" num="4" /> <!-- write DO2 NL-8AI -->
-                <cmd enable="0" internal="20" regcount="30" pollint="1000" node="1" func="3"   address="257" swap="0" num="5" /> <!-- read SAF -->
+                <!--cmd enable="0" internal="20" regcount="30" pollint="1000" node="1" func="3"   address="257" swap="0" num="5" /--> <!-- read SAF -->
                 <cmd enable="1" internal="51" regcount="4"  pollint="0"    node="3" func="3"   address="0"   swap="0" num="7" /> <!-- read counters M7080B -->
                 <cmd enable="1" internal="55" regcount="2"  pollint="0"    node="3" func="1"   address="0"   swap="0" num="8" /> <!-- read DO0, DO1 M7080B -->
                 <cmd enable="2" internal="3"  regcount="1"  pollint="0"    node="3" func="15"  address="0"   swap="0" num="9" /> <!-- write DO0 M7080B -->
@@ -71,6 +71,7 @@
             <pwd>mutan</pwd>
             <clientid>ore001</clientid>
             <qos>1</qos>
+            <keepAliveInterval>20</keepAliveInterval>
         </up>
     </uplinks>
 </connections>

@@ -11,6 +11,7 @@ using namespace std;
 
 int32_t dT = 0;
 
+
 int32_t getnumfromstr(std::string in, std::string st, std::string fin) {
     string line = in;
     int32_t res=-1;
@@ -183,7 +184,9 @@ int16_t readCfg() {
                     }
                 }
                 else {
-                    mb->setproperty( tool.name(), tool.text().get() );
+                    string _n = tool.name();
+                    string _v = tool.text().get();
+                    mb->setproperty( _n, _v );
                 }
             }
         }
@@ -215,7 +218,9 @@ int16_t readCfg() {
             
             cout<<"parse upcon num="<<up->m_id<<endl;
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                up->setproperty( tool.name(), tool.text().get() );
+                string _n = tool.name();
+                string _v = tool.text().get();
+                up->setproperty( _n, _v );
                 cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
             cout<<endl;   
@@ -236,7 +241,9 @@ int16_t readCfg() {
             } 
             
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                uni.setproperty( tool.name(), tool.text().get() );
+                string _n = tool.name();
+                string _v = tool.text().get();
+                uni.setproperty( _n, _v );
                 cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
             string s;
@@ -259,7 +266,9 @@ int16_t readCfg() {
             } 
             
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
-                alg->setproperty( tool.name(), tool.text().get() );
+                string _n = tool.name();
+                string _v = tool.text().get();
+                alg->setproperty( _n, _v );
                 cout<<" "<<tool.name()<<"="<<tool.text().get()<<" size="<<alg->getpropertysize();   
             }
             cout<<endl;   
@@ -308,7 +317,7 @@ int16_t readCfg() {
         // парсим режимы клапана
         tools = doc.select_nodes("//valve/mode");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            cproperties prp;
+            cproperties<content> prp;
 
             cout<<"parse valve mode "<<endl;
            
@@ -324,7 +333,7 @@ int16_t readCfg() {
          // парсим статусы клапана
         tools = doc.select_nodes("//valve/status");
         for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
-            cproperties prp;
+            cproperties<content> prp;
 
             cout<<"parse status mode "<<endl;
            

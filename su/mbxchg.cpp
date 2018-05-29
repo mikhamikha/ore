@@ -2,6 +2,7 @@
 #include "main.h"
 #include "mbxchg.h"
 #include "tag.h"
+#include "const.h"
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
@@ -69,19 +70,19 @@ std::string ccmd::ToString()
 
 cmbxchg::cmbxchg()
 {
-    setproperty( "path",                "" );///dev/ttyS2")) );
-    setproperty( "enabled",             int16_t(0) );
-    setproperty( "protocol",            int16_t(RTU) );    // пока работаем только RTU
-    setproperty( "baudrate",            int32_t(0) );//9600)) );
-    setproperty( "parity",              int16_t('E') );
-    setproperty( "databits",            int16_t(7) );
-    setproperty( "stopbits",            int16_t(1) );
-    setproperty( "minimumcommanddelay", int16_t(10) );
-    setproperty( "commanderrorpointer", int16_t(500) );
-    setproperty( "responsetimeout",     int16_t(1000) );
-    setproperty( "charTO",              int16_t(20) );
-    setproperty( "retrycnt",            int16_t(0) );
-    setproperty( "errordelaycntr",      int16_t(0) );
+    setproperty( "path",                _sZero );///dev/ttyS2")) );
+    setproperty( "enabled",             _nZero );
+    setproperty( "protocol",            _nZero );    // пока работаем только RTU
+    setproperty( "baudrate",            _nZero );//9600)) );
+    setproperty( "parity",              _nZero );
+    setproperty( "databits",            _nZero );
+    setproperty( "stopbits",            _nZero );
+    setproperty( "minimumcommanddelay", _nZero );
+    setproperty( "commanderrorpointer", _nZero );
+    setproperty( "responsetimeout",     _nZero );
+    setproperty( "charTO",              _nZero );
+    setproperty( "retrycnt",            _nZero );
+    setproperty( "errordelaycntr",      _nZero );
 }
 //
 //  Modbus connection initialization

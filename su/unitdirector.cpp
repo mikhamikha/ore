@@ -195,10 +195,11 @@ void cunitdirector::run() {
 // 
 cunit* getaddrunit(string& str) {
     cunit* p = unitdir.getunit( str.c_str() );
+/*
     cout<<"getunit "<<hex<<long(p);
     if(p) cout<<" name="<< p->getname();
     cout<<endl;
-
+*/
     return p;
 }
 

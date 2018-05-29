@@ -1,18 +1,22 @@
 #include "upcon.h"
 #include "tagdirector.h"
+#include "hist.h"
 
 using namespace std;
  
-int arrivedcount = 0;
-pubdata                  pubs;
+int     arrivedcount = 0;
+pubdata pubs;
 
-MQTTAsync_connectOptions _conn_opts = MQTTAsync_connectOptions_initializer;
+//MQTTAsync_connectOptions g_conn_opts = MQTTAsync_connectOptions_initializer;
 
 upconnections upc;
 
 void onDisconnect(void* context, MQTTAsync_successData* response)
 {
 //	disconnected = 1;
+    upcon* _upc = (upcon *)context;    
+
+    _upc->connected( false );
 }
 
 
@@ -31,12 +35,20 @@ void onSubscribeFailure(void* context, MQTTAsync_failureData* response)
 
 void onConnectFailure(void* context, MQTTAsync_failureData* response)
 {
+    upcon* _upc = (upcon *)context;    
+
+    _upc->connected( false );
+   
 //	printf("Connect failed, rc %d\n", response->code);
 //	finished = 1;
 }
 
 void onConnect(void* context, MQTTAsync_successData* response)
 {
+    upcon* _upc = (upcon *)context;    
+
+    _upc->connected( true );
+   
 	//MQTTAsync client = (MQTTAsync)context;
 	//MQTTAsync_responseOptions ropts = MQTTAsync_responseOptions_initializer;
 	//MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
@@ -58,6 +70,9 @@ void onConnect(void* context, MQTTAsync_successData* response)
 
 void connectionLost(void *context, char *cause)
 {
+    upcon* _upc = (upcon *)context;    
+
+    _upc->connected( false );
 //	MQTTAsync client = (MQTTAsync)context;
 //	int rc;
 /*
@@ -75,11 +90,13 @@ int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_m
 //    std::string::size_type  found;
     std::string             top(topicName, strlen(topicName));
     std::string             val((char*)message->payload, message->payloadlen);
-    upconnections::iterator ib, ie;
+//    upconnections::iterator ib, ie;
     int32_t                 rc = EXIT_FAILURE;
-    
+    upcon*                  _upc = (upcon *)context;    
+
+    _upc->connected( true );
 //    cout<<"Received: "<< top <<" value "<< val << " set ";
-    
+/*    
     ib = upc.begin(); ie = upc.end(); 
        
     while( ib != ie ) {
@@ -89,32 +106,40 @@ int32_t messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_m
         }
         ++ib;
     }
-    
+*/    
 //    cout<<endl;
+    tagdir.tasktag( top, val );
     
     MQTTAsync_freeMessage(&message);
 	MQTTAsync_free(topicName);
+
     return rc;
 }
 
 void onPublishFailure(void* context, MQTTAsync_failureData* response)
 {
+    upcon* _upc = (upcon *)context;    
+
+    _upc->connected( false );
+
 	printf("Publish failed, rc %d\n", response ? -1 : response->code);
-//	published = -1; 
+    //	published = -1; 
 }
 
 
 void onPublish(void* context, MQTTAsync_successData* response)
 {
-	//MQTTAsync client = (MQTTAsync)context;
+    upcon* _upc = (upcon *)context;    
 
-//	published = 1;
+    _upc->connected( true );
+    //MQTTAsync client = (MQTTAsync)context;
+    //	published = 1;
 }
 
 upcon::upcon() 
 { 
-    conn_opts = new MQTTAsync_connectOptions();
-    memcpy(conn_opts, &_conn_opts, sizeof(conn_opts));      
+//    conn_opts = new MQTTAsync_connectOptions();
+//    memcpy(conn_opts, &g_conn_opts, sizeof(conn_opts));      
 }
 
 upcon::~upcon() {
@@ -122,9 +147,9 @@ upcon::~upcon() {
 
     /*rc = */disconnect();
 	MQTTAsync_destroy(&m_client);
-    delete []conn_opts->password;
-    delete []conn_opts->username;
-    delete conn_opts;
+//    delete []conn_opts->password;
+//    delete []conn_opts->username;
+//    delete conn_opts;
 }
 
 int16_t upcon::disconnect() {
@@ -148,6 +173,8 @@ int16_t upcon::connect() {
     int32_t         nv, nq;
     std::string     si, sport, su, sp, sc, sq;
     stringstream    url;
+    int32_t         nkeepalive;
+    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
 
     rc =  (getproperty("ip", si) == EXIT_SUCCESS) && \
           (getproperty("port", sport) == EXIT_SUCCESS) && \
@@ -155,27 +182,28 @@ int16_t upcon::connect() {
           (getproperty("user", su) == EXIT_SUCCESS) && \
           (getproperty("pwd", sp) == EXIT_SUCCESS) && \
           (getproperty("qos", nq) == EXIT_SUCCESS) && \
+          (getproperty("keepAliveInterval", nkeepalive) == EXIT_SUCCESS) && \
           (getproperty("clientid", sc) == EXIT_SUCCESS);
     
     if(rc) {
 //        mqtt_create_options opts = 
 //            { sc.c_str(), 1, '\n', nq, su.c_str(), sp.c_str(), si.c_str(), sport.c_str(), 0, 10 };
         url<<si<<":"<<sport;
-        rc = MQTTAsync_create(&m_client, url.str().c_str(), \
-                                    sc.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL); 
+        rc = MQTTAsync_create( &m_client, url.str().c_str(), \
+                                    sc.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL ); 
         
-        MQTTAsync_setCallbacks(m_client, m_client, connectionLost, messageArrived, NULL);
+        MQTTAsync_setCallbacks( m_client, this/*m_client*/, connectionLost, messageArrived, NULL );
         
-//        conn_opts.keepAliveInterval = opts.keepalive;
-        conn_opts->cleansession = 1;
-        conn_opts->username = new char[su.length()+1];
-        strcpy((char*)conn_opts->username, su.c_str());
-        conn_opts->password = new char[sp.length()+1];
-        strcpy((char*)conn_opts->password, (char*)sp.c_str());
-        conn_opts->onSuccess = onConnect;
-        conn_opts->onFailure = onConnectFailure;
-        conn_opts->context = m_client;
-        if ((rc = MQTTAsync_connect(m_client, conn_opts)) != MQTTASYNC_SUCCESS)
+        conn_opts.keepAliveInterval = nkeepalive;
+        conn_opts.cleansession = 1;
+        conn_opts.username = new char[su.length()+1];
+        strcpy((char*)conn_opts.username, su.c_str());
+        conn_opts.password = new char[sp.length()+1];
+        strcpy((char*)conn_opts.password, (char*)sp.c_str());
+        conn_opts.onSuccess = onConnect;
+        conn_opts.onFailure = onConnectFailure;
+        conn_opts.context = m_client;
+        if ((rc = MQTTAsync_connect(m_client, &conn_opts)) != MQTTASYNC_SUCCESS)
         {
             printf("Failed to start connect, return code %d\n", rc);
             rc = EXIT_FAILURE;
@@ -281,24 +309,49 @@ int16_t upcon::publish(ctag &tag) {
 // queue of message for pub processing
 //
 int16_t upcon::pubdataproc() {
-    string                      topic, val;
+    string                      topic;
     MQTTAsync_responseOptions   pub_opts = MQTTAsync_responseOptions_initializer;
-    int16_t                     rc = EXIT_FAILURE;
-
-    if( !pubs.empty() ) {
+    int16_t                     rc = _exFail;
+    string                      sPubData;
+    
+    if( getproperty("pubf", sPubData) == EXIT_SUCCESS )
+    //    if( !pubs.empty() ) 
+    {
+        // публикация через буфер
+        histCellBody    _hcb;
+        ctag*           _pt = NULL; 
+        pthread_mutex_lock( &mutex_pub );
+        bool _fRes = ( connected() && hist.pull( topic, _hcb )==_exOK );
+        pthread_mutex_unlock( &mutex_pub );
+        /*  
+        // публикация через простую очередь
         topic = pubs.front().first;
         val = pubs.front().second;
-        pub_opts.onSuccess = onPublish;
-		pub_opts.onFailure = onPublishFailure;
-
-        rc = MQTTAsync_send(m_client, topic.c_str(), val.length()+1, (char*)val.c_str(), 1, 0, &pub_opts);
-				
-        if(rc == MQTTASYNC_SUCCESS) {
-            pubs.erase(pubs.begin());
-            rc=EXIT_SUCCESS;
+        */
+        if( _fRes && ((_pt=getaddr(topic))!=NULL) ){
+            replaceString( sPubData, "value", to_string( _hcb.m_value ) );
+            replaceString( sPubData, "quality", to_string( _hcb.m_qual ) );
+            replaceString( sPubData, "timestamp", to_string( _hcb.m_ts ) );
+            
+            pub_opts.onSuccess = onPublish;
+            pub_opts.onFailure = onPublishFailure;
+            _pt->getfullname( topic );
+            rc = MQTTAsync_send( m_client, topic.c_str(), sPubData.length()+1, (char*)sPubData.c_str(), 1, 0, &pub_opts );
+                    
+            if(rc == MQTTASYNC_SUCCESS) {
+    //            pubs.erase(pubs.begin());
+                rc=_exOK;
+            }
         }
     }
     return rc;
+}
+
+void upcon::valueChanged( ctag& tag ) {
+    pthread_mutex_lock( &mutex_pub );
+    string s = tag.getname();
+    hist.push( s, tag.getvalue(), tag.getquality(), tag.getmsec() );
+    pthread_mutex_unlock( &mutex_pub );
 }
 
 //
@@ -309,9 +362,7 @@ void upcon::run() {
     /*int16_t rc =*/ connect();
     if(getstatus() == INITIALIZED) {
         while(getstatus()!=TERMINATE) {
-           pthread_mutex_lock( &mutex_pub );
            pubdataproc();
-           pthread_mutex_unlock( &mutex_pub );
            usleep(1000);
         }
     }

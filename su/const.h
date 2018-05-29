@@ -37,4 +37,11 @@ enum exit_codes {
     _exBadIO        // =5
 };                  
 
+
+const double        _fZero  = 0.0;
+const int32_t       _nZero  = 0;
+const std::string   _sZero("");
+
+const int32_t       _1MB    = 1048576;
+
 #endif // CONST_H_ORE_

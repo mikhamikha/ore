@@ -109,10 +109,10 @@ enum valvestatus {
     _vlv_override   // =12
 };
 
-typedef std::vector <cproperties> vlvmode;
+typedef std::vector < cproperties<content> > vlvmode;
 
 // объявление класса исполнительного механизма 
-class cunit: public cproperties { 			// имя класса
+class cunit: public cproperties<content> { 			// имя класса
     tagvector   args;
     int16_t     m_nType;
     int16_t     m_num;   

@@ -11,6 +11,9 @@
 #include <modbus.h>
 #include <pthread.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+
 #include "main.h"
 #include "upcon.h"
 #include "unitdirector.h"
@@ -18,12 +21,16 @@
 #include "algo.h"
 #include "mbxchg.h"
 #include "display.h"
+#include "hist.h"
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
     
     setDT();
+//    crc16::init();
+    hist.init();
+
     if (readCfg()==EXIT_SUCCESS) {
         int ret=0;
         ret = pthread_mutexattr_settype(&mutex_tag_attr, PTHREAD_MUTEX_ERRORCHECK_NP); 
@@ -104,7 +111,14 @@ int main(int argc, char* argv[]) {
                 }            
                 cout << endl;
            }
-
+           else if(ch=='m' || ch=='M') {
+               histCellBody _hc;
+               string       _hn;
+//               int          _rc;
+               while( hist.pull( _hn, _hc )==_exOK )
+                   cout<<"tag="<<_hn<<"\tpv="<<_hc.m_value<<"\tq=0x"<<hex
+                       <<uint16_t(_hc.m_qual)<<dec<<"\tts="<<_hc.m_ts<<endl;
+           } 
             cout << endl;
         }
         tcsetattr( STDIN_FILENO, TCSANOW, &oldt );

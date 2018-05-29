@@ -181,21 +181,21 @@ void ctagdirector::run() {
         iend = tags.end();
         while ( ih != iend ) {
             string  sOff;
-            int16_t nu;
+//            int16_t nu;
             ctag&   pp = ih->second;
             
-            int16_t rc = pp.getvalue( rVal );                        // вычислим значение параметра
-
+            /*int16_t rc = */pp.getvalue( rVal );                        // вычислим значение параметра
+            /*
             // публикация свежих данных
             if( rc==_exOK && pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<int(upc.size()) ) {
                 publish(pp);                        
             }
-
+            */
             // выдача задания на модули вв
             pthread_mutex_lock( &mutex_tag );
             if( pp.getquality()==OPC_QUALITY_GOOD ) {
-                if( pp.isbool() && pp.m_tasktimer.isDone() ) {  // если было импульсное задание и вышел таймер
-                    pp.settask( !pp.gettask() );                // инверитруем выход
+                if( pp.isbool() && pp.m_tasktimer.isDone() ) {      // если было импульсное задание и вышел таймер
+                    pp.settask( !pp.gettask() );                    // инвертируем выход
                     pp.m_tasktimer.reset();
                 }
             }
@@ -207,8 +207,8 @@ void ctagdirector::run() {
         iah   = algos.begin();
         iaend = algos.end();
         while ( iah != iaend ) {
-            calgo* p = *iah;
-            if(p) p->solveIt();
+            //calgo* p = *iah;
+            //if(p) p->solveIt();
             ++iah;
         }
    
@@ -225,10 +225,11 @@ void ctagdirector::run() {
 // получить ссылку на тэг по имени
 ctag* getaddr(string& str) {
     ctag* p = tagdir.gettag( str.c_str() );
+/*
     cout<<"gettag "<<hex<<long(p);
     if(p) cout<<" name="<< p->getname();
     cout<<endl;
-
+*/
     return p;
 }
 

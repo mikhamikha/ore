@@ -33,7 +33,7 @@ std::string to_string(int32_t i);
 std::string to_string(double i);
 char easytoupper(char in);
 char easytolower(char in);
-std::string trim( const std::string&, const std::string& );
+std::string trim( const std::string& str, const std::string& whitespaces = " \t" );
 void reduce( string &str, char* charsToRemove );
 string time2string( time_t rawtime );
 int16_t replaceString(string& subject, const string& search, const string& replace);

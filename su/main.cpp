@@ -27,10 +27,31 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     
-    setDT();
-//    crc16::init();
+    if( argc>1 ) {
+        string _s = argv[1];
+        _s = trim( _s );
+        if( !_s.compare("-c") || !_s.compare("--clear") ) {
+            hist.clear();
+            cout<<"History on SRAM was cleared\n";
+        }
+        else {
+            if( !_s.compare("-v") || !_s.compare("--version") ) {
+                cout<<"bu version "<<g_sVersion<<endl;;
+            }
+            else {
+                cout<<"Typically usage of this program:\n";
+                cout<<"bu [-c]\n";
+                cout<<"where:\n";
+                cout<<"\t-c, --clear \t\tclean SRAM history and exit\n";
+                cout<<"\t-h, --help \t\tShow this help and exit\n";
+                cout<<"\t-v, --version \t\tshow program version and exit\n";
+            }
+        }
+        return 0;
+    }
     hist.init();
 
+    setDT();
     if (readCfg()==EXIT_SUCCESS) {
         int ret=0;
         ret = pthread_mutexattr_settype(&mutex_tag_attr, PTHREAD_MUTEX_ERRORCHECK_NP); 

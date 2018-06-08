@@ -213,7 +213,7 @@ void ctagdirector::run() {
         }
    
         tt.start(1000);
-        usleep(_tag_prc_delay);
+        usleep( _tag_prc_delay );
     }     
     
     cout << "end tags processing" << endl;

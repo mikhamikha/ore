@@ -38,10 +38,12 @@ enum exit_codes {
 };                  
 
 
-const double        _fZero  = 0.0;
-const int32_t       _nZero  = 0;
-const std::string   _sZero("");
+const double        g_fZero  = 0.0;
+const int32_t       g_nZero  = 0;
+const std::string   g_sZero("");
 
-const int32_t       _1MB    = 1048576;
+const int32_t       g_1MB    = 1048576;
+
+const std::string   g_sVersion("0.72");
 
 #endif // CONST_H_ORE_

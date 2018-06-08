@@ -70,19 +70,19 @@ std::string ccmd::ToString()
 
 cmbxchg::cmbxchg()
 {
-    setproperty( "path",                _sZero );///dev/ttyS2")) );
-    setproperty( "enabled",             _nZero );
-    setproperty( "protocol",            _nZero );    // пока работаем только RTU
-    setproperty( "baudrate",            _nZero );//9600)) );
-    setproperty( "parity",              _nZero );
-    setproperty( "databits",            _nZero );
-    setproperty( "stopbits",            _nZero );
-    setproperty( "minimumcommanddelay", _nZero );
-    setproperty( "commanderrorpointer", _nZero );
-    setproperty( "responsetimeout",     _nZero );
-    setproperty( "charTO",              _nZero );
-    setproperty( "retrycnt",            _nZero );
-    setproperty( "errordelaycntr",      _nZero );
+    setproperty( "path",                g_sZero );///dev/ttyS2")) );
+    setproperty( "enabled",             g_nZero );
+    setproperty( "protocol",            g_nZero );    // пока работаем только RTU
+    setproperty( "baudrate",            g_nZero );//9600)) );
+    setproperty( "parity",              g_nZero );
+    setproperty( "databits",            g_nZero );
+    setproperty( "stopbits",            g_nZero );
+    setproperty( "minimumcommanddelay", g_nZero );
+    setproperty( "commanderrorpointer", g_nZero );
+    setproperty( "responsetimeout",     g_nZero );
+    setproperty( "charTO",              g_nZero );
+    setproperty( "retrycnt",            g_nZero );
+    setproperty( "errordelaycntr",      g_nZero );
 }
 //
 //  Modbus connection initialization

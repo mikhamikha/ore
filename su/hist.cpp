@@ -33,7 +33,7 @@ histBlock::histBlock( const histCellBody& val ) {
 }
 
 void histBlock::setvalue( histCellBody& val ) {
-    cout<<"histBlock::setvalue histCell_size="<<sizeof(histCellBody)+sizeof(histCellHeader)<<endl;
+    cout<<"histBlock::setvalue histCellBodyID="<<m_id<<endl;
     val.m_id = m_id;                            // сохраним id тэга
 }
 
@@ -66,18 +66,21 @@ int16_t history::storageOperation( int16_t _typeOper, string& _name, histCellBod
     if( !rc ) {
         // Маппируем статическую память
         int _ns = sizeof(histCell);
-    //    cout<<" histCellSize="<<_ns<<endl;
-        
+//        cout<<" histCellSize="<<_ns<<endl;
+        cout << "storOp: "<<_typeOper<<" ";         
         histCell* m_pp = (histCell*) mmap( 0, _ns, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0 );
         if ( m_pp == MAP_FAILED )
             cout<<"history::push mmap error\n";
         else {
-    //        cout<<"mmap ok\t"<<m_off<<endl;
+            cout<<_name<<" mmap ok\t"<<"size="<<m_pp->m_h.m_size<<" ind="<<m_pp->m_h.m_writeOff<<endl;
             switch( _typeOper ) {
                 case 0:     // запись в историю
-                    memcpy( &m_pp->m_b[m_pp->m_h.m_writeOff++], &_val, sizeof(histCellBody) );
+                    cout<<"push "<<"name="<<_name<<" pv="<<_val.m_value<<" q=0x"<<hex<<int(_val.m_qual)
+                        <<" ts="<<dec<<_val.m_ts<<" id="<<_val.m_id<<endl;
+                    memcpy( &m_pp->m_b[m_pp->m_h.m_writeOff], &_val, sizeof(histCellBody) );
                     m_pp->m_h.m_size += ( m_pp->m_h.m_size < _MAX_RECORDS-1 )? 1: 0;
-                    m_pp->m_h.m_writeOff = (m_pp->m_h.m_writeOff) % _MAX_RECORDS;
+                    m_pp->m_h.m_writeOff++;   
+                    m_pp->m_h.m_writeOff = m_pp->m_h.m_writeOff % _MAX_RECORDS;
                     
                     if( setproperty( _name, _val )!=_exOK ) {       // если тэга еще не было в истории
                         memset( m_pp->m_h.m_tn[_val.m_id], 0, _TAG_LEN ); // сохраним имя в заголовке 
@@ -85,7 +88,8 @@ int16_t history::storageOperation( int16_t _typeOper, string& _name, histCellBod
                     }
                     break;
                 case 1:     // чтение из истории
-                    //int i = _ind; 
+                    //int i = _ind;
+                    cout<<"pull "<<"name=";
                     if( m_pp->m_h.m_size && _ind>=-1 && _ind<_MAX_RECORDS ) {   
                         if( _ind==-1 ) {
                             m_pp->m_h.m_size--;
@@ -96,8 +100,10 @@ int16_t history::storageOperation( int16_t _typeOper, string& _name, histCellBod
                         memcpy( (void *)(&_val), (void*)(m_pp->m_b+_ind), sizeof(histCellBody) ); 
                     }
                     else rc = _exBadParam;
+                    cout<<_name<<endl;
                     break;
                 case 2:     // инициализация при старте
+                    cout<<"init \n";   
                     for(uint16_t j=0; j<m_pp->m_h.m_size; j++) {
                         string _n = string( m_pp->m_h.m_tn[j], _TAG_LEN );
                         histCellBody _v;   
@@ -105,7 +111,9 @@ int16_t history::storageOperation( int16_t _typeOper, string& _name, histCellBod
                     }
                     break;                
                 case 3:     // очистка истории
+                    cout<<"clear \n";   
                     m_pp->m_h.m_size = 0;
+                    m_pp->m_h.m_writeOff=0;   
                     break;
             }
             munmap( m_pp, _ns );

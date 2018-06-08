@@ -28,20 +28,20 @@ bool ftagThreadInitialized;
 
 ctag::ctag() {
 
-    setproperty( string("raw"),         _fZero );
-    setproperty( string("value"),       _fZero );
-    setproperty( string("task"),        _fZero );
-    setproperty( string("quality"),     _nZero );
-    setproperty( string("timestamp"),   _sZero );  
-    setproperty( string("dead"),        _fZero );
-    setproperty( string("sec"),         _nZero );
-    setproperty( string("msec"),        _nZero );
-    setproperty( string("mineng"),      _fZero );   
-    setproperty( string("name"),        _sZero );
-    setproperty( string("simenable"),   _nZero );    
-    setproperty( string("simvalue"),    _fZero );    
-    setproperty( string("mindev"),      _fZero );   
-    setproperty( string("maxdev"),      _fZero );   
+    setproperty( string("raw"),         g_fZero );
+    setproperty( string("value"),       g_fZero );
+    setproperty( string("task"),        g_fZero );
+    setproperty( string("quality"),     g_nZero );
+    setproperty( string("timestamp"),   g_sZero );  
+    setproperty( string("dead"),        g_fZero );
+    setproperty( string("sec"),         g_nZero );
+    setproperty( string("msec"),        g_nZero );
+    setproperty( string("mineng"),      g_fZero );   
+    setproperty( string("name"),        g_sZero );
+    setproperty( string("simenable"),   g_nZero );    
+    setproperty( string("simvalue"),    g_fZero );    
+    setproperty( string("mindev"),      g_fZero );   
+    setproperty( string("maxdev"),      g_fZero );   
     
     m_task = 0;
     m_task_go = false;

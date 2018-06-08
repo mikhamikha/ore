@@ -64,7 +64,7 @@ char easytoupper(char in){
 //  Removing leading and trailing spaces from a string
 //
 std::string trim(const std::string& str,
-                         const std::string& whitespace = " \t") {
+                         const std::string& whitespace) {
 
     std::size_t strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos) return ""; // no content

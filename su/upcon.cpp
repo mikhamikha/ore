@@ -158,7 +158,8 @@ int16_t upcon::disconnect() {
     MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
     
     disc_opts.onSuccess = onDisconnect;
-	
+	disc_opts.context = this;
+    
     if ((rc = MQTTAsync_disconnect(m_client, &disc_opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start disconnect, return code %d\n", rc);
@@ -202,7 +203,7 @@ int16_t upcon::connect() {
         strcpy((char*)conn_opts.password, (char*)sp.c_str());
         conn_opts.onSuccess = onConnect;
         conn_opts.onFailure = onConnectFailure;
-        conn_opts.context = m_client;
+        conn_opts.context = this;//m_client;
         if ((rc = MQTTAsync_connect(m_client, &conn_opts)) != MQTTASYNC_SUCCESS)
         {
             printf("Failed to start connect, return code %d\n", rc);
@@ -253,7 +254,7 @@ int16_t upcon::subscribe(void* vtag) {
                 sztop = topic+"/"+name+"/"+sf;
                 ropts.onSuccess = onSubscribe;
                 ropts.onFailure = onSubscribeFailure;
-                ropts.context   = m_client;
+                ropts.context   = this;//m_client;
                 if((rc = MQTTAsync_subscribe(m_client, sztop.c_str(), 1, &ropts)) != MQTTASYNC_SUCCESS) {
                     printf("Failed to start subscribe, return code %d\n", rc);
                 }
@@ -314,15 +315,17 @@ int16_t upcon::pubdataproc() {
     int16_t                     rc = _exFail;
     string                      sPubData;
     
-    if( getproperty("pubf", sPubData) == EXIT_SUCCESS )
-    //    if( !pubs.empty() ) 
-    {
+    if( getproperty("pubf", sPubData) == EXIT_SUCCESS && 1 ) {
+//    if( !pubs.empty() ) {
         // публикация через буфер
         histCellBody    _hcb;
         ctag*           _pt = NULL; 
+        cout<<"pubdataproc:\n";
         pthread_mutex_lock( &mutex_pub );
         bool _fRes = ( connected() && hist.pull( topic, _hcb )==_exOK );
         pthread_mutex_unlock( &mutex_pub );
+        cout<<"name="<<topic<<" pv="<<_hcb.m_value<<" q=0x"<<hex<<int(_hcb.m_qual)
+                        <<" ts="<<dec<<_hcb.m_ts<<" id="<<_hcb.m_id<<" pullOk="<<_fRes;        
         /*  
         // публикация через простую очередь
         topic = pubs.front().first;
@@ -335,6 +338,8 @@ int16_t upcon::pubdataproc() {
             
             pub_opts.onSuccess = onPublish;
             pub_opts.onFailure = onPublishFailure;
+            pub_opts.context   = this;//m_client;
+
             _pt->getfullname( topic );
             rc = MQTTAsync_send( m_client, topic.c_str(), sPubData.length()+1, (char*)sPubData.c_str(), 1, 0, &pub_opts );
                     
@@ -343,6 +348,7 @@ int16_t upcon::pubdataproc() {
                 rc=_exOK;
             }
         }
+        cout<<" pt="<<hex<<long(_pt)<<dec<<" topic="<<topic<<endl;
     }
     return rc;
 }
@@ -365,6 +371,7 @@ void upcon::run() {
            pubdataproc();
            usleep(1000);
         }
+        disconnect();
     }
     cout << "\nend up connection " << m_id << endl;
 }

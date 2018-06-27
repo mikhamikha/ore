@@ -17,6 +17,7 @@ void onDisconnect(void* context, MQTTAsync_successData* response)
     upcon* _upc = (upcon *)context;    
 
     _upc->connected( false );
+    printf("onDisconnect \n");//, response->code);
 }
 
 
@@ -28,7 +29,7 @@ void onSubscribe(void* context, MQTTAsync_successData* response)
 
 void onSubscribeFailure(void* context, MQTTAsync_failureData* response)
 {
-//	printf("Subscribe failed, rc %d\n", response->code);
+	printf("Subscribe failed, rc %d\n", response->code);
 //	finished = 1;
 }
 
@@ -39,7 +40,7 @@ void onConnectFailure(void* context, MQTTAsync_failureData* response)
 
     _upc->connected( false );
    
-//	printf("Connect failed, rc %d\n", response->code);
+	printf("Connect failed, rc %d\n", response->code);
 //	finished = 1;
 }
 
@@ -48,6 +49,7 @@ void onConnect(void* context, MQTTAsync_successData* response)
     upcon* _upc = (upcon *)context;    
 
     _upc->connected( true );
+	printf("onConnect \n");
    
 	//MQTTAsync client = (MQTTAsync)context;
 	//MQTTAsync_responseOptions ropts = MQTTAsync_responseOptions_initializer;
@@ -75,8 +77,8 @@ void connectionLost(void *context, char *cause)
     _upc->connected( false );
 //	MQTTAsync client = (MQTTAsync)context;
 //	int rc;
-/*
-	printf("connectionLost called\n");
+
+	printf("connectionLost called\n");/*
 	if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start reconnect, return code %d\n", rc);
@@ -122,7 +124,7 @@ void onPublishFailure(void* context, MQTTAsync_failureData* response)
 
     _upc->connected( false );
 
-	printf("Publish failed, rc %d\n", response ? -1 : response->code);
+	cout<<"Publish failed<<, rc "<< (response ? -1 : response->code)<<endl;
     //	published = -1; 
 }
 
@@ -132,6 +134,7 @@ void onPublish(void* context, MQTTAsync_successData* response)
     upcon* _upc = (upcon *)context;    
 
     _upc->connected( true );
+//    cout<<"onPublish\n";
     //MQTTAsync client = (MQTTAsync)context;
     //	published = 1;
 }
@@ -139,7 +142,8 @@ void onPublish(void* context, MQTTAsync_successData* response)
 upcon::upcon() 
 { 
 //    conn_opts = new MQTTAsync_connectOptions();
-//    memcpy(conn_opts, &g_conn_opts, sizeof(conn_opts));      
+//    memcpy(conn_opts, &g_conn_opts, sizeof(conn_opts));  
+    m_connected = false;
 }
 
 upcon::~upcon() {
@@ -176,7 +180,8 @@ int16_t upcon::connect() {
     stringstream    url;
     int32_t         nkeepalive;
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
-
+    
+    cout<<"upcon::connect "<<hex<<long(this)<<dec<<endl;
     rc =  (getproperty("ip", si) == EXIT_SUCCESS) && \
           (getproperty("port", sport) == EXIT_SUCCESS) && \
           (getproperty("version", nv) == EXIT_SUCCESS) && \
@@ -204,8 +209,7 @@ int16_t upcon::connect() {
         conn_opts.onSuccess = onConnect;
         conn_opts.onFailure = onConnectFailure;
         conn_opts.context = this;//m_client;
-        if ((rc = MQTTAsync_connect(m_client, &conn_opts)) != MQTTASYNC_SUCCESS)
-        {
+        if ((rc = MQTTAsync_connect(m_client, &conn_opts)) != MQTTASYNC_SUCCESS) {
             printf("Failed to start connect, return code %d\n", rc);
             rc = EXIT_FAILURE;
         }
@@ -223,8 +227,17 @@ int16_t upcon::connect() {
     return rc;
 }
 
+bool upcon::connected() { 
+    return m_connected; 
+}
+
+void upcon::connected(bool v) { 
+    m_connected = v; 
+//    cout<<"upcon "<<(v?"connected":"disconnected")<<endl;
+}
+
 int16_t upcon::subscribe(void* vtag) {    
-    int16_t                     rc = EXIT_FAILURE;
+    int16_t                     rc = _exFail;
 	MQTTAsync_responseOptions   ropts = MQTTAsync_responseOptions_initializer;
 //	MQTTAsync_message           pubmsg = MQTTAsync_message_initializer;
     string                      topic;
@@ -258,53 +271,13 @@ int16_t upcon::subscribe(void* vtag) {
                 if((rc = MQTTAsync_subscribe(m_client, sztop.c_str(), 1, &ropts)) != MQTTASYNC_SUCCESS) {
                     printf("Failed to start subscribe, return code %d\n", rc);
                 }
-                cout<<"Subscribe "<<sztop<<" rc="<<rc<<endl;
+                else
+                cout<<"Subscribed "<<sztop<<" rc="<<rc<<endl;
             }
         }
     }
-    
     return rc;
 }
-/*
-int16_t upcon::publish(ctag &tag) {    
-    int16_t         res = EXIT_FAILURE;
-    string          topic;
-    string          name;
-    string          val;
-    string          kval;
-    string          ts;
-    string          sf;
-    int16_t         rc;
-    int32_t         sec, msec;
-   
-    rc = getproperty("pubf", sf) == EXIT_SUCCESS && \
-         tag.getproperty("name", name)    == EXIT_SUCCESS;
-         tag.getproperty("topic", topic)  == EXIT_SUCCESS && \
-         tag.getproperty("value", val)    == EXIT_SUCCESS && \
-         tag.getproperty("quality", kval) == EXIT_SUCCESS && \
-         tag.getproperty("sec", sec) == EXIT_SUCCESS && \
-         tag.getproperty("msec", msec) == EXIT_SUCCESS;
-         
-    if(rc==0) {
-        cout << "cfg: prop not found" << endl; 
-    }
-    else {
-        ts = time2string(sec)+"."+to_string(msec);        
-        replaceString(sf, "value", val);
-        replaceString(sf, "quality", kval);
-        replaceString(sf, "timestamp", ts);
-
-        if(pubs.size()<_pub_buf_max) {
-            pubs.push_back(make_pair(topic+"/"+name, sf));
-            res = EXIT_SUCCESS;
-        }
-
-//        cout<<setfill(' ')<<setw(12)<<left<<topic+"/"+name<<" | "<<sf<<endl;
-        tag.acceptnewvalue();
-    }
-    return res;
-}
-*/
 
 //
 // queue of message for pub processing
@@ -320,18 +293,19 @@ int16_t upcon::pubdataproc() {
         // публикация через буфер
         histCellBody    _hcb;
         ctag*           _pt = NULL; 
-        cout<<"pubdataproc:\n";
         pthread_mutex_lock( &mutex_pub );
         bool _fRes = ( connected() && hist.pull( topic, _hcb )==_exOK );
         pthread_mutex_unlock( &mutex_pub );
-        cout<<"name="<<topic<<" pv="<<_hcb.m_value<<" q=0x"<<hex<<int(_hcb.m_qual)
-                        <<" ts="<<dec<<_hcb.m_ts<<" id="<<_hcb.m_id<<" pullOk="<<_fRes;        
         /*  
         // публикация через простую очередь
         topic = pubs.front().first;
         val = pubs.front().second;
         */
+        if(_fRes)
+//            cout<<"pubdataproc name="<<topic<<" pv="<<_hcb.m_value<<" q=0x"<<hex<<int(_hcb.m_qual)
+//                <<" ts="<<dec<<_hcb.m_ts<<" id="<<_hcb.m_id;
         if( _fRes && ((_pt=getaddr(topic))!=NULL) ){
+//            cout<<"pubdataproc:\t";
             replaceString( sPubData, "value", to_string( _hcb.m_value ) );
             replaceString( sPubData, "quality", to_string( _hcb.m_qual ) );
             replaceString( sPubData, "timestamp", to_string( _hcb.m_ts ) );
@@ -347,8 +321,9 @@ int16_t upcon::pubdataproc() {
     //            pubs.erase(pubs.begin());
                 rc=_exOK;
             }
+//            cout<<" pt="<<hex<<long(_pt)<<dec<<" topic="<<topic;        
         }
-        cout<<" pt="<<hex<<long(_pt)<<dec<<" topic="<<topic<<endl;
+//        if(_fRes) cout<<" rc="<<rc<<endl;
     }
     return rc;
 }
@@ -365,14 +340,14 @@ void upcon::valueChanged( ctag& tag ) {
 //
 void upcon::run() {
     cout << "\nstart up connection " << m_id << endl;
-    /*int16_t rc =*/ connect();
-    if(getstatus() == INITIALIZED) {
-        while(getstatus()!=TERMINATE) {
-           pubdataproc();
-           usleep(1000);
-        }
-        disconnect();
+    static int nCntTO=0;
+
+    while(getstatus()!=TERMINATE) {
+        if( connected() ) pubdataproc();
+        else if( !(nCntTO++%5000) ) connect();
+        usleep(1000);
     }
+    if( connected() ) disconnect();
     cout << "\nend up connection " << m_id << endl;
 }
 

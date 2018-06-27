@@ -73,8 +73,8 @@ class upcon: public cproperties<content>, public cthread, public iObserver<ctag>
         int16_t terminate() { m_status = TERMINATE; return EXIT_SUCCESS; }
         uint32_t handle() { return uint32_t(m_client); } 
         void run();
-        bool connected() { return m_connected; }
-        void connected(bool v) { m_connected = v; }
+        bool connected();
+        void connected(bool v);
         virtual void valueChanged( ctag& value );   
 };
 

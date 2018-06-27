@@ -47,7 +47,7 @@ struct histBlock {
     static int16_t m_cnt;
     histBlock() { } 
     histBlock( const histCellBody& val );
-    ~histBlock() { cout<<"hb destr"<<endl;  }
+    ~histBlock() { /*cout<<"hb destr"<<endl;*/  }
     
     void    setvalue( histCellBody& val );
     int16_t getvalue( histCellBody& val );

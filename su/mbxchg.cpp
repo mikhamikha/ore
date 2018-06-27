@@ -231,19 +231,23 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
         <<" charTO="<<floor(charto/1000)<<","<<1000*(charto%1000)<<" minCmdDelay="<<mincmddel 
         <<" errordelay="<<errdel<<" commanderror="<<erroff<<" fConn="<<fConnected<<endl;
 */    
-    if( rc == 0)
+    if( rc == _exOK)
     while(cmdi!=cmds.end()) {
-        if(i==900) {
-            cout<<"cmd="<<i<<" n="<<(*cmdi).m_node<<" f="<<(*cmdi).m_func<<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<endl;
-            outtext(cmdi->ToString());
-        }
-        fTook = true; 
+        fTook = false; 
         if( cmdi->m_enable && ( cmdi->m_first || cmdi->m_time.isDone() ) ) {
-            rc = 0;
+            fTook = true; 
+//            rc = 0;
+            
+            if( 0 && ((*cmdi).m_node==1 || (*cmdi).m_node==4) ) {
+//                cout<<"conn="<<hex<<long(this)<<" cmd="<<i<<" n="<<(*cmdi).m_node<<" f="<<(*cmdi).m_func
+//                    <<" en="<<(*cmdi).m_enable<<" fi="<<(*cmdi).m_first<<" minCmdDelay="<<mincmddel<<endl;
+                outtext(cmdi->ToString());
+            }
             if(proto == RTU) {
                 rc = modbus_set_slave(m_ctx, cmdi->m_node);
+                if(rc) cout<<"mbxchg bad rtu\n";
             }   
-            if(rc==0) {
+            if(rc==_exOK) {
 //                pthread_mutex_lock( &mutex_tag );
                 switch(cmdi->m_func) {                // modbus read commands queue processing
                     case 1: 
@@ -262,7 +266,7 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
 
                     case 3: 
                     case 103: 
-                       rc = modbus_read_registers( \
+                        rc = modbus_read_registers( \
                                 m_ctx,             \
                                 cmdi->m_devAddr,   \
                                 cmdi->m_count,     \
@@ -271,9 +275,13 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
 //                      for( int j=0; i==7 && j<cmdi->m_count; j++ ) 
 //                                cout<<m_pReadData[cmdi->m_intAddress+j]<<" "; cout<<endl;
                         if( cmdi->m_func==103 && rc!=-1 ) {     // сохраним защелки и сбросим их в модуле ВВ
-                            for(int j=0; j<cmdi->m_count; j++ ) 
+                            for( int j=0; j<cmdi->m_count; j++ ) {
                                 m_pReadTrigger[j+cmdi->m_intAddress] |= m_pReadData[j+cmdi->m_intAddress];
-                            modbus_write_register(m_ctx, cmdi->m_devAddr, 0);    
+                                if( m_pReadData[j+cmdi->m_intAddress] ) {
+                                    usleep(mincmddel*1000l);   
+                                    modbus_write_register(m_ctx, cmdi->m_devAddr+j, 0);    
+                                }
+                            }
                         }
                         break;
 
@@ -290,15 +298,15 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                     case 5:
                         pthread_mutex_lock( &mutex_tag );
                         // write bit if enable==1 or (2 and new<>old)
-                        if( (*cmdi).m_first || fLast || cmdi->m_enable==1 ||    \
+                        if( (*cmdi).m_first || fLast || cmdi->m_enable==1 ||    
                             m_pWriteData[cmdi->m_intAddress]!=m_pLastWriteData[cmdi->m_intAddress] ) {
-                            rc = modbus_write_bit(      \
-                                    m_ctx,              \
-                                    cmdi->m_devAddr,  \
-                                    (fLast)? 0: m_pWriteData[cmdi->m_intAddress]   \
+                            rc = modbus_write_bit(   
+                                    m_ctx,           
+                                    cmdi->m_devAddr, 
+                                    (fLast)? 0: m_pWriteData[cmdi->m_intAddress]   
                                     );
-//                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr<< 
-//                                " val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
+                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr
+                                <<" val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
                             if(rc!=-1)
                                 m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 

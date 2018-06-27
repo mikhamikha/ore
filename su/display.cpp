@@ -18,17 +18,6 @@ void view::definedspline( int16_t nd, int16_t nr, const char* sr, const std::str
     if( nd >= 0 && nr >= 0 ) {
         addpages(nd);        
         pages.at(nd).setproperty( nr, sr, attr );
-        /*
-        if( pages.at(nd).rows.size() <= nr ) {
-            properties s;
-            while( pages.at(nd).rows.size() <= nr ) { pages.at(nd).rows.push_back(s); pages.at(nd).attr.push_back(s); } 
-        }
-        string strim(" \t");
-        pages.at(nd).rows.at(nr) = trim( sr, strim );
-        pages.at(nd).attr.at(nr) = trim( attr, strim );
-        cout<<"define dsp "<<nd<<" row "<<nr<<" content "<<sr \
-            <<" dspsize "<<pages.size()<<" rows "<<pages.at(nd).rows.size()<<endl;
-            */
     }
 }
 
@@ -255,13 +244,17 @@ void view::keymanage() {
         olds[j] = ( (nval[j] != 0) && !first );
     }
 //    cout<<endl;
-    if(first) { first = false; return; }
+    if(first) { 
+        first = false; 
+        if(  m_tsleeper.getPreset() ) m_tsleeper.start();
+        return; 
+    }
     memcpy( (void*)&m_btn, &bbtn, sizeof(cbtn) );
-    if( bbtn && m_mode != _sleep_mode ) {               // если жались кнопки, то перезапустим таймер сна
+    if( bbtn && m_mode != _sleep_mode && m_tsleeper.getPreset() ) {  // если жались кнопки, то перезапустим таймер сна
         m_tsleeper.reset(); 
         m_tsleeper.start(); 
     } 
-    if( m_tsleeper.isDone() ) {
+    if( m_tsleeper.isDone() && m_tsleeper.getPreset() ) {
         m_mode = _sleep_mode;                           // уснем, если никому не нужен
         m_tsleeper.reset();
         GU3000_displayOff();

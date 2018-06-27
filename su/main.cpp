@@ -70,12 +70,13 @@ int main(int argc, char* argv[]) {
         
         fieldconnections::iterator coni;
         for(coni=conn.begin(); coni != conn.end(); ++coni) (*coni)->start();
-
+        
         upconnections::iterator up;
         for(up=upc.begin(); up != upc.end(); ++up) (*up)->start();
         
         tagdir.start();     
 //        unitdir.start();
+        
         dsp.start();
 
 // ----------- terminate block -------------

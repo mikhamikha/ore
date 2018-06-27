@@ -19,7 +19,7 @@ int16_t calgo::init() {
         getproperty( "type", m_nType );
         getproperty( "args", sin );
         getproperty( "res", sres );
-        getproperty( "equipments", seq );;
+        getproperty( "equipments", seq );
 
     cout<<" rc="<<rc<<" type="<<m_nType<<" args="<<sin<<" res="<<sres<<" equip="<<seq<<endl;
     
@@ -62,7 +62,7 @@ int16_t calgo::solveIt() {
     int16_t rc=_exOK;
     
     getproperty( "enable", m_enable );
-    if( m_enable ) {
+    if( m_enable ) {                                                                // если алгоритм запрещен -> 
     if( m_fInit>0 ) {
         arr_qual.resize( m_args.size() );
         transform( m_args.begin(), m_args.end(), arr_qual.begin(), getqual );
@@ -73,11 +73,6 @@ int16_t calgo::solveIt() {
             */
             case _unitProcessing: {
 //                    cout<<"_unitProcessing"<<endl;
-                                      /*
-                    int16_t fEn;
-                    getproperty( "enable", fEn );
-                    if( !fEn ) break;                                               // если алгоритм запрещен -> выходим 
-                    */
                     if( !m_nUnits ) getproperty("number", m_nUnits);                // считываем количество устройств                      
                     if( m_nUnits && (size_t)m_nUnits<=m_units.size()  ) {
                         for( int16_t j=0; j<m_nUnits; j++ ) {
@@ -88,7 +83,8 @@ int16_t calgo::solveIt() {
                                     if( m_args.size() >= (size_t)m_nUnits ) {
                                         puni->pidEval( m_args[j] );
                                     }                                
-                                    break;
+                                break;
+                                /*
                                 case _auto_time: 
                                     if( puni->gettype()==_valve && m_nUnits==2 && \
                                             m_args.size() >= (size_t)m_nUnits*2 && m_res.size() ) {
@@ -142,7 +138,8 @@ int16_t calgo::solveIt() {
                                             }
                                         }
                                     }
-                                    break; 
+                                break;
+                                    */
                             }
                             if( puni->gettype()!=_valve || puni->valveCtrlEnabled() ) puni->control(); // запустим исполнение ;
                         } 

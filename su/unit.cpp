@@ -88,7 +88,7 @@ int16_t cunit::init() {
                 if( m_pblock )    m_preg      = getaddr( snam[9] );// cout<<"a"<<long(m_preg)<<dec<<endl;
                 if( m_preg )      m_pother    = getaddrunit( snam[10] );// cout<<"a"<<long(m_preg)<<dec<<endl;
                 
-                if( !m_pother ) { rc=_exBadAddr; cout<<" bad addr\n"; break; }
+                if( !m_pother ) { rc=_exBadAddr; cout<<" bad addr\n"; /*break;*/ }
 
                 // получим настройки ПИД-регулятора
                 res = getproperty("kp",       m_pid.kp ) | \
@@ -201,10 +201,12 @@ int16_t cunit::getstate() {
             int16_t nmode = m_pmod->getvalue();
             if( nmode!=m_mode ) {                               // если смена режима
                 if(!m_mode) m_status = _vlv_ready;              // ввод в работу
+                /*
                 if( nmode==_auto_time                           // если новый="по времени", у второго меняем тоже                        
                         && m_pother && m_pother->getmode()!=_auto_time) m_pother->changemode( nmode );      
                 if( m_mode==_auto_time                          // если старый="по времени", у второго меняем на ручной
                         && m_pother ) m_pother->changemode( _manual );   
+                */
                 changemode(nmode);                                                      // меняем режим текущего 
             }
 
@@ -252,7 +254,7 @@ int16_t cunit::getstate() {
  
             m_pfc->setoldvalue( _cnt );   
             m_ppos->setrawval( raw_set );                                   // сохраним значение положения в сырых единицах
-            m_ppos->getvalue( m_position );                                 // пересчитаем положение клапана в инж. единицах
+            m_position = m_ppos->getvalue();                                // пересчитаем положение клапана в инж. единицах
             uint8_t n_qual_fv = ((m_pfc->getquality() |  m_plso->getquality() | m_pcmdopen->getquality()) & OPC_STATUS_MASK);
             if( n_qual_fv==OPC_QUALITY_GOOD ) {
                 if( _lso && _lsc ) n_qual_fv = OPC_QUALITY_DEVICE_FAILURE;
@@ -418,13 +420,13 @@ int16_t cunit::control( void ) {
                         m_cmdstatus = _cmd_completed;   
                 }
             }
-/*            if( m_ppos->getname()=="FV11" ) 
+            if( m_ppos->getname()=="FV11" && 0) 
                 cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_mode<<" ucmd="<<m_cmd<<" ucmdst="<<m_cmdstatus \
                     <<" mot= "<<m_motion<<" cmd= "<<_cmd_val<<"|"<<_dir_val<<" cnt= "<<_cnt_old<<"|"<<_cnt \
                     <<" pv="<<m_position<<" task= "<<m_task<<"|"<<m_delta \
                     <<" lso= "<<_lso_old<<"|"<<_lso<<" lsc= "<<_lsc_old<<"|"<<_lsc<<" I="<<m_pblock->getvalue()\
                     <<" fcQ="<<rc0<<" cvQ="<<rc2<<" pulseW="<<m_pulsew<<" scaleVLV="<<_minOpen<<"|"<<_maxOpen\
-                    <<" t= "<<m_twait.getTT()<<" of "<<m_twait.getPreset()<<endl;                        */
+                    <<" t= "<<m_twait.getTT()<<" of "<<m_twait.getPreset()<<endl;                        
             break;
     }
     return rc;

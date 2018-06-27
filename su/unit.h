@@ -52,8 +52,8 @@ enum modecontrol {
     _not_proc = 0,          // отключен
     _manual,                // ручное управление
     _auto_pid,              // ПИД 
-    _auto_time,             // автоматический по времени
-    _calibrate,             // режим калибровки
+//    _auto_time,             // автоматический по времени
+//    _calibrate,             // режим калибровки
     _manual_pulse_open,     // импульс на открытие
     _manual_pulse_close     // импульс на закрытие
 };

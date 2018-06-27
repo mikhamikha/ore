@@ -171,7 +171,6 @@ void ctagdirector::run() {
     taglist::iterator ih, iend;
     alglist::iterator iah, iaend;   
     
-    double  rVal;
 
     cout << "start tags processing " << endl;
     sleep(1);
@@ -180,25 +179,18 @@ void ctagdirector::run() {
         ih   = tags.begin();
         iend = tags.end();
         while ( ih != iend ) {
-            string  sOff;
+//            string  sOff;
 //            int16_t nu;
             ctag&   pp = ih->second;
             
-            /*int16_t rc = */pp.getvalue( rVal );                        // вычислим значение параметра
+            pthread_mutex_lock( &mutex_tag );
+            pp.evaluate();                        // выполним вычисления над тэгом
             /*
             // публикация свежих данных
             if( rc==_exOK && pp.hasnewvalue() && (nu=pp.getpubcon())>=0 && nu<int(upc.size()) ) {
                 publish(pp);                        
             }
             */
-            // выдача задания на модули вв
-            pthread_mutex_lock( &mutex_tag );
-            if( pp.getquality()==OPC_QUALITY_GOOD ) {
-                if( pp.isbool() && pp.m_tasktimer.isDone() ) {      // если было импульсное задание и вышел таймер
-                    pp.settask( !pp.gettask() );                    // инвертируем выход
-                    pp.m_tasktimer.reset();
-                }
-            }
             pthread_mutex_unlock( &mutex_tag );
             ++ih;
         }
@@ -207,8 +199,8 @@ void ctagdirector::run() {
         iah   = algos.begin();
         iaend = algos.end();
         while ( iah != iaend ) {
-            //calgo* p = *iah;
-            //if(p) p->solveIt();
+            calgo* p = *iah;
+            if(p) p->solveIt();
             ++iah;
         }
    

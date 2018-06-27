@@ -57,10 +57,12 @@ protected: 				// спецификатор доступа protected
     std::string m_name;
     std::string m_topic;
     bool        m_firstscan;
+    bool        m_subscribed;
  
     // referenses to counter, limit switches (opened & closed), commands (open & close)
-    ctag*     tag1; 
-    void*       m_pup;          // указатель на исходящее соединения  
+    ctag*       tag1; 
+    void*       m_ppub;          // указатель на внешнее соединение для публикации  
+    void*       m_psub;          // указатель на внешнее соединение для подписки  
 public: 				// спецификатор доступа public
     ctag();			// конструктор класса
 //    ctag(const ctag&) {}		// конструктор класса
@@ -68,9 +70,14 @@ public: 				// спецификатор доступа public
 //    int16_t     m_sub;   
     cton        m_tasktimer;
     void		*p_conn;	
-    enum DataType {
-        _real_type,
-        _int_type,
+    
+    
+     enum DataType {
+        _real_i16,
+        _di_i16,
+        _di_inv_i6,
+        _real_i32,
+        _real_ui32
     };
 
     timespec* getTS() { return &m_ts; }
@@ -86,53 +93,21 @@ public: 				// спецификатор доступа public
     void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
     void    init();
     int16_t getraw();                           // get raw data from readdata buffer
-    int16_t getvalue(double &rOut);             // get value in EU
+    int16_t evaluate();                         // выполним вычисления над тэгом
     int16_t setvalue(double);                   // write tasks to modbus writedata area 
-    double  gettask( bool fraw=false ) {        // get task value; if fraw==true then unscaled task
-        double val;
-        if( !fraw && m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) { 
-            val = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_task-m_minRaw)+m_minEng;
-            val = min( val, m_maxEng );         // ограничим значение инженерной шкалой
-            val = max( val, m_minEng );
-            
-            if( m_minDev!=m_maxDev )  {         // если задана шкала параметра < шкалы прибора,
-                val = (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(val-m_minDev)+m_minEng;
-                val = min( val, m_maxEng );     // ограничим значение инженерной шкалой
-                val = max( val, m_minEng );
-            }        
-        }
-        else val = m_task;
-
-        return val;    
-    }
+    double  gettask( bool fraw=false );         // get task value; if fraw==true then unscaled task
     int16_t settask( double rin, bool fgo=true ); 
 
-    void cleartask() {
-        m_task_go = false;    
-    }    
+    void cleartask() { m_task_go = false; }    
 
-    int16_t settaskpulse(double rin, int32_t pre=2000) {
-        int16_t rc = settask( rin, true ); 
-        m_task_go = true;    
-        m_tasktimer.start(pre);
-        return rc;
-    }
-
-    double getrawval() {
-        return m_raw;
-    }   
-
-    void setrawval( double r ) {
-        m_raw = r;
-        setproperty( "raw", r );
-//        if( m_name.substr(0,4)=="FV11") cout << "? really raw = "<< r <<endl; 
-    }  
-
+    int16_t settaskpulse(double rin, int32_t pre=2000); 
+    double getrawval() { return m_raw; }   
+    void setrawval( double r ) { m_raw = r; setproperty( "raw", r ); }
     void setrawscale( double minr, double maxr ) {
         m_maxRaw = maxr;
         m_minRaw = minr;
-        setproperty( "minraw", minr );
-        setproperty( "maxraw", maxr );
+        setproperty( "minr", minr );
+        setproperty( "maxr", maxr );
     }
     double  getdead() { return m_deadband; }
     double  gethi() { return m_hi; }
@@ -146,9 +121,8 @@ public: 				// спецификатор доступа public
     bool    taskset() { return m_task_go; }
 //    bool    hasnewvalue() { return m_valueupdated; }
 //    void    acceptnewvalue() { m_valueupdated = false; }
-    //  получить номер внешнего соединения
-    int16_t getpubcon() { int16_t u=0; getproperty("pub", u); return --u; }    
-    int16_t getsubcon() { int16_t u=0; getproperty("sub", u); return --u; }
+    bool subscribed() { return m_subscribed; }
+    void subscribed(bool f) { m_subscribed = f; }
     bool    isbool() { return (m_type>0 && m_type<2); }
 
     int16_t rawValveValueEvaluate();

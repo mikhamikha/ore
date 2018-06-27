@@ -92,10 +92,10 @@ class cmbxchg: public cproperties<content>, public cthread {
         int32_t mbCommandsCount() {return cmds.size();}
         ccmd* mbCommand(const int i) {return &cmds[i];}
         void mbCommandAdd(ccmd &cmd) { cmds.push_back(cmd); }
-        static  int16_t    *m_pWriteData;       // write data area
-        static  int16_t    *m_pLastWriteData;   // write data area
-        static  int16_t    *m_pReadData;        // read data area
-        static  int16_t    *m_pReadTrigger;     // read data area
+        static int16_t    *m_pWriteData;       // write data area
+        static int16_t    *m_pLastWriteData;   // write data area
+        static int16_t    *m_pReadData;        // read data area
+        static int16_t    *m_pReadTrigger;     // read data area
         static int32_t     m_maxReadData;
         static int32_t     m_maxWriteData;
         int16_t init();

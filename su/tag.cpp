@@ -61,7 +61,9 @@ ctag::ctag() {
     m_name.assign("");
     m_minDev = 0;
     m_maxDev = 0;
-    m_pup = 0l;
+    m_ppub = 0l;
+    m_psub = 0l;
+    m_subscribed = false;   
 //    m_motion    = 0;
 }
 
@@ -92,10 +94,10 @@ void ctag::init() {
 //    string  she;
 //    int32_t nhe;
     int rc = \
-    getproperty( "minraw",  m_minRaw   ) | \
-    getproperty( "maxraw",  m_maxRaw   ) | \
-    getproperty( "mineng",  m_minEng   ) | \
-    getproperty( "maxeng",  m_maxEng   ) | \
+    getproperty( "minr",  m_minRaw   ) | \
+    getproperty( "maxr",  m_maxRaw   ) | \
+    getproperty( "mine",  m_minEng   ) | \
+    getproperty( "maxe",  m_maxEng   ) | \
     getproperty( "flttime", m_fltTime  ) | \
     getproperty( "type",    m_type   ) | \
     getproperty( "hihi",    m_hihi     ) | \
@@ -109,10 +111,6 @@ void ctag::init() {
     getproperty( "maxdev",  m_maxDev   );
 
     int16_t nPortErrOff=0, nErrOff=0;
-    
-    cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_type<<" deadband "<<m_deadband<< \
-        " maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw<< \
-        " hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo;
     
     if( (m_readOff >= 0 || m_writeOff >= 0) && /*mb->getproperty("commanderror", nPortErrOff) == EXIT_SUCCESS &&*/ \
                 getproperty("ErrPtr", nErrOff) == _exOK ) {     // read errors of read modbus operations
@@ -129,21 +127,26 @@ void ctag::init() {
             num = atoi( m_name.substr(2, 2).c_str() );
             s1 = "FV"+to_string(num);
             m_pos = getaddr( s1 );                  // valve position in percent
-            cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
+//            cout<<"init "<<m_name<<" pos="<<hex<<long(m_pos)<<dec<<endl;
         }
     }
-    cout<<endl;
     double rval;
     if( getproperty("default", rval)==_exOK ) { setvalue(rval); } 
+
     // подписка на команды
-    uint16_t nu;
-    if( (nu=getsubcon())>=0 && nu<upc.size() ) {
-        upc[nu]->subscribe( this );
-//      pp.m_sub = nu;
+    int16_t nu;
+    // получим адрес соединения для подписки на команды
+    if( (getproperty("sub", nu))==_exOK && nu && nu<=int(upc.size()) ) {
+        m_psub = upc[nu-1];
     }
-    if( (nu=getpubcon())>=0 && nu<upc.size() ) {
-        m_pup = upc[nu];
+    // получим адрес соединения для публикации данных
+    if( (getproperty("pub", nu))==_exOK && nu && nu<=int(upc.size()) ) {
+        m_ppub = upc[nu-1];
     }
+    cout<<"tag::init "<<m_name<<" rc="<<rc<<" bool? "<<m_type<<" deadband "<<m_deadband
+        <<" maxE "<<m_maxEng<<" minE "<<m_minEng<<" maxR "<<m_maxRaw<<" minR "<<m_minRaw
+        <<" hihi "<<m_hihi<<" hi "<<m_hi<<" lolo "<<m_lolo<<" lo "<<m_lo<<" pos="<<hex<<long(m_pos)
+        <<" sub="<<m_psub<<" pub="<<m_ppub<<dec<<endl;
 }
 
 int16_t ctag::getraw() {
@@ -157,7 +160,30 @@ int16_t ctag::getraw() {
     m_quality_old = m_quality;
 
     if( m_readOff >= 0 ) {
-        m_raw = cmbxchg::m_pReadData[m_readOff];
+        int16_t _tmp16[2];
+        int32_t _tmp32;
+            switch( m_type ) {
+            case _real_i32:
+//                    if(m_name.substr(0,4)=="PT11") 
+//                        cout<<m_name<<" "<<hex<<cmbxchg::m_pReadData[m_readOff]<<"|"<<cmbxchg::m_pReadData[m_readOff+1]<<dec<<endl;
+                    _tmp16[1] = cmbxchg::m_pReadData[m_readOff];
+                    _tmp16[0] = cmbxchg::m_pReadData[m_readOff+1];
+                    memcpy( ((char *)&_tmp32), ((char *)&_tmp16[0]), sizeof(int32_t));
+                    m_raw = _tmp32;
+//                    if(m_name.substr(0,4)=="PT11") 
+//                        cout<<" getraw off="<<m_readOff<<" src="<<hex<<*((int32_t*)(cmbxchg::m_pReadData+m_readOff))
+//                            <<" tmp="<<_tmp32<<"|"<<dec<<_tmp32<<" raw="<<m_raw
+//                            <<" sizeof="<<sizeof(_tmp32)<<endl;
+                break;
+           case _real_ui32: 
+                    _tmp16[1] = cmbxchg::m_pReadData[m_readOff];
+                    _tmp16[0] = cmbxchg::m_pReadData[m_readOff+1];
+                    memcpy( ((char *)&_tmp32), ((char *)&_tmp16[0]), sizeof(int32_t));
+                    m_raw = (uint32_t)_tmp32;
+                break;
+            default: 
+                m_raw = cmbxchg::m_pReadData[m_readOff];
+        }
 //        cout<<m_raw<<" ";
         if( m_readbit >= 0 ) {
             m_raw = (( int(m_raw) & ( 1 << m_readbit ) ) != 0);
@@ -188,7 +214,7 @@ int16_t ctag::getraw() {
 //  приведение к инж. единицам, фильтрация, аналог==дискрет
 //  анализ изменения значения сравнением с зоной нечувствительности
 //
-int16_t ctag::getvalue(double &rOut) {
+int16_t ctag::evaluate() {                         
     double      rVal = m_rvalue;
     timespec    tv;
     int32_t     nTime;
@@ -202,6 +228,7 @@ int16_t ctag::getvalue(double &rOut) {
     if(m_firstscan) {
         init();
     }
+
     clock_gettime(CLOCK_MONOTONIC,&tv);
     tv.tv_sec += dT;
     nctt = tv.tv_sec*_million + tv.tv_nsec/1000;
@@ -212,7 +239,7 @@ int16_t ctag::getvalue(double &rOut) {
             getproperty("simvalue", rsim_v)) == _exOK && rsim_en != 0 ) {   // simulation mode switched ON 
         m_quality_old = m_quality;
         rVal  = rsim_v;
-        rOut  = rsim_v;
+//        rOut  = rsim_v;
         m_quality = OPC_QUALITY_GOOD;
     }
     else { 
@@ -230,7 +257,7 @@ int16_t ctag::getvalue(double &rOut) {
                 rVal = max( rVal, m_minEng );
                 
                 if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
-                    rVal =  (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(rVal-m_minDev)+m_minEng;
+                    rVal = (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(rVal-m_minDev)+m_minEng;
                     rVal = min( rVal, m_maxEng );                                   // ограничим значение инженерной шкалой
                     rVal = max( rVal, m_minEng );
                 }
@@ -239,22 +266,35 @@ int16_t ctag::getvalue(double &rOut) {
                 if( nD && nTime ) rVal = (m_rvalue*nTime+rVal*nD)/(nTime+nD); 
                 if(m_type==1) rVal = (rVal >= m_hihi);                              // if it is a discret tag
                 if(m_type==2) rVal = (rVal < m_hihi);                               // if it is a discret tag & inverse
-                rOut = rVal;                                                        // current value
+//                rOut = rVal;                                                        // current value
             }
             else {
-                rOut = m_raw;
+//                rOut = m_raw;
                 rVal = m_raw;
             }
         }
-      
-/*        if( m_name.substr(0,4)=="MV11") \
+/*      
+        if( m_name.substr(0,3)=="ZV1") \
             cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
                 <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
                 <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
                 <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr \
-                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<endl;*/
-
-        //      save value if it (or quality or timestamp) was changes
+                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<endl;
+*/        
+        // подписка на команды
+        if( m_psub ) {                              // если разрешено получать команды
+            if( ((upcon*)m_psub)->connected() ) {   // если подключение есть и не подписаны, пробуем подписать тэг
+                if( !subscribed() ) {
+                    cout<<" attempt 2 sub "<<m_name<<endl;
+                    subscribed( (((upcon*)m_psub)->subscribe( this )==_exOK) );          
+                }
+            }
+            else {                                  // если подключения нет, снимаем флаг о подписке
+                subscribed( false );
+            }
+        }
+        
+        // save value if it (or quality or timestamp) was changes
         if( fabs(rVal-m_rvalue)>=m_deadband || m_quality_old != m_quality || nD>60*_million ) {
             int32_t nsec = int32_t(tv.tv_sec);
             int32_t nmsec= int32_t(tv.tv_nsec/_million);
@@ -264,16 +304,28 @@ int16_t ctag::getvalue(double &rOut) {
             setproperty("quality", m_quality);
             setproperty("sec",  nsec);
             setproperty("msec", nmsec);
-            if( m_pup ) ((upcon*)m_pup)->valueChanged( *this );
+            if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
+
 /*          if( m_name.substr(0,3)=="MV1") cout<<endl;
                 cout <<" |v "<< rVal<<" |vold "<<m_rvalue<< \
                 " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
 */
             m_rvalue = rVal;
         } 
+
+        // выдача задания на модули вв
+        // в случае, если было импульсное задание
+        if( m_quality==OPC_QUALITY_GOOD ) {
+            if( isbool() && m_tasktimer.isDone() ) {      // если было импульсное задание и вышел таймер
+                settask( !gettask() );                    // инвертируем выход
+                m_tasktimer.reset();
+            }
+        }
+
     }    
     if(m_firstscan) { m_rvalue_old = m_rvalue; m_firstscan = false; }
-   
+
+  
     return rc;
 }
 
@@ -286,20 +338,41 @@ int16_t ctag::setvalue( double rin=0 ) {
         m_rvalue = rin;
         m_raw = rin;
         m_quality = OPC_QUALITY_GOOD;
-        settask( rin, false );
+        if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
+        //settask( rin, false );
+        setproperty( "task", rin );
+
         rc = _exOK;   
     }
     
     return rc;
+}
+// get task value; if fraw==true then unscaled task
+double ctag::gettask( bool fraw ) {        
+    double val;
+    if( !fraw && m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) { 
+        val = (m_maxEng-m_minEng)/(m_maxRaw-m_minRaw)*(m_task-m_minRaw)+m_minEng;
+        val = min( val, m_maxEng );         // ограничим значение инженерной шкалой
+        val = max( val, m_minEng );
+        
+        if( m_minDev!=m_maxDev )  {         // если задана шкала параметра < шкалы прибора,
+            val = (m_maxEng-m_minEng)/(m_maxDev-m_minDev)*(val-m_minDev)+m_minEng;
+            val = min( val, m_maxEng );     // ограничим значение инженерной шкалой
+            val = max( val, m_minEng );
+        }        
+    }
+    else val = m_task;
+
+    return val;    
 }
 
 int16_t ctag::settask(double rin, bool fgo) {
     int16_t rc = _exOK;
     double  rVal = rin;
    
-   cout<<endl<<"settask "<<m_name<<" task=="<<rVal; 
-   
-   if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
+    cout<<endl<<"settask "<<m_name<<" task=="<<rVal<<" go="<<fgo; 
+
+    if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
         if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
             rVal = (m_maxDev-m_minDev)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minDev;
             rVal = min( rVal, m_maxDev );                                   // ограничим значение инженерной шкалой
@@ -308,7 +381,7 @@ int16_t ctag::settask(double rin, bool fgo) {
         }        
         rVal = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minRaw;
         cout<<" raw="<<rVal;
-   }
+    }
     m_task    = rVal;  
     if(fgo) m_task_go = fgo; 
     
@@ -327,6 +400,13 @@ int16_t ctag::settask(double rin, bool fgo) {
         m_task_go = false; 
     }
     setproperty( "task", rin );
+    return rc;
+}
+
+int16_t ctag::settaskpulse(double rin, int32_t pre) {
+    int16_t rc = settask( rin, true ); 
+    m_task_go = true;    
+    m_tasktimer.start(pre);
     return rc;
 }
 

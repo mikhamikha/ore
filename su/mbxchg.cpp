@@ -305,8 +305,8 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                                     cmdi->m_devAddr, 
                                     (fLast)? 0: m_pWriteData[cmdi->m_intAddress]   
                                     );
-                            cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr
-                                <<" val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
+                            //cout<<"func 5 rc="<<rc<<" dev="<<cmdi->m_devAddr
+                            //    <<" val="<<(fLast? 0: m_pWriteData[cmdi->m_intAddress])<<endl;
                             if(rc!=-1)
                                 m_pLastWriteData[cmdi->m_intAddress]=m_pWriteData[(*cmdi).m_intAddress];
                         } 

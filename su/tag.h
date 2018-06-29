@@ -77,7 +77,8 @@ public: 				// спецификатор доступа public
         _di_i16,
         _di_inv_i6,
         _real_i32,
-        _real_ui32
+        _real_ui32,
+        _real_wt_foton
     };
 
     timespec* getTS() { return &m_ts; }

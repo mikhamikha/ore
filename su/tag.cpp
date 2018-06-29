@@ -181,7 +181,10 @@ int16_t ctag::getraw() {
                     memcpy( ((char *)&_tmp32), ((char *)&_tmp16[0]), sizeof(int32_t));
                     m_raw = (uint32_t)_tmp32;
                 break;
-            default: 
+           case _real_wt_foton:
+                    m_raw = m_maxRaw-cmbxchg::m_pReadData[m_readOff];
+                    break;
+           default: 
                 m_raw = cmbxchg::m_pReadData[m_readOff];
         }
 //        cout<<m_raw<<" ";
@@ -273,14 +276,8 @@ int16_t ctag::evaluate() {
                 rVal = m_raw;
             }
         }
-/*      
-        if( m_name.substr(0,3)=="ZV1") \
-            cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
-                <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
-                <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
-                <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr \
-                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<endl;
-*/        
+      
+        
         // подписка на команды
         if( m_psub ) {                              // если разрешено получать команды
             if( ((upcon*)m_psub)->connected() ) {   // если подключение есть и не подписаны, пробуем подписать тэг
@@ -304,13 +301,17 @@ int16_t ctag::evaluate() {
             setproperty("quality", m_quality);
             setproperty("sec",  nsec);
             setproperty("msec", nmsec);
-            if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
-
-/*          if( m_name.substr(0,3)=="MV1") cout<<endl;
-                cout <<" |v "<< rVal<<" |vold "<<m_rvalue<< \
-                " |d "<<m_deadband<<" | mConnErrOff "<<m_connErr<<" |q "<<int(nQual)<<" |dt "<<nD/_million<<endl;
+/*
+            if( m_name.substr(0,3)=="ZV1") \
+                cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
+                    <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
+                    <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
+                    <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr \
+                    <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)
+                    <<" pub="<<m_ppub<<" isConn="<<(m_ppub ? ((upcon*)m_ppub)->connected():0)<<endl;
 */
             m_rvalue = rVal;
+            if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
         } 
 
         // выдача задания на модули вв
@@ -362,7 +363,6 @@ double ctag::gettask( bool fraw ) {
         }        
     }
     else val = m_task;
-
     return val;    
 }
 
@@ -370,23 +370,23 @@ int16_t ctag::settask(double rin, bool fgo) {
     int16_t rc = _exOK;
     double  rVal = rin;
    
-    cout<<endl<<"settask "<<m_name<<" task=="<<rVal<<" go="<<fgo; 
+//    cout<<endl<<"settask "<<m_name<<" task=="<<rVal<<" go="<<fgo; 
 
     if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {
         if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
             rVal = (m_maxDev-m_minDev)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minDev;
             rVal = min( rVal, m_maxDev );                                   // ограничим значение инженерной шкалой
             rVal = max( rVal, m_minDev );
-            cout<<" dev="<<rVal;
+//            cout<<" dev="<<rVal;
         }        
         rVal = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minRaw;
-        cout<<" raw="<<rVal;
+//        cout<<" raw="<<rVal;
     }
     m_task    = rVal;  
     if(fgo) m_task_go = fgo; 
     
-//      if( m_name.substr(0,3)=="FC1")
-    cout<<endl; 
+    if( m_name.substr(0,4)=="PT11") \
+            cout<<"settask "<<m_task<<endl; 
     
     if( m_writeOff >= 0 ) {                                     // если это modbus
 /*      if( m_name.substr(0,3)=="FC1") \

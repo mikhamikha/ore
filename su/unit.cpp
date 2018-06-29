@@ -188,7 +188,8 @@ int16_t cunit::getstate() {
 // -------- вычислим текущее состояние
 //
             if( m_ppos->getname()=="FV11" && 0 ) 
-                cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_pmod->getoldvalue()<<"|"<<m_pmod->getvalue()<<"|"<<m_mode_old<<"|"<<m_mode
+                cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_pmod->getoldvalue()<<"|"<<m_pmod->getvalue()
+                    <<"|"<<m_mode_old<<"|"<<m_mode
                     <<" ucmd="<<m_cmd<<" ucmdst="<<m_cmdstatus
                     <<" mot= "<<m_motion<<" cmd= "<<_cmd_val<<"|"<<_dir_val<<" cnt= "<<_cnt_old<<"|"<<_cnt
                     <<" pv="<<m_position<<" task= "<<m_task<<"|"<<m_delta
@@ -222,15 +223,16 @@ int16_t cunit::getstate() {
 
 //            cout<<" motion="<<mot<<" raw="<<raw_set;
             if(_lso && mot>0) {
-                cout<<" {MAX} ";
+//                cout<<" {MAX} ";
                 raw_set = m_ppos->getmaxraw();
             }
             if(_lsc && mot<0) {
-                cout<<" {MIN} ";
+//                cout<<" {MIN} ";
                 raw_set = m_ppos->getminraw();
             }
 //                        cout<<" newRaw= "<<raw;
-            bool fReset = (_lso && !_lso_old) || (_lsc && !_lsc_old) || _cnt>20000;
+            //bool fReset = (_lso && !_lso_old) || (_lsc && !_lsc_old) || _cnt>20000;
+            bool fReset = ((_lso || _lsc) && m_cmdstatus==_cmd_clear) || _cnt>20000;
             //cout<<" doReset?="<<fReset<<endl;
             if( m_cmd==_cmd_none && fReset && _cnt && m_pfc->getquality()==OPC_QUALITY_GOOD ) { 
                 /*
@@ -247,7 +249,7 @@ int16_t cunit::getstate() {
                 m_pfc->settask( 0 );                                        // сброс счетчика
                 m_plso->setoldvalue( _lso );
                 m_plsc->setoldvalue( _lsc );
-                cout<<"{ CLEAR }"; 
+//                cout<<"{ CLEAR }"; 
             } 
             if( !_lso && _lso_old ) m_plso->setoldvalue( _lso );            
             if( !_lsc && _lsc_old ) m_plsc->setoldvalue( _lsc );            
@@ -364,13 +366,13 @@ int16_t cunit::control( void ) {
                     fOpen = fOpen && !_lso;
                     fOpen = fOpen && ( m_task - m_position > m_delta || m_task==_maxOpen );
                     fOpen = fOpen || ( m_mode==_manual_pulse_open );
-                    fOpen = fOpen && ( !_lsc || !_cnt );
+                    fOpen = fOpen && ( !(_lsc && _cnt) );
                     
                     bool fClose = ( m_task_go );   
                     fClose = fClose && !_lsc;
                     fClose = fClose && ( m_position - m_task > m_delta || m_task==_minOpen );
                     fClose = fClose || ( m_mode==_manual_pulse_close );
-                    fClose = fClose && ( !_lso || !_cnt );
+                    fClose = fClose && ( !(_lso && _cnt) );
                     
                     if( fOpen ) m_cmd = _cmd_open;  
                     else
@@ -442,7 +444,7 @@ int16_t cunit::changemode(int16_t nv) {
         }
         m_pmod->setvalue(nv);
         m_mode = nv;
-        cout<<" changemode "<<m_mode_old<<"|"<<m_pmod->getoldvalue()<<"|"<<m_mode<<endl;
+ //       cout<<" changemode "<<m_mode_old<<"|"<<m_pmod->getoldvalue()<<"|"<<m_mode<<endl;
         m_twait.reset();
     }
     else rc=_exBadIO;
@@ -451,7 +453,7 @@ int16_t cunit::changemode(int16_t nv) {
 }
 
 int16_t cunit::revertmode() {
-    cout<<" revertmode ";
+ //   cout<<" revertmode to "<< m_mode_old<<endl;
     return changemode(m_mode_old);
 }
 

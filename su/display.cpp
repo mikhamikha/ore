@@ -406,12 +406,15 @@ void view::keymanage() {
                 }
                 else
                 if( sn.substr(0, 1)=="P" ) {                            // задание уставки давления
-                    double r =   p->gettask();
-                    double rem = r/10 - floor(r/10);
-                    r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
-                    double perc = 1;//(maxe-mine)/100000.0;
+                    double r=0;// =   floor(p->gettask());
+                    //double rem = r/10 - floor(r/10);
+                    //r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
+                    double perc = 0.2;//(maxe-mine)/100000.0;
                     double add = 0;
-
+                    p->getproperty("task", r);
+                    r = floor( r*10 )/10;
+    //if( m_name.substr(0,4)=="PT11") 
+            cout<<"gettask "<<r<<" min="<<mine<<" max="<<maxe<<endl;
                     if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {         
                         if( m_btn.down ) { add -= perc; }
                         else if( m_btn.up ) { add += perc; }

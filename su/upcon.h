@@ -66,7 +66,7 @@ class upcon: public cproperties<content>, public cthread, public iObserver<ctag>
         ~upcon();
         int16_t connect();                                   // connect to broker
         int16_t disconnect();
-//        int16_t publish(ctag &);
+        int16_t publish(ctag &);
         int16_t subscribe(void* );
         int16_t pubdataproc();                              // publication of data from buffer
         int16_t getstatus() { return m_status; };

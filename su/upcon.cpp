@@ -301,7 +301,7 @@ int16_t upcon::pubdataproc() {
         topic = pubs.front().first;
         val = pubs.front().second;
         */
-        if(_fRes)
+//        if(_fRes)
 //            cout<<"pubdataproc name="<<topic<<" pv="<<_hcb.m_value<<" q=0x"<<hex<<int(_hcb.m_qual)
 //                <<" ts="<<dec<<_hcb.m_ts<<" id="<<_hcb.m_id;
         if( _fRes && ((_pt=getaddr(topic))!=NULL) ){
@@ -316,6 +316,7 @@ int16_t upcon::pubdataproc() {
 
             _pt->getfullname( topic );
             rc = MQTTAsync_send( m_client, topic.c_str(), sPubData.length()+1, (char*)sPubData.c_str(), 1, 0, &pub_opts );
+//            cout<<"pubdataproc: "<<"topic="<<topic<<" payload="<<sPubData<<" rc="<<rc<<endl;       
                     
             if(rc == MQTTASYNC_SUCCESS) {
     //            pubs.erase(pubs.begin());
@@ -329,10 +330,46 @@ int16_t upcon::pubdataproc() {
 }
 
 void upcon::valueChanged( ctag& tag ) {
+//    if( tag.getname().substr(0,3)=="ZV1")    
+//            cout<<"valueChanged \n";   
     pthread_mutex_lock( &mutex_pub );
-    string s = tag.getname();
-    hist.push( s, tag.getvalue(), tag.getquality(), tag.getmsec() );
+    if( connected() ) {
+        publish(tag); 
+    }
+    else {
+        string s = tag.getname();
+        hist.push( s, tag.getvalue(), tag.getquality(), tag.getmsec() );
+    }
     pthread_mutex_unlock( &mutex_pub );
+}
+
+int16_t upcon::publish(ctag &rt) {
+    string                      topic;
+    MQTTAsync_responseOptions   pub_opts = MQTTAsync_responseOptions_initializer;
+    int16_t                     rc = _exFail;
+    string                      sPubData;
+    
+//            cout<<"pubdataproc:\t";
+    if( getproperty("pubf", sPubData) == EXIT_SUCCESS && 1 ) {
+        replaceString( sPubData, "value", to_string( rt.getvalue() ) );
+        replaceString( sPubData, "quality", to_string( rt.getquality() ) );
+        replaceString( sPubData, "timestamp", to_string( rt.getmsec() ) );
+        
+        pub_opts.onSuccess = onPublish;
+        pub_opts.onFailure = onPublishFailure;
+        pub_opts.context   = this;//m_client;
+
+        rt.getfullname( topic );
+        rc = MQTTAsync_send( m_client, topic.c_str(), sPubData.length()+1, (char*)sPubData.c_str(), 1, 0, &pub_opts );
+//        if( rt.getname().substr(0,3)=="ZV1")    
+//            cout<<"publish: "<<"topic="<<topic<<" payload="<<sPubData<<" rc="<<rc<<endl;       
+        if(rc == MQTTASYNC_SUCCESS) {
+    //            pubs.erase(pubs.begin());
+            rc=_exOK;
+        }
+    }
+//            cout<<" pt="<<hex<<long(_pt)<<dec<<" topic="<<topic;        
+    return rc;
 }
 
 //

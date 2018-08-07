@@ -285,6 +285,17 @@ void view::keymanage() {
                     replaceString( sn, srch, srpl ); 
                     if((pt=getaddr(sn))!=NULL) pt->setvalue(_not_proc);
                 }
+                else if( pg.getproperty(pg.rowssize()-1,"tag",sn)==_exOK 
+                        && sn.substr(0, 2)=="NC"
+                        && (pt=getaddr(sn))!=NULL
+                        && pt->getproperty("status", nm)==_exOK
+                        && nm==_p_running ) { 
+                        ctag* pt1;
+                        string srpl="MN", srch="NC";
+                        replaceString( sn, srch, srpl ); 
+                        if((pt1=getaddr(sn))!=NULL) pt1->setvalue(_manual);
+                        pt->settask( 0 );
+                }
                 else {
                     int n = m_curpage; 
                     pagePrev();
@@ -371,7 +382,58 @@ void view::keymanage() {
                     }
                 }
                 else
-                if( sn.substr(0, 2)=="MV" ) {                           // задание режима клапана
+                if( sn.substr(0, 2)=="NC" ) {                           // ручное управление клапаном
+                    string srpl="MN", srch="NC";
+                    replaceString( sn, srch, srpl );
+                    ctag *p1 = tagdir.gettag( sn.c_str() );
+                    //if( p->getproperty("motion", mot)==EXIT_SUCCESS && mot==_no_motion ) {
+                    if( p->getquality()==OPC_QUALITY_GOOD ) {
+                        if( m_btn.down || m_btn.up ) {                                                      // 4 или 5
+                            //cout << ( (m_btn.down) ? "btn Down\n" : "btn Up\n" );
+                            double r =   p->gettask();
+                            double rem = r - floor(r);
+                            //cout<<"gettask r0="<<r<<" rem0="<<rem<<" dwn="<<nval[4]<<" up="<<nval[5];
+                            //r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
+                            rem = ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5);
+                            //cout<<" rem1="<<rem;
+                            rem = rem + ( ( m_btn.down ) ? -nval[4]*0.5 : nval[5]*0.5 );
+                            r = floor(r)+rem;
+                            //cout<<" rem2="<<rem<<" r1="<<r<<" min="<<mine<<" max="<<maxe;
+                            r = max( r, mine );
+                            r = min( r, maxe );
+                            //cout<<" r3="<<r<<endl;
+                            pthread_mutex_lock( &mutex_tag );   
+                            p->settask( r, false );                  // сохраним задание клапану
+                            pthread_mutex_unlock( &mutex_tag );   
+                        }
+                        else
+                        if( (m_btn.left || m_btn.right) && p1 && (mode=p1->getvalue()) == _manual ) {       // 1 или 2
+                            cout << ( ( m_btn.left ) ? "btn Left\n" : "btn Right\n" );
+                            double r =   p->gettask();
+                            double rem = r/10 - floor(r/10);
+                            r = 10 * (floor(r/10) + ((rem<0.3) ? 0 : (rem>0.7) ? 1 : 0.5));
+                            r = r + ( ( m_btn.left ) ? -nval[1]*5 : nval[2]*5 );
+                            r = max( r, mine );
+                            r = min( r, maxe );
+                            pthread_mutex_lock( &mutex_tag );   
+                            p->settask( r, false );                  // сохраним задание клапану
+                            pthread_mutex_unlock( &mutex_tag );   
+                        }
+                        else
+                        if( m_btn.enter && p1 && (mode=p1->getvalue()) == _manual ) {   // 3
+                            cout << "btn Enter\n";
+                            double r;
+                            pthread_mutex_lock( &mutex_tag );   
+                            cout<<p->getname()<<" val="<<p->getvalue()<<" task="<<p->gettask()<<endl;;
+                            if( (r=p->gettask())!=p->getvalue() ) 
+                                p->settask( r );                     // выполним сохраненное задание клапану
+                            pthread_mutex_unlock( &mutex_tag );
+                            m_mode = _view_mode;                      // возврат в режим просмотра
+                        }                    
+                    }
+                }
+                else
+                if( sn.substr(0, 2)=="MV" || sn.substr(0, 2)=="MN" ) { // задание режима клапана/насоса
                     mode = p->gettask();
                     pthread_mutex_lock( &mutex_tag );   
                     if( m_btn.down || m_btn.up || m_btn.left || m_btn.right ) {

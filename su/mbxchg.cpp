@@ -256,14 +256,26 @@ int16_t cmbxchg::runCmdCycle(bool fLast=false)
                             rc = modbus_read_bits( m_ctx, cmdi->m_devAddr, cmdi->m_count, tab_value );
                             for(int16_t j=0; j<cmdi->m_count; j++) m_pReadData[cmdi->m_intAddress+j] = tab_value[j];
                             if(0 && i==1) {
-                                cout<<"func 1 :";
+                                cout<<"func 1:";
                                 for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pReadData[cmdi->m_intAddress+j]<<" ";
                                 cout<<endl;                            
                             }
                             delete []tab_value;
                         }
                         break;
-
+                    case 2: 
+                        {
+                            uint8_t *tab_value = new uint8_t[cmdi->m_count];
+                            rc = modbus_read_input_bits( m_ctx, cmdi->m_devAddr, cmdi->m_count, tab_value );
+                            for(int16_t j=0; j<cmdi->m_count; j++) m_pReadData[cmdi->m_intAddress+j] = tab_value[j];
+                            if(0 && i==1) {
+                                cout<<"func 2:";
+                                for( int j=0; j<cmdi->m_count; j++ ) cout<<m_pReadData[cmdi->m_intAddress+j]<<" ";
+                                cout<<endl;                            
+                            }
+                            delete []tab_value;
+                        }
+                        break;
                     case 3: 
                     case 103: 
                         rc = modbus_read_registers( \

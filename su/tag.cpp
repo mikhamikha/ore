@@ -36,12 +36,13 @@ ctag::ctag() {
     setproperty( string("dead"),        g_fZero );
     setproperty( string("sec"),         g_nZero );
     setproperty( string("msec"),        g_nZero );
-    setproperty( string("mineng"),      g_fZero );   
+    setproperty( string("minE"),        g_fZero );   
     setproperty( string("name"),        g_sZero );
     setproperty( string("simenable"),   g_nZero );    
     setproperty( string("simvalue"),    g_fZero );    
     setproperty( string("mindev"),      g_fZero );   
     setproperty( string("maxdev"),      g_fZero );   
+    setproperty( string("persist"),     g_nZero );   
     
     m_task = 0;
     m_task_go = false;
@@ -63,7 +64,8 @@ ctag::ctag() {
     m_maxDev = 0;
     m_ppub = 0l;
     m_psub = 0l;
-    m_subscribed = false;   
+    m_subscribed = false;
+    m_persist = false;
 //    m_motion    = 0;
 }
 
@@ -94,20 +96,21 @@ void ctag::init() {
 //    string  she;
 //    int32_t nhe;
     int rc = \
-    getproperty( "minr",  m_minRaw   ) | \
-    getproperty( "maxr",  m_maxRaw   ) | \
-    getproperty( "mine",  m_minEng   ) | \
-    getproperty( "maxe",  m_maxEng   ) | \
-    getproperty( "flttime", m_fltTime  ) | \
-    getproperty( "type",    m_type   ) | \
-    getproperty( "hihi",    m_hihi     ) | \
-    getproperty( "hi",      m_hi       ) | \
-    getproperty( "lolo",    m_lolo     ) | \
-    getproperty( "lo",      m_lo       ) | \
-    getproperty( "dead",    m_deadband ) | \
-    getproperty( "name",    m_name     ) | \
-    getproperty( "topic",   m_topic    ) | \
-    getproperty( "mindev",  m_minDev   ) | \
+    getproperty( "minr",  m_minRaw   ) | 
+    getproperty( "maxr",  m_maxRaw   ) | 
+    getproperty( "mine",  m_minEng   ) | 
+    getproperty( "maxe",  m_maxEng   ) | 
+    getproperty( "flttime", m_fltTime  ) | 
+    getproperty( "type",    m_type   ) | 
+    getproperty( "hihi",    m_hihi     ) | 
+    getproperty( "hi",      m_hi       ) | 
+    getproperty( "lolo",    m_lolo     ) | 
+    getproperty( "lo",      m_lo       ) | 
+    getproperty( "dead",    m_deadband ) | 
+    getproperty( "name",    m_name     ) | 
+    getproperty( "topic",   m_topic    ) | 
+//    getproperty( "persist", m_persist  ) | 
+    getproperty( "mindev",  m_minDev   ) | 
     getproperty( "maxdev",  m_maxDev   );
 
     int16_t nPortErrOff=0, nErrOff=0;
@@ -132,6 +135,16 @@ void ctag::init() {
     }
     double rval;
     if( getproperty("default", rval)==_exOK ) { setvalue(rval); } 
+    int16_t nval;
+    if( getproperty("persist", nval)==_exOK ) {     // если значения тэгов были сохранены, восстановим из файла
+        m_persist = (nval!=0);
+        cout<<m_name<<" persist = "<<m_persist<<endl;
+        if( m_persist ) {
+            string _attr = "value";
+            _attr = getPersistData( m_name, _attr );
+            if( _attr.size() ) setvalue( atof( _attr.c_str() ) );
+        }
+    } 
 
     // подписка на команды
     int16_t nu;
@@ -170,10 +183,11 @@ int16_t ctag::getraw() {
                     _tmp16[0] = cmbxchg::m_pReadData[m_readOff+1];
                     memcpy( ((char *)&_tmp32), ((char *)&_tmp16[0]), sizeof(int32_t));
                     m_raw = _tmp32;
-//                    if(m_name.substr(0,4)=="PT11") 
+/*                    if(m_name.substr(0,4)=="PT11") 
 //                        cout<<" getraw off="<<m_readOff<<" src="<<hex<<*((int32_t*)(cmbxchg::m_pReadData+m_readOff))
 //                            <<" tmp="<<_tmp32<<"|"<<dec<<_tmp32<<" raw="<<m_raw
-//                            <<" sizeof="<<sizeof(_tmp32)<<endl;
+                            <<" sizeof="<<sizeof(_tmp32)<<endl;
+*/                
                 break;
            case _real_ui32: 
                     _tmp16[1] = cmbxchg::m_pReadData[m_readOff];
@@ -290,7 +304,24 @@ int16_t ctag::evaluate() {
                 subscribed( false );
             }
         }
+        if( 0 && m_name.substr(0,3)=="FV1") \
+            cout <<"evValue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff
+                <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal 
+                <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng 
+                <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr 
+                <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)<<" isPers="<<m_persist
+                /*<<" pub="<<m_ppub<<" isConn="<<(m_ppub ? ((upcon*)m_ppub)->connected():0)*/<<endl;
+
+       
+        // если требуется восстановление данных при старте, сохраним их
         
+        /*
+        if( m_persist && fabs(rVal-m_rvalue)>=m_deadband && OPC_QUALITY_GOOD == m_quality ) {
+            string _attr = "value";
+            string _val = to_string( m_rvalue );
+            setPersistData( m_name, _attr, _val );   
+        }
+        */ 
         // save value if it (or quality or timestamp) was changes
         if( fabs(rVal-m_rvalue)>=m_deadband || m_quality_old != m_quality || nD>60*_million ) {
             int32_t nsec = int32_t(tv.tv_sec);
@@ -301,15 +332,6 @@ int16_t ctag::evaluate() {
             setproperty("quality", m_quality);
             setproperty("sec",  nsec);
             setproperty("msec", nmsec);
-/*
-            if( m_name.substr(0,3)=="ZV1") \
-                cout <<"getvalue name="<<m_name<<" TS= "<< nodt << "|" << nctt << " dT= " << nD <<" readOff="<<m_readOff \
-                    <<" val= "<<dec<<m_rvalue_old<<"|"<<m_rvalue<<"|"<<rVal \
-                    <<" raw= "<<m_raw_old<<"|"<<m_raw<<" dead= "<<m_deadband<<" engSc= "<<m_minEng<<"|"<<m_maxEng \
-                    <<" rawSc= "<<m_minRaw<<"|"<<m_maxRaw<<" hihi= "<<m_hihi<<" mConnErrOff= "<<m_connErr \
-                    <<" q= "<<int(m_quality_old)<<"|"<<int(m_quality)
-                    <<" pub="<<m_ppub<<" isConn="<<(m_ppub ? ((upcon*)m_ppub)->connected():0)<<endl;
-*/
             m_rvalue = rVal;
             if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
         } 
@@ -334,10 +356,27 @@ int16_t ctag::setvalue( double rin=0 ) {
     int16_t rc = _exFail;
 //    cmbxchg *mb;
     string  sOff;
+    double  rVal = rin;
     
+    if( m_maxRaw-m_minRaw!=0 && m_maxEng-m_minEng!=0 ) {                    // если есть масштабирование по шкале
+        if( m_minDev!=m_maxDev )  {                                         // если задана шкала параметра < шкалы прибора,
+            rVal = (m_maxDev-m_minDev)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minDev;
+            rVal = min( rVal, m_maxDev );                                   // ограничим значение инженерной шкалой
+            rVal = max( rVal, m_minDev );
+//            cout<<" dev="<<rVal;
+        }        
+        rVal = (m_maxRaw-m_minRaw)/(m_maxEng-m_minEng)*(rVal-m_minEng)+m_minRaw;
+//        cout<<" raw="<<rVal;
+    }
     if( m_writeOff == -2 ) {
+        if(m_persist && m_rvalue != rin) {
+    //            cout<<"set old value "<<m_name<<" = "<<val<<" persist="<<m_persist<<endl;
+            string _attr = "value";
+            string _val = to_string( rin );
+            setPersistData( m_name, _attr, _val ); 
+        }
         m_rvalue = rin;
-        m_raw = rin;
+        m_raw = rVal;
         m_quality = OPC_QUALITY_GOOD;
         if( m_ppub && ((upcon*)m_ppub)->connected() ) ((upcon*)m_ppub)->valueChanged( *this );
         //settask( rin, false );
@@ -418,10 +457,12 @@ int16_t ctag::getdescvalue( string& name, string& sval )
     int16_t rc;
     int32_t ival;
     rc=getproperty( name, ival );
-    if( !rc && m_name.substr(0,2)=="MV" && name=="task" && ival < int(vmodes.size()) ) 
+    if( !rc && (m_name.substr(0,2)=="MV" || m_name.substr(0,2)=="MN" ) && name=="task" && ival < int(vmodes.size()) ) 
         vmodes[ival].getproperty( "display", sval );
     if( !rc && m_name.substr(0,2)=="FV" && name=="status" && ival < int(vstatuses.size()) ) 
         vstatuses[ival].getproperty( "display", sval );  
+    if( !rc && m_name.substr(0,2)=="NC" && name=="status" && ival < int(pstatuses.size()) ) 
+        pstatuses[ival].getproperty( "display", sval );  
     return rc;
 }
 
@@ -438,9 +479,9 @@ double ctag::gettrigger()  {
 // 
 // получить отметку времени в милисекундах
 // 
-int32_t ctag::getmsec() {
-    timespec* tts = getTS();
-    return  int32_t(tts->tv_sec*1000 + int(tts->tv_nsec/_million));
+int64_t ctag::getmsec() {
+//    timespec* tts = getTS();
+    return int64_t(int64_t(m_ts.tv_sec)*1000 + int64_t(m_ts.tv_nsec)/_million);
 }
 
 //
@@ -462,3 +503,6 @@ uint8_t getqual(ctag* p) {
     return nval;
 }
 
+void ctag::setoldvalue(double val) { 
+    m_rvalue_old = val; 
+}

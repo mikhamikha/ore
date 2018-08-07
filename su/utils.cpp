@@ -33,23 +33,6 @@ void setDT() {
     cout << " dT = " << dT << endl;
 }
 
-string to_string(int32_t i) {
-    string s;
-    stringstream out;
-    out << i;
-    s = out.str();
-    return s;
-}
-
-string to_string(double i) {
-    string s;
-    stringstream out;
-    out <<  i;
-    s = out.str();
-//    cout << "tostr "<<i<<" | "<<s<<endl;
-    return s;
-}
-
 char easytolower(char in) {
     if(in<='Z' && in>='A') return in-('Z'-'z');
     return in;
@@ -201,9 +184,9 @@ int16_t readCfg() {
                 spar = attr.name();
                 sval = attr.value();
                 p.setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
+//                cout<<" "<<spar<<"="<<sval;
             } 
-            cout<<endl;
+//            cout<<endl;
             p.setproperty("name", s);
             
             tagdir.addtag( s, p );
@@ -216,14 +199,14 @@ int16_t readCfg() {
             upc.push_back(up);
             up->m_id = atoi(it->node().attribute("num").value());   
             
-            cout<<"parse upcon num="<<up->m_id<<endl;
+//            cout<<"parse upcon num="<<up->m_id<<endl;
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
                 string _n = tool.name();
                 string _v = tool.text().get();
                 up->setproperty( _n, _v );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+//                cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
-            cout<<endl;   
+//            cout<<endl;   
         }
 
         // парсим объекты
@@ -237,18 +220,18 @@ int16_t readCfg() {
                 spar = attr.name();
                 sval = attr.value();
                 uni.setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
+//                cout<<" "<<spar<<"="<<sval;
             } 
             
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
                 string _n = tool.name();
                 string _v = tool.text().get();
                 uni.setproperty( _n, _v );
-                cout<<" "<<tool.name()<<"="<<tool.text().get();   
+//                cout<<" "<<tool.name()<<"="<<tool.text().get();   
             }
             string s;
             if( uni.getproperty( "name", s )==_exOK && !s.empty() ) unitdir.addunit( s, uni );
-            cout<<"\nuni name="<<s<<" size="<<unitdir.size()<<endl; 
+//            cout<<"\nuni name="<<s<<" size="<<unitdir.size()<<endl; 
         }
        // парсим алгоритмы
         int16_t cnt=0;
@@ -262,16 +245,16 @@ int16_t readCfg() {
                 spar = attr.name();
                 sval = attr.value();
                 alg->setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval<<" size="<<alg->getpropertysize();
+//                cout<<" "<<spar<<"="<<sval<<" size="<<alg->getpropertysize();
             } 
             
             for(pugi::xml_node tool = it->node().first_child(); tool; tool = tool.next_sibling()) {        
                 string _n = tool.name();
                 string _v = tool.text().get();
                 alg->setproperty( _n, _v );
-                cout<<" "<<tool.name()<<"="<<tool.text().get()<<" size="<<alg->getpropertysize();   
+//                cout<<" "<<tool.name()<<"="<<tool.text().get()<<" size="<<alg->getpropertysize();   
             }
-            cout<<endl;   
+//            cout<<endl;   
             algos.push_back(alg);
         }
         //
@@ -283,7 +266,7 @@ int16_t readCfg() {
             if(t) dsp.setSleepWait(t*1000);
             string s=tool.node().attribute("unlock").value();
             if(s.length()>0) dsp.setUnlockCode(s);
-            cout<<"sleep = "<<t<<" sec. unlock key = "<<s<<endl;
+//            cout<<"sleep = "<<t<<" sec. unlock key = "<<s<<endl;
         }
         
         tools = doc.select_nodes("//displays/display[@num]");
@@ -296,20 +279,20 @@ int16_t readCfg() {
                 cout<<" "<<spar<<"="<<sval;
                 dsp.setproperty( ndisp, spar, sval );
             } 
-            cout<<endl;
+//            cout<<endl;
             pugi::xml_node nod = it->node().child("lines");
             for(pugi::xml_node tool = nod.first_child(); tool; tool = tool.next_sibling()) {        
                int16_t nrow = atoi(tool.text().get())-1;
-               cout<<"row="<<nrow;
+//               cout<<"row="<<nrow;
                for(pugi::xml_attribute attr = tool.first_attribute(); attr; attr = attr.next_attribute()) {
                     spar = attr.name();
                     sval = attr.value();
                     if(nrow>=0) {
                         dsp.definedspline( ndisp, nrow, spar.c_str(), sval );
-                        cout<<" "<<spar<<"="<<sval;   
+//                        cout<<" "<<spar<<"="<<sval;   
                     }
                 }               
-                cout<<endl;
+//                cout<<endl;
             }   
             ndisp++;
         }
@@ -325,9 +308,9 @@ int16_t readCfg() {
                 spar = attr.name();
                 sval = attr.value();
                 prp.setproperty( spar, sval );
-                cout<<" "<<spar<<"="<<sval;
+//                cout<<" "<<spar<<"="<<sval;
             } 
-            cout<<endl;   
+//            cout<<endl;   
             vmodes.push_back(prp);
         }
          // парсим статусы клапана
@@ -343,8 +326,24 @@ int16_t readCfg() {
                 prp.setproperty( spar, sval );
                 cout<<" "<<spar<<"="<<sval;
             } 
-            cout<<endl;   
+//            cout<<endl;   
             vstatuses.push_back(prp);
+        }
+         // парсим статусы насосов
+        tools = doc.select_nodes("//pump/status");
+        for(pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it) {
+            cproperties<content> prp;
+
+//            cout<<"parse pump status mode "<<endl;
+           
+            for (pugi::xml_attribute attr = it->node().first_attribute(); attr; attr = attr.next_attribute()) {
+                spar = attr.name();
+                sval = attr.value();
+                prp.setproperty( spar, sval );
+//                cout<<" "<<spar<<"="<<sval;
+            } 
+            cout<<endl;   
+            pstatuses.push_back(prp);
         }
       
         rc = _exOK;
@@ -354,6 +353,76 @@ int16_t readCfg() {
     }
     
     return rc;
+}
+
+string getPersistData( string& _name, string& _attr ) {
+    string sRes="";
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file("persist.xml");    
+    if(result) {                            // если формат файла корректен
+        string s = string("//tags/tag[@name='") + _name + string("']");
+        // Exception is thrown for query with incorrect return type
+        try {
+            pugi::xpath_node node = doc.select_node( s.c_str() );   
+            sRes = node.node().attribute(_attr.c_str()).value();
+        }
+        catch (const pugi::xpath_exception& e) {
+//                  std::cout << "Select failed: " << e.what() << std::endl;
+        }
+    }
+    return sRes;
+}
+
+int16_t setPersistData( string& _name, string& _attr, string& _val ) {
+    pugi::xml_document doc;
+    cout<<"save  persist "<<_name<<" "<<_attr<<"attr = "<<_val;
+    pugi::xml_parse_result result = doc.load_file("persist.xml"); 
+    cout<<" loadres="<<result;
+    if(!result) {                            // если файла нет или формат файла некорректен, сформируем его
+        string _s;
+        _s = "<tags><tag name='"+_name+"' "+_attr+"='"+_val+"'/></tags>";
+        doc.load_string(_s.c_str()); 
+        // add a custom declaration node
+        pugi::xml_node decl = doc.prepend_child(pugi::node_declaration);
+        decl.append_attribute("version") = "1.0";
+        decl.append_attribute("encoding") = "UTF-8";
+    }
+    else {
+        pugi::xpath_node_set nodes = doc.select_nodes( "//tags" );
+//        pugi::xpath_node nodes = doc.select_node( "//tags" );
+        if(nodes.size()) {
+//        if(nodes.childs().size()) {
+            string s = string("//tags/tag[@name='") + _name + string("']");
+            // Exception is thrown for query with incorrect return type
+//            try {
+            pugi::xpath_node node = doc.select_node( s.c_str() );  
+            if( node ) {
+                node.node().attribute(_attr.c_str()).set_value(_val.c_str());
+            }
+            //            }
+            //            catch (const pugi::xpath_exception& e) {
+            else {
+                cout<<"not found node "<<s<<endl;
+                pugi::xpath_node nod = doc.select_node( "//tags" );
+                pugi::xml_node node = nod.node().append_child("tag");
+                // add attributes 
+                node.append_attribute("name") = _name.c_str();
+                node.append_attribute(_attr.c_str()) = _val.c_str();
+            }
+        }
+        else {
+            pugi::xpath_node nod = doc.select_node( "//tags" );
+            pugi::xml_node node = nod.node().append_child();
+                            // add attributes 
+            node.append_attribute("name") = _name.c_str();
+            node.append_attribute(_attr.c_str()) = _val.c_str();
+        }
+    }
+    
+    bool bresult = doc.save_file("persist.xml");
+    cout<<" savRes="<<bresult<<endl;
+
+    return _exOK;
 }
 
 // проверка на NULL

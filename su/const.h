@@ -34,12 +34,14 @@ enum exit_codes {
     _exBadParam,    // =2
     _exBadAddr,     // =3
     _exBadDippedHW, // =4
-    _exBadIO        // =5
+    _exBadIO,       // =5
+    _exInitFailed   // =6
 };                  
 
 
 const double        g_fZero  = 0.0;
 const int32_t       g_nZero  = 0;
+const bool          g_bZero  = false;
 const std::string   g_sZero("");
 
 const int32_t       g_1MB    = 1048576;

@@ -69,7 +69,7 @@ int16_t history::storageOperation( int16_t _typeOper, string& _name, histCellBod
 //        cout<<" histCellSize="<<_ns<<endl;
         histCell* m_pp = (histCell*) mmap( 0, _ns, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0 );
         if ( m_pp == MAP_FAILED )
-            cout<<"history::push mmap error\n";
+            cout<<"history::push mmap error (size="<<_ns<<")\n";
         else {
             switch( _typeOper ) {
                 case 0:     // запись в историю
@@ -136,7 +136,7 @@ int16_t history::push( string& _n, histCellBody& _v ) {
     return storageOperation( 0, _n, _v, 0 );
 }
 
-int16_t history::push( string& _n, double v, uint8_t q, int32_t t ) {
+int16_t history::push( string& _n, double v, uint8_t q, int64_t t ) {
     histCellBody hc = { v, q, t, 0 };
     return push( _n, hc );
 }

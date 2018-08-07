@@ -10,7 +10,7 @@
 #include <string>
 #include "utils.h"
 
-#define _MAX_RECORDS    60000
+#define _MAX_RECORDS    50000
 #define _MAX_TAGS       1000
 #define _TAG_LEN        4
 
@@ -27,7 +27,7 @@ struct histCellHeader {
 struct histCellBody {
     double              m_value;            // значение тэга
     uint8_t             m_qual;             // качество
-    int32_t             m_ts;               // временная метка в мс
+    int64_t             m_ts;               // временная метка в мс
     int16_t             m_id;
 };
 //
@@ -64,7 +64,7 @@ class history : public cproperties<histBlock> {
         history() { }
         int16_t init();
         int16_t clear();
-        int16_t push( string& _n, double v, uint8_t q, int32_t t );
+        int16_t push( string& _n, double v, uint8_t q, int64_t t );
         int16_t push( string&, histCellBody& );
         int16_t pull( string& _n, histCellBody& _v, int32_t ref=-1 );
         string  hist_to_string( uint32_t );  

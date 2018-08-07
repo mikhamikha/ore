@@ -307,7 +307,7 @@ int16_t upcon::pubdataproc() {
         if( _fRes && ((_pt=getaddr(topic))!=NULL) ){
 //            cout<<"pubdataproc:\t";
             replaceString( sPubData, "value", to_string( _hcb.m_value ) );
-            replaceString( sPubData, "quality", to_string( _hcb.m_qual ) );
+            replaceString( sPubData, "quality", to_string( int16_t(_hcb.m_qual) ) );
             replaceString( sPubData, "timestamp", to_string( _hcb.m_ts ) );
             
             pub_opts.onSuccess = onPublish;
@@ -319,7 +319,7 @@ int16_t upcon::pubdataproc() {
 //            cout<<"pubdataproc: "<<"topic="<<topic<<" payload="<<sPubData<<" rc="<<rc<<endl;       
                     
             if(rc == MQTTASYNC_SUCCESS) {
-    //            pubs.erase(pubs.begin());
+//            pubs.erase(pubs.begin());
                 rc=_exOK;
             }
 //            cout<<" pt="<<hex<<long(_pt)<<dec<<" topic="<<topic;        
@@ -352,7 +352,7 @@ int16_t upcon::publish(ctag &rt) {
 //            cout<<"pubdataproc:\t";
     if( getproperty("pubf", sPubData) == EXIT_SUCCESS && 1 ) {
         replaceString( sPubData, "value", to_string( rt.getvalue() ) );
-        replaceString( sPubData, "quality", to_string( rt.getquality() ) );
+        replaceString( sPubData, "quality", to_string( int16_t(rt.getquality()) ) );
         replaceString( sPubData, "timestamp", to_string( rt.getmsec() ) );
         
         pub_opts.onSuccess = onPublish;

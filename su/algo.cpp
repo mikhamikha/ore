@@ -72,19 +72,24 @@ int16_t calgo::solveIt() {
                         ---------- Управление МЕХАНИЗМАМИ  ----------
             */
             case _unitProcessing: {
-//                    cout<<"_unitProcessing"<<endl;
+//                    cout<<"_unitProcessing arg="<<(m_args.size()?m_args[0]->getname():"")<<endl;
                     if( !m_nUnits ) getproperty("number", m_nUnits);                // считываем количество устройств                      
                     if( m_nUnits && (size_t)m_nUnits<=m_units.size()  ) {
                         for( int16_t j=0; j<m_nUnits; j++ ) {
                             cunit* puni = m_units[j];
+                            // --- test --
+                            puni->control( (m_args.size() >= (size_t)m_nUnits) ? &m_args: NULL );  // запустим исполнение ;  
+                            // --- instead below ---
+                            /*
                             if( puni->getstate()!=_exOK ) continue;                 // получим состояние
+                            // -- обработку режимов перенести в unit.cpp --
                             switch( puni->getmode() ) {                             // управляем механизмом согласно режима
                                 case _auto_pid:                                     // ПИД
                                     if( m_args.size() >= (size_t)m_nUnits ) {
                                         puni->pidEval( m_args[j] );
                                     }                                
                                 break;
-                                /*
+                            
                                 case _auto_time: 
                                     if( puni->gettype()==_valve && m_nUnits==2 && \
                                             m_args.size() >= (size_t)m_nUnits*2 && m_res.size() ) {
@@ -140,8 +145,10 @@ int16_t calgo::solveIt() {
                                     }
                                 break;
                                     */
-                            }
+                            //}
+                            /*
                             if( puni->gettype()!=_valve || puni->valveCtrlEnabled() ) puni->control(); // запустим исполнение ;
+                            */
                         } 
                     } 
                 } 

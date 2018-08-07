@@ -1,0 +1,32 @@
+unit.cpp:107:                    string snam = m_ppos->getname();
+unit.cpp:109:                    m_ppos->setvalue( atof( sval.c_str() ) );
+unit.cpp:111://                    m_ppos->setrawval( (m_ppos->getmaxraw()+m_ppos->getminraw())/2 );   // будем считать, что клапан посередине
+unit.cpp:114:                    m_ppos->setrawval( m_ppos->getmaxraw() );                           // полностью открыт
+unit.cpp:116:                    m_ppos->setrawval( m_ppos->getminraw() );                           // полностью закрыт  
+unit.cpp:126:                m_pid.out=  m_ppos->getvalue();
+unit.cpp:257:    m_position = m_ppos->getvalue();                                // get положение клапана (or pump speed) в инж. единицах
+unit.cpp:266:            if( m_ppos->getname()=="FV11" && 0 ) { 
+unit.cpp:267:                cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_pmod->getoldvalue()<<"|"<<m_pmod->getvalue()
+unit.cpp:292:                raw_set = m_ppos->getmaxraw();
+unit.cpp:296:                raw_set = m_ppos->getminraw();
+unit.cpp:305:                    m_ppos->setrawscale( 0, _cnt );
+unit.cpp:309:                    m_ppos->setrawval( _lsc ? 0: _cnt );
+unit.cpp:322:            m_ppos->setrawval( raw_set );                                   // сохраним значение положения в сырых единицах
+unit.cpp:354:            m_ppos->setquality( _nQual );
+unit.cpp:395:    m_ppos->setproperty("status", m_status);
+unit.cpp:397:    if(m_ppos->taskset()) {                             // если было задание на положение/скорость, перепишем его в тэг юнита
+unit.cpp:400:            m_task = m_ppos->gettask();
+unit.cpp:401:            m_ppos->cleartask();
+unit.cpp:468:                        string _name = m_ppos->getname();                                   // сохраним положение в файл
+unit.cpp:470:                        string _val = to_string( m_ppos->getvalue() );
+unit.cpp:496:    //                    if( m_ppos->getname()=="FV11" ) 
+unit.cpp:529:                        //m_ppos->cleartask();
+unit.cpp:539:                if( m_ppos->getname()=="FV11" && 0) {
+unit.cpp:540:                    cout<<dec<<' '<<m_ppos->getname()<<" mode="<<m_mode<<" ucmd="<<m_cmd<<" ucmdst="<<m_cmdstatus \
+unit.cpp:610:    m_task = m_ppos->getmaxeng();
+unit.cpp:611:    m_ppos->settask( m_task, true );
+unit.cpp:615:    m_task = m_ppos->getmineng(); 
+unit.cpp:616:    m_ppos->settask( m_task, true );
+unit.cpp:622:    task = min( t,    m_ppos->getmaxeng() );
+unit.cpp:623:    task = max( task, m_ppos->getmineng() );
+unit.cpp:626:    m_ppos->settask(m_task, f);

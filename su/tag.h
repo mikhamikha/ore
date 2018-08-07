@@ -58,7 +58,8 @@ protected: 				// спецификатор доступа protected
     std::string m_topic;
     bool        m_firstscan;
     bool        m_subscribed;
- 
+    bool     m_persist;
+
     // referenses to counter, limit switches (opened & closed), commands (open & close)
     ctag*       tag1; 
     void*       m_ppub;          // указатель на внешнее соединение для публикации  
@@ -82,13 +83,13 @@ public: 				// спецификатор доступа public
     };
 
     timespec* getTS() { return &m_ts; }
-    int32_t getmsec();
+    int64_t getmsec();
     double  gettrigger();
     string  getname() { return m_name; }
     void    getlimits(double& emin, double& emax)  { emin=m_minEng; emax=m_maxEng; }
     double  getvalue()  { return m_rvalue; }
     double  getoldvalue() { return m_rvalue_old; }
-    void    setoldvalue(double val) { m_rvalue_old = val; }
+    void    setoldvalue(double val);
     uint8_t getquality(){ return m_quality; }
     void    setquality( uint8_t qual ){ m_quality = qual; }
     void    getfullname (string &sfn) { sfn = m_topic+"/"+m_name; }
@@ -99,11 +100,11 @@ public: 				// спецификатор доступа public
     double  gettask( bool fraw=false );         // get task value; if fraw==true then unscaled task
     int16_t settask( double rin, bool fgo=true ); 
 
-    void cleartask() { m_task_go = false; }    
+    void    cleartask() { m_task_go = false; }    
 
     int16_t settaskpulse(double rin, int32_t pre=2000); 
-    double getrawval() { return m_raw; }   
-    void setrawval( double r ) { m_raw = r; setproperty( "raw", r ); }
+    double  getrawval() { return m_raw; }   
+    void    setrawval( double r ) { m_raw = r; setproperty( "raw", r ); }
     void setrawscale( double minr, double maxr ) {
         m_maxRaw = maxr;
         m_minRaw = minr;
@@ -122,8 +123,8 @@ public: 				// спецификатор доступа public
     bool    taskset() { return m_task_go; }
 //    bool    hasnewvalue() { return m_valueupdated; }
 //    void    acceptnewvalue() { m_valueupdated = false; }
-    bool subscribed() { return m_subscribed; }
-    void subscribed(bool f) { m_subscribed = f; }
+    bool    subscribed() { return m_subscribed; }
+    void    subscribed(bool f) { m_subscribed = f; }
     bool    isbool() { return (m_type>0 && m_type<2); }
 
     int16_t rawValveValueEvaluate();

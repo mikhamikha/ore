@@ -111,7 +111,7 @@ int16_t ctagdirector::tasktag( std::string& na, std::string& fi, std::string& va
     string  val(va);
     
     reduce(val, (char *)" \t\n");
-    cout<<"tasktag "<<na<<" field "<<fi<<" value "<<val<<endl;
+    cout<<"tasktag "<<na<<" field="<<fi<<" value="<<val<<endl;
     if( (val.length() && isdigit(val[0])) || (val.length()>1 && val[0]=='-' && isdigit(val[1])) ) {
         
         ctag* pp = gettag(na.c_str());

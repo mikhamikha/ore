@@ -53,10 +53,14 @@
             <retryCount>0</retryCount>                <!-- request retry count -->
             <errorDelayCntr>10000</errorDelayCntr>    <!-- timeout for device if error comm -->
             <commands>
-                <cmd enable="1" internal="50" regcount="1"  pollint="0"         node="21" func="103" address="520" swap="0" num="6" /> <!-- read NL-16DI -->
-                <cmd enable="1" internal="60" regcount="7"  pollint="0"         node="21" func="3"   address="528" swap="0" num="17"/> <!-- read NL-16DI counters -->
-                <cmd enable="1" internal="70" regcount="8"  pollint="0"         node="1" func="3"   address="67"  swap="0" num="18"/> <!-- read FOTON S/N -->
-                <cmd enable="1" internal="80" regcount="14" pollint="0"         node="1" func="3"   address="256" swap="0" num="19"/> <!-- read FOTON PVs -->
+                <cmd enable="1" internal="50" regcount="1"  pollint="0" node="21" func="103" address="520" swap="0" num="6" /> <!-- read NL-16DI -->
+                <cmd enable="1" internal="60" regcount="7"  pollint="0" node="21" func="3"   address="528" swap="0" num="17"/> <!-- read NL-16DI counters -->
+                <cmd enable="0" internal="70" regcount="8"  pollint="0" node="1"  func="3"   address="67"  swap="0" num="18"/> <!-- read FOTON S/N -->
+                <cmd enable="1" internal="80" regcount="14" pollint="0" node="1"  func="3"   address="256" swap="0" num="19"/> <!-- read FOTON PVs -->
+                <cmd enable="2" internal="14" regcount="2"  pollint="0" node="22" func="15"  address="6"   swap="0" num="20"/> <!-- start/stop ПЭД -->
+                <cmd enable="2" internal="16" regcount="1"  pollint="0" node="22" func="16" address="1078" swap="0" num="21"/> <!-- set frequency ПЭД -->
+                <cmd enable="1" internal="100" regcount="41"  pollint="0" node="22" func="2" address="0"   swap="0" num="22"/><!-- read ПЭД status -->
+                <cmd enable="1" internal="150" regcount="88"  pollint="0" node="22" func="4" address="0"   swap="0" num="23"/><!-- read SU info -->
             </commands>
         </port>
     </ports>
@@ -79,18 +83,12 @@
 </connections>
 
 <tags>
-    <!-- 1 - нижний клапан; 2 - верхний клапан -->
     <tag topic="/data" rAddr="0" wAddr="" minR="-32767" maxR="32768" minE="-100" maxE="60" fltTime="0" dead="0.001" hihi="4.0" hi="2" lo="0" lolo="0" type="0" errPtr="400" pub="1" sub="1" desc="Ток актуатора" eu="A">IT01</tag>
     <tag topic="/data" rAddr="1" wAddr="" minR="-32767" maxR="32768" minE="-10" maxE="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 открыт" eu="">ZV11</tag>
     <tag topic="/data" rAddr="2" wAddr="" minR="-32767" maxR="32768" minE="-10" maxE="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 1 закрыт" eu="">ZV12</tag>
-    <!--tag topic="/data" rAddr="3" wAddr="" minR="-32767" maxR="32768" minE="-10" maxE="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 открыт" eu="">ZV21</tag>
-    <tag topic="/data" rAddr="4" wAddr="" minR="-32767" maxR="32768" minE="-10" maxE="10" fltTime="0" dead="1" hihi="0.2" hi="0" lo="0" lolo="0" type="2" errPtr="400" pub="1" sub="0" desc="Клапан 2 закрыт" eu="">ZV22</tag-->
-    <tag topic="/data" rAddr="16" wAddr="0" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 open command" eu="">CV11</tag>
-    <tag topic="/data" rAddr="17" wAddr="1" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 close command" eu="">CV12</tag>
-    <!--tag topic="/data" rAddr="55" wAddr="3" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="408" pub="1" sub="1" desc="valve 2 open command" eu="">CV21</tag>
-    <tag topic="/data" rAddr="56" wAddr="4" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="408" pub="1" sub="1" desc="valve 2 close command" eu="">CV22</tag-->
+    <tag topic="/data" rAddr="16" wAddr="0" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 move command" eu="">CV11</tag>
+    <tag topic="/data" rAddr="17" wAddr="1" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="401" pub="1" sub="1" desc="valve 1 direction command" eu="">CV12</tag>
     <tag topic="/data" rAddr="73" wAddr="" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="468" pub="1" sub="0" desc="Серийный номер 1" eu="">SN11</tag>
-    <tag topic="/data" rAddr="77" wAddr="" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="468" pub="1" sub="0" desc="Серийный номер 2" eu="">SN12</tag>
     <tag topic="/data" rAddr="80" wAddr="" minR="0" maxR="1000000" minE="0" maxE="101.325" fltTime="0" dead="0.01" hihi="0" hi="0" lo="0" lolo="3.6" type="3" errPtr="469" pub="1" sub="1" desc="Давление 1" eu="МПа">PT11</tag>
     <tag topic="/data" rAddr="82" wAddr="" minR="0" maxR="1000000" minE="0" maxE="101.325" fltTime="0" dead="0.01" hihi="0" hi="0" lo="0" lolo="3.5" type="3" errPtr="469" pub="1" sub="1" desc="Давление 2" eu="МПа">PT12</tag>
     <tag topic="/data" rAddr="84" wAddr="" minR="-100000" maxR="100000" minE="-100" maxE="100" fltTime="0" dead="0.1" hihi="0" hi="0" lo="0" lolo="0" type="3" errPtr="469" pub="1" sub="1" desc="Температура 1" eu="oC">TT11</tag>
@@ -113,31 +111,27 @@
     <tag topic="/data" rAddr="65"   wAddr="" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="down button" eu="">HC05</tag>
     <tag topic="/data" rAddr="66"   wAddr="" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="467" pub="1" sub="1" desc="up button" eu="">HC06</tag>
     <tag topic="/data" rAddr="51"   wAddr="5" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="1" desc="Счетчик 1" eu="">FC11</tag>
-    <!--tag topic="/data" rAddr="53"   wAddr="7" minR="-32768" maxR="32767" minE="-32768" maxE="32767" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="407" pub="1" sub="0" desc="Счетчик 2" eu="">FC21</tag-->
-    <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="7585" minE="0" maxE="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%">FV11</tag>
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="7764" minE="0" maxE="100" minDev="16" maxDev="76" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%">FV21</tag-->
+    <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="7585" minE="0" maxE="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" persist="1" desc="Положение кл. 1" eu="%">FV11</tag>
     <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="100" minE="0" maxE="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="%">FV11</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="100" minE="0" maxE="100" minDev="0" maxDev="100" fltTime="0" dead="0.1" hihi="100" hi="100" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="%">FV21</tag-->
     <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="100" minE="0" maxE="100" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="0" pub="1" sub="1" desc="valve 1 Kv" eu="">KV11</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="100" minE="0" maxE="100" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="0" pub="1" sub="1" desc="valve 2 Kv" eu="">KV21</tag-->
     <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="10000" minE="0" maxE="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 1" eu="м3/ч">FT11</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="10000" minE="0" maxE="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 2" eu="м3/ч">FT21</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="10000" minE="0" maxE="10000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Расход 1+2" eu="м3/ч">FT31</tag-->
     <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="2000" minE="0" maxE="2000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Плотность 1" eu="кг/м3">DT11</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="2000" minE="0" maxE="2000" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Плотность 2" eu="кг/м3">DT21</tag-->
     <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="72" minE="0" maxE="72" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 1" eu="мм">LV11</tag>
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="72" minE="0" maxE="72" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Положение кл. 2" eu="мм">LV21</tag-->
     <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="10" minE="0" maxE="10" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Выбор клапана " eu="">SV01</tag>
-    <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="6" minE="0" maxE="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 1" eu="">MV11</tag>
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="6" minE="0" maxE="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Режим клапана 2" eu="">MV21</tag-->
+    <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="6" minE="0" maxE="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" persist="1" desc="Режим клапана 1" eu="">MV11</tag>
+    <tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="6" minE="0" maxE="6" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" persist="1" desc="Режим ПЭД" eu="">MN11</tag>
     <tag topic="/data" rAddr="E" wAddr="E" minR="-50000" maxR="50000" minE="-50000" maxE="50000" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления Н" eu="кПа">PD11</tag>
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="-50000" maxR="50000" minE="-50000" maxE="50000" fltTime="0" dead="0.001" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Перепад давления В" eu="кПа">PD21</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="1000000" minE="0" maxE="1000000" default="60" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы Н" eu="сек">KC11</tag-->
-    <!--tag topic="/data" rAddr="E" wAddr="E" minR="0" maxR="1000000" minE="0" maxE="1000000" default="60" fltTime="0" dead="1" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="" pub="1" sub="1" desc="Время работы В" eu="сек">KC21</tag-->   
+    <tag topic="/data" rAddr="100" wAddr="" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="0.3" hi="0" lo="0" lolo="0" type="2" errPtr="472" pub="1" sub="1" desc="ПЭД запущен" eu="">NS11</tag>
+    <tag topic="/data" rAddr="139" wAddr="" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="0.3" hi="0" lo="0" lolo="0" type="1" errPtr="472" pub="1" sub="1" desc="ПЭД в аварии" eu="">NS12</tag>
+    <tag topic="/data" rAddr="140" wAddr="" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="0.3" hi="0" lo="0" lolo="0" type="1" errPtr="472" pub="1" sub="1" desc="ПЭД готов" eu="">NS13</tag>
+    <tag topic="/data" rAddr="206" wAddr="" minR="-5000" maxR="5000" minE="-50" maxE="50" fltTime="0" dead="0.01" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="473" pub="1" sub="1" desc="Частота ПЭД" eu="Гц">NC11</tag>
+    <tag topic="/data" rAddr="" wAddr="16" minR="-5000" maxR="5000" minE="-50" maxE="50" fltTime="0" dead="0.01" hihi="0" hi="0" lo="0" lolo="0" type="0" errPtr="471" pub="1" sub="0" desc="Задание частоты" eu="Гц">NY13</tag>
+    <tag topic="/data" rAddr="" wAddr="14" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="470" pub="1" sub="1" desc="Пуск ПЭД" eu="">NY11</tag>
+    <tag topic="/data" rAddr="" wAddr="15" minR="0" maxR="1" minE="0" maxE="1" fltTime="0" dead="1" hihi="1" hi="0" lo="0" lolo="0" type="1" errPtr="470" pub="1" sub="1" desc="Останов ПЭД" eu="">NY12</tag>
 </tags>
 
 <units>
-    <unit name="V01" num="1" type="1" desc="Клапан нижний " pulsewidth="2000" pid_type="1" pid_dead="0.1" period="10000" kp="1" ki="0.1" kd="0" minAuto="10" maxAuto="90">
+    <unit name="V01" num="1" type="1" desc="Клапан нижний" pulsewidth="2000" pid_type="1" pid_dead="0.1" period="10000" kp="1" ki="0.1" kd="0" minAuto="10" maxAuto="90">
         <lso>ZV11</lso>
         <lsc>ZV12</lsc>
         <fc>FC11</fc>
@@ -148,27 +142,32 @@
         <cmd2>CV12</cmd2>
         <block1>IT01</block1>
         <reg>PT11</reg>
-        <ref>V02</ref>
+        <ref>N01</ref>
     </unit>
-    <!--unit name="V02" num="2" type="1" desc="Клапан верхний" pulsewidth="2000" pid_type="1" pid_dead="1" period="10000" kp="1" ki="0.1" kd="0" minAuto="10" maxAuto="90">
-        <lso>ZV21</lso>
-        <lsc>ZV22</lsc>
-        <fc>FC21</fc>
-        <pos>FV21</pos>
-        <mode>MV21</mode>
+    <unit name="N01" num="2" type="2" desc="ПЭД" pulsewidth="2000" pid_type="1" pid_dead="0.1" period="10000" kp="1" ki="0.1" kd="0" minAuto="10" maxAuto="50">
+        <run>NS11</run>
+        <fault>NS12</fault>
+        <ready>NS13</ready>
+        <speed>NC11</speed>
+        <mode>MN11</mode>
         <selected>SV01</selected>
-        <cmd1>CV21</cmd1>
-        <cmd2>CV22</cmd2>
-        <block1>IT01</block1>
-        <reg>PD21</reg>
+        <task>NY13</task>
+        <start>NY11</start>
+        <stop>NY12</stop>
+        <reg>PT12</reg>
         <ref>V01</ref>
-    </unit-->
+    </unit>
 </units>
 
 <algo>
     <alg num="1" type="1" desc="Управление работой клапанов" enable="1" number="1">
         <equipments>V01</equipments>
         <args>PT11;KC11</args>
+        <res>SV01</res>
+    </alg>
+    <alg num="2" type="1" desc="Управление работой СУ ПЭД" enable="1" number="1">
+        <equipments>N01</equipments>
+        <args>PT12</args>
         <res>SV01</res>
     </alg>
     <!--alg num="1" type="1" desc="Управление работой клапанов" enable="1" number="2">
@@ -182,7 +181,7 @@
     </alg>
     <alg num="8" type="10" desc="Расчет расхода по перепаду давления на сечении клапана 2" enable="0">
         <args>LV21;PT21;PT31;DT21;KV21</args>
-        <res>FT21</res>
+        <res>FT21</res>5
     </alg>
     <alg num="9" type="11" desc="Суммарный расход" enable="0">
         <args>FT11;FT21</args>
@@ -202,29 +201,30 @@
     <display num="1" fontsize="2">
         1
         <lines>
-            <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
-            <line tag="PT12" format="{desc,18} {value,5.3} {eu}" task="0">2</line>
-            <line tag="TT11" format="{desc,18} {value,5.1} {eu}" task="0">3</line>
-            <line tag="TT12" format="{desc,18} {value,5.1} {eu}" task="0">4</line>
-            <line tag="FT11" format="{desc,18} {value,5.1} {eu}" task="0">5</line>
-            <line tag="WT11" format="{desc,18} {value,5.1} {eu}" task="0">6</line>
-            <line tag="WT12" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
-            <line tag="FV11" format="{desc,18} {value,5.1} {eu}" task="11">8</line>
+            <line tag="PT11" format="{desc,18} {value,7.3,R} {eu}" task="0" >1</line>
+            <line tag="PT12" format="{desc,18} {value,7.3,R} {eu}" task="0" >2</line>
+            <line tag="WT11" format="{desc,18} {value,7.1,R} {eu}" task="0" >3</line>
+            <line tag="WT12" format="{desc,18} {value,7.1,R} {eu}" task="0" >4</line>
+            <line tag="FT11" format="{desc,18} {value,7.1,R} {eu}" task="0" >5</line>
+            <line tag="FQ11" format="{desc,18} {value,7.1,R} {eu}" task="0" >6</line>
+            <line tag="FV11" format="{desc,18} {value,7.1,R} {eu}" task="11">7</line>
+            <line tag="NC11" format="{desc,18} {value,7.1,R} {eu}" task="12">8</line>
         </lines>
     </display>
-    <!--display num="2" fontsize="2">
+    <display num="2" fontsize="2">
         2
         <lines>
-            <line tag="IT01" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
-            <line tag="FV11" format="{desc,18} {value,5.1} {eu}" task="11">2</line>
-            <line tag="PT11" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
-            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PD11" format="{desc,18} {value,5.1} {eu}" task="0">6</line>
-            <line tag="FT11" format="{desc,18} {value,5.1} {eu}" task="0">7</line>
-            <line tag="TT11" format="{desc,18} {value,5.1} {eu}" task="0">8</line>
+            <line tag="PT11" format="{desc,18} {value,7.3,R} {eu}" task="0">1</line>
+            <line tag="PT12" format="{desc,18} {value,7.3,R} {eu}" task="0">2</line>
+            <line tag="TT11" format="{desc,18} {value,7.1,R} {eu}" task="0">3</line>
+            <line tag="TT12" format="{desc,18} {value,7.1,R} {eu}" task="0">4</line>
+            <line tag="WT11" format="{desc,18} {value,7.1,R} {eu}" task="0">5</line>
+            <line tag="WT12" format="{desc,18} {value,7.1,R} {eu}" task="0">6</line>
+            <line tag="FT11" format="{desc,18} {value,7.1,R} {eu}" task="0">7</line>
+            <line tag="FQ11" format="{desc,18} {value,7.1,R} {eu}" task="0">8</line>
         </lines>
     </display>
-    <display num="3" fontsize="2">
+    <!--display num="3" fontsize="2">
         3
         <lines>
             <line tag="IT01" format="{desc,18} {value,5.3} {eu}" task="0">1</line>
@@ -239,27 +239,26 @@
     <display num="11" fontsize="2">
         11
         <lines>
-            <line tag="FV11" format="{desc,18}" task="0">1</line>
+            <line tag="FV11" format="Управление клапаном" task="0">1</line>
             <line tag="FV11" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">2</line>
-            <line tag="IT01" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
-            <line tag="PT11" format="{desc,13} {task,5.1,R} / {value,5.1,R} {eu}" task="-1">4</line>
-            <line tag="PT12" format="{desc,18} {value,5.1,R} {eu}" task="0">5</line>
-            <line tag="MV11" format="{desc,18} {@task,1} {eu}" task="-1">7</line>
-            <line tag="FV11" format="Статус     {@status,1,R}" task="0">8</line>
+            <line tag="IT01" format="{desc,20} {value,5.3} {eu}" task="0">3</line>
+            <line tag="PT11" format="{desc,10} {task,5.3,R} / {value,5.3,R} {eu}" task="-1">4</line>
+            <line tag="PT12" format="{desc,20} {value,5.3,R} {eu}" task="0">5</line>
+            <line tag="MV11" format="{desc,20} {@task,1} {eu}" task="-1">7</line>
+            <line tag="FV11" format="Статус   {@status,1,R}" task="0">8</line>
         </lines>
     </display>
-    <!--display num="12" fontsize="2">
+    <display num="12" fontsize="2">
         12
         <lines>
-            <line tag="FV21" format="{desc,18}" task="0">1</line>
-            <line tag="FV21" format="Задание/Факт {task,5.1,r} / {value,5.1} {eu}" task="-1">2</line>
-            <line tag="PT21" format="{desc,18} {value,5.3} {eu}" task="0">3</line>
-            <line tag="PT31" format="{desc,18} {value,5.3} {eu}" task="0">4</line>
-            <line tag="PD21" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">5</line>
-            <line tag="MV21" format="{desc,18} {@task,1} {eu}" task="-1">6</line>
-            <line tag="FV21" format="Статус        {@status,1}" task="-1">8</line>
+            <line tag="NC11" format="Управление СУ ЭЦН" task="0">1</line>
+            <line tag="NC11" format="Задание/Факт {task,5.1,R} / {value,5.1} {eu}" task="-1">2</line>
+            <line tag="PT11" format="{desc,20} {value,5.3,R} {eu}" task="0">4</line>
+            <line tag="PT12" format="{desc,10} {task,5.3,R} / {value,5.3,R} {eu}" task="-1">5</line>
+            <line tag="MN11" format="{desc,20} {@task,1} {eu}" task="-1">7</line>
+            <line tag="NC11" format="Статус   {@status,1,R}" task="0">8</line>
         </lines>
-    </display-->
+    </display>
 </displays>
 
 <valve>
@@ -284,6 +283,22 @@
     <status num="11" name="fault 4"  display="ОТКАЗ МОДУЛЯ" visible="0"/>
     <status num="12" name="override" display="ПЕРЕГРУЗКА"  visible="0"/>
 </valve>
+
+<pump>
+    <status num="0"  name="ready"    display="ГОТОВ"       visible="0"/>
+    <status num="1"  name="works"    display="РАБОТАЕТ"    visible="0"/>
+    <status num="2"  name="starts"   display="СТАРТ"       visible="0"/>
+    <status num="3"  name="stops"    display="ОСТАНОВ"     visible="0"/>
+    <status num="4"  name="opening"  display="НЕ ОПРЕДЕЛЕН" visible="0"/>
+    <status num="5"  name="dummy1"    display="резерв 1" visible="0"/>
+    <status num="6"  name="dummy2"  display="резерв 2" visible="0"/>
+    <status num="7"  name="warning"  display="ОШИБКА"      visible="0"/>
+    <status num="8"  name="fault 1"  display="НЕТ СВЯЗИ с СУ ЭЦН"     visible="0"/>
+    <status num="9"  name="fault 2"  display="СУ ЭЦН в ОШИБКЕ" visible="0"/>
+    <status num="10" name="fault 3"  display="ОШИБКА НЕИЗВ." visible="0"/>
+    <status num="11" name="fault 4"  display="ОТКАЗ МОДУЛЯ" visible="0"/>
+    <status num="12" name="override" display="ПЕРЕГРУЗКА"  visible="0"/>
+</pump>
 
 </cfg>
 

@@ -29,8 +29,6 @@ extern int32_t dT;
 
 int16_t readCfg();
 void outtext(std::string tx);
-std::string to_string(int32_t i);
-std::string to_string(double i);
 char easytoupper(char in);
 char easytolower(char in);
 std::string trim( const std::string& str, const std::string& whitespaces = " \t" );
@@ -40,6 +38,16 @@ int16_t replaceString(string& subject, const string& search, const string& repla
 void setDT();
 int32_t getnumfromstr(std::string in, std::string st, std::string fin);
 int16_t strsplit(string& s, char delim, vector<string>& vec);
+
+template <class T>
+string to_string(T i) {
+    string s;
+    stringstream out;
+    out << i;
+    s = out.str();
+    return s;
+}
+
 //
 //  структура объекта таймера
 //
@@ -269,6 +277,8 @@ class cproperties {
 };
 
 int16_t readCfg();
+string  getPersistData( string& _name, string& _attr );
+int16_t setPersistData( string& _name, string& _attr, string& _val );
 
 bool testaddr(void* x);   // проверка на NULL
 

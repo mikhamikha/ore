@@ -97,16 +97,32 @@ enum valvestatus {
     _vlv_ready=0,
     _vlv_opened,    // =1
     _vlv_closed,    // =2
-    _vlv_open=3,      // =3
-    _vlv_opening=4,   // =4
-    _vlv_close=5,     // =5    
-    _vlv_closing=6,   // =6
+    _vlv_open,      // =3
+    _vlv_opening,   // =4
+    _vlv_close,     // =5    
+    _vlv_closing,   // =6
     _vlv_warn,      // =7
     _vlv_fault_1,   // =8
     _vlv_fault_2,   // =9
     _vlv_fault_3,   // =10
     _vlv_fault_4,   // =11
     _vlv_override   // =12
+};
+
+enum pumpstatus {
+    _p_ready=0,
+    _p_running,     // =1
+    _p_start,       // =2
+    _p_stop,        // =3
+    _p_idle,        // =4
+    _p_dummy_1,     // =5
+    _p_dummy_2,     // =6
+    _p_warn,        // =7
+    _p_fault_1,     // =8
+    _p_fault_2,     // =9
+    _p_fault_3,     // =10
+    _p_fault_4,     // =11
+    _p_override     // =12
 };
 
 typedef std::vector < cproperties<content> > vlvmode;
@@ -132,26 +148,33 @@ class cunit: public cproperties<content> { 			// имя класса
     int16_t     m_cmdstatus;
     double      m_minAuto;
     double      m_maxAuto;
+            
+    ctag*   m_pmod;             // режим 
+    ctag*   m_psel;             // выбор 
+    ctag*   m_preg;             // ссылка на регулируемый параметр
+    cunit*  m_pother;           // парный юнит
+    int16_t m_error;            // ошибка 
+    int16_t m_motion;           // движение клапана motionstate
+    ctag*   m_ppos;             // положение клапана/продуктивность
 
     union {
         struct {            // valve
             ctag*   m_plso;             // конечный открытия           
             ctag*   m_plsc;             // конечный закрытия
             ctag*   m_pfc;              // текущий счетчик
-            ctag*   m_ppos;             // положение клапана
-            ctag*   m_pmod;             // режим клапана
-            ctag*   m_psel;             // выбор клапана
             ctag*   m_pcmdopen;         // команда движения            
             ctag*   m_pcmdclose;        // команда обратного движения            
             ctag*   m_pblock;           // ссылка на блокирующий параметр
-            ctag*   m_preg;             // ссылка на регулируемый параметр
-            int16_t m_motion;           // движение клапана motionstate
             double  m_delta;            // дельта для остановки клапана
             double  m_maxdelta;         // максимальная дельта
-            int16_t m_error;            // ошибка клапана valve_error_codes
-            cunit*  m_pother;            // парный клапан
         };
         struct {            // pump
+            ctag*   m_prun;             // 1 - работает, 0 - нет           
+            ctag*   m_pflt;             // ошибка
+            ctag*   m_pready;           // готовность
+            ctag*   m_ptask;            // задание продуктивности
+            ctag*   m_pstart;           // команда включения            
+            ctag*   m_pstop;            // команда отключения            
         };
     };
     struct {
@@ -175,7 +198,7 @@ class cunit: public cproperties<content> { 			// имя класса
     string  getname() { return m_name; }
 
     int16_t getstate( void );
-    int16_t control( void );
+    int16_t control( void* );
     int16_t argsize( void ) { return args.size(); }
     int16_t gettype() { return m_nType; }
     int16_t getmode() { return m_mode; }
@@ -201,6 +224,7 @@ class cunit: public cproperties<content> { 			// имя класса
 
 extern vlvmode vmodes;
 extern vlvmode vstatuses;
+extern vlvmode pstatuses;
 typedef std::vector <cunit *> unitvector;
 
 #endif  // _UNIT_HPP_
